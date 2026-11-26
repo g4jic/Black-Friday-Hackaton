@@ -21,6 +21,16 @@ No long dashes in this file; use a plain hyphen.
   `listing-<id>` (`LISTING_ID_PREFIXES` in `src/domain/source.ts`). The server takes an injectable `DemoCatalogue`;
   none is built in, so **"Run demo" answers 503 until step 4** (seeded catalogue) and step 8 (recorded scenarios).
   `npm run screenshots` also waits for step 8. 122 tests pass, typecheck clean.
+- Step 1 DONE: `SpaceListing` entity (`src/domain/space-listing.ts`, rules in code, typed errors listing every field
+  problem), contacts kept apart, `ListingStore` port, `LocalListingStore` (seed + `data/local-listings.json`,
+  ignored) and the "Local demo landlord".
+- Step 2 DONE, seed APPROVED and FROZEN: `src/adapters/seed/generate-listings.ts` (fixed seed, fingerprint pinned in
+  `tests/seed.test.ts`). Prices per m2 are a synthetic assumption, roughly aligned with public 2025-2026 ranges (Kurir
+  Biznis, Biznis.rs): medians Novi Sad 10, Beograd 16.2 EUR/m2. "Missing data" = no lease draft, a draft missing
+  clauses, or no description; required form fields are never empty. `npm run seed:report` prints a summary.
+- Step 3 DONE: listing API (`src/adapters/server/listing-routes.ts`) and pages /listings, /listings/:id (Show contact,
+  demo phone masked, no links), /listings/new, /listings/:id/edit, /my-listings.
+- Local ports: another local project may hold 3000 and 5173; stop it before `npm run dev`.
 
 ## 26 Nov 2026, late evening (Andrej): app flow, run orbit, results redesign
 What changed (commits 1c11f9e to the last one of the day; 122 tests pass, typecheck clean, keyless demo unchanged):

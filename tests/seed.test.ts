@@ -10,7 +10,7 @@ describe("synthetic seed (100 listings, 100 demo landlords)", () => {
   it("is deterministic and frozen: the same fingerprint on every run", () => {
     expect(fingerprint(generateSeed())).toBe(fingerprint(seed))
     // Pinned. If this changes, the catalogue changed: the seed is frozen after approval.
-    expect(fingerprint(seed)).toBe("0ded5c4864a8ec5a")
+    expect(fingerprint(seed)).toBe("4257c4ac88fbeb0c")
   })
 
   it("50 Novi Sad + 50 Beograd, unique ids, every listing passes the same rules as the form", () => {
@@ -21,6 +21,17 @@ describe("synthetic seed (100 listings, 100 demo landlords)", () => {
     expect(listings.every((l) => l.props.isDemo && l.props.published)).toBe(true)
     expect(contacts).toHaveLength(100)
     for (const l of listings) expect(l.props.areaM2).toBeGreaterThanOrEqual(20), expect(l.props.areaM2).toBeLessThanOrEqual(300)
+  })
+
+  it("prices per m2 sit on the approved targets: median about 10 EUR in Novi Sad and 16 to 17 EUR in Beograd", () => {
+    const median = (city: string) => {
+      const xs = seed.listings.filter((l) => l.input.city === city).map((l) => l.input.rentMonthly / l.input.areaM2).sort((a, b) => a - b)
+      return (xs[24]! + xs[25]!) / 2
+    }
+    expect(median("Novi Sad")).toBeGreaterThan(9.5)
+    expect(median("Novi Sad")).toBeLessThan(10.5)
+    expect(median("Beograd")).toBeGreaterThan(15.5)
+    expect(median("Beograd")).toBeLessThan(17.5)
   })
 
   it("about 70% have a lease draft, and bad terms and missing data are in there on purpose", () => {

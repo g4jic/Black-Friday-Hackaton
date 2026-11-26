@@ -4,10 +4,13 @@
  * and Supabase (npm run seed:supabase). No real companies, no house numbers (street and part of town only), emails on
  * example.com, phones in a realistic format that the UI only ever shows partly masked.
  *
- * Prices per m2 per part of town are OUR SYNTHETIC ASSUMPTION for the demo (a plausible order of magnitude), not
- * market data. The README says so.
+ * Prices per m2 per part of town are OUR SYNTHETIC ASSUMPTION for the demo, not market data. They are roughly aligned
+ * with publicly reported 2025-2026 ranges (Kurir Biznis, Biznis.rs): Novi Sad about 7-12 EUR/m2 in residential parts
+ * and 12-20 in the centre; Beograd about 10-15 in outer parts, 15-22 in Novi Beograd and the wider city, 22-35 in
+ * Stari grad, Vracar and Savski venac. The README says so.
  *
- * FROZEN after approval: changing this file changes the catalogue. tests/seed.test.ts pins its fingerprint.
+ * FROZEN (approved 26 Nov 2026, with the price correction): do not change this file. Any change changes the catalogue;
+ * tests/seed.test.ts pins its fingerprint.
  */
 import type { BusinessType, ListingContactInput, ListingIndexation, SpaceListingInput, SupportedCity } from "../../domain/index.js"
 
@@ -35,36 +38,42 @@ type District = { readonly name: string; readonly eurPerM2: readonly [number, nu
 /** Synthetic rent per m2 per month (EUR) for a 50 to 80 m2 ground-floor shop; other sizes and floors adjust below. */
 export const DISTRICTS: Record<SupportedCity, readonly District[]> = {
   "Novi Sad": [
-    { name: "Centar", eurPerM2: [18, 26], streets: ["Zmaj Jovina", "Dunavska", "Pašićeva", "Njegoševa", "Laze Telečkog"] },
-    { name: "Stari grad", eurPerM2: [15, 22], streets: ["Jevrejska", "Svetozara Miletića", "Modene", "Ignjata Pavlasa"] },
-    { name: "Liman 1", eurPerM2: [13, 17], streets: ["Bulevar cara Lazara", "Fruškogorska", "Ćirpanova"] },
-    { name: "Liman 2", eurPerM2: [12, 16], streets: ["Narodnog fronta", "Balzakova", "Ilije Ognjanovića"] },
-    { name: "Liman 3", eurPerM2: [11, 15], streets: ["Bulevar despota Stefana", "Braće Ribnikar", "Puškinova"] },
-    { name: "Grbavica", eurPerM2: [11, 14], streets: ["Gogoljeva", "Radnička", "Ive Lole Ribara", "Šekspirova"] },
-    { name: "Podbara", eurPerM2: [10, 13], streets: ["Kosovska", "Đorđa Rajkovića", "Vuka Karadžića"] },
-    { name: "Rotkvarija", eurPerM2: [10, 13], streets: ["Kisačka", "Hadži Ruvimova", "Temerinska"] },
-    { name: "Detelinara", eurPerM2: [9, 12], streets: ["Bulevar Jaše Tomića", "Rumenačka", "Janka Čmelika"] },
-    { name: "Novo naselje", eurPerM2: [9, 12], streets: ["Bulevar Slobodana Jovanovića", "Seljačkih buna", "Gagarinova"] },
-    { name: "Satelit", eurPerM2: [8, 11], streets: ["Seljačkih buna", "Kornelija Stankovića", "Vere Pavlović"] },
-    { name: "Telep", eurPerM2: [8, 10], streets: ["Ive Andrića", "Kanadska", "Mileve Marić"] },
+    { name: "Centar", eurPerM2: [15, 20], streets: ["Zmaj Jovina", "Dunavska", "Pašićeva", "Njegoševa", "Laze Telečkog"] },
+    { name: "Stari grad", eurPerM2: [12, 18], streets: ["Jevrejska", "Svetozara Miletića", "Modene", "Ignjata Pavlasa"] },
+    { name: "Liman 1", eurPerM2: [10, 13], streets: ["Bulevar cara Lazara", "Fruškogorska", "Ćirpanova"] },
+    { name: "Liman 2", eurPerM2: [9, 12], streets: ["Narodnog fronta", "Balzakova", "Ilije Ognjanovića"] },
+    { name: "Liman 3", eurPerM2: [9, 12], streets: ["Bulevar despota Stefana", "Braće Ribnikar", "Puškinova"] },
+    { name: "Grbavica", eurPerM2: [9, 12], streets: ["Gogoljeva", "Radnička", "Ive Lole Ribara", "Šekspirova"] },
+    { name: "Podbara", eurPerM2: [8, 11], streets: ["Kosovska", "Đorđa Rajkovića", "Vuka Karadžića"] },
+    { name: "Rotkvarija", eurPerM2: [8, 11], streets: ["Kisačka", "Hadži Ruvimova", "Temerinska"] },
+    { name: "Detelinara", eurPerM2: [8, 11], streets: ["Bulevar Jaše Tomića", "Rumenačka", "Janka Čmelika"] },
+    { name: "Novo naselje", eurPerM2: [8, 11], streets: ["Bulevar Slobodana Jovanovića", "Seljačkih buna", "Gagarinova"] },
+    { name: "Satelit", eurPerM2: [7, 10], streets: ["Seljačkih buna", "Kornelija Stankovića", "Vere Pavlović"] },
+    { name: "Telep", eurPerM2: [7, 10], streets: ["Ive Andrića", "Kanadska", "Mileve Marić"] },
     { name: "Adice", eurPerM2: [7, 9], streets: ["Kopaonička", "Podunavska", "Cara Dušana"] },
-    { name: "Klisa", eurPerM2: [6, 9], streets: ["Temerinski put", "Partizanska", "Sentandrejski put"] },
+    { name: "Klisa", eurPerM2: [7, 9], streets: ["Temerinski put", "Partizanska", "Sentandrejski put"] },
   ],
   Beograd: [
-    { name: "Stari grad", eurPerM2: [26, 36], streets: ["Knez Mihailova", "Kralja Petra", "Čika Ljubina", "Kosančićev venac"] },
-    { name: "Vračar", eurPerM2: [22, 30], streets: ["Njegoševa", "Kalenićeva", "Maksima Gorkog", "Kursulina"] },
-    { name: "Dorćol", eurPerM2: [20, 28], streets: ["Cara Dušana", "Strahinjića bana", "Dobračina", "Gospodar Jevremova"] },
-    { name: "Savski venac", eurPerM2: [20, 27], streets: ["Nemanjina", "Kneza Miloša", "Sarajevska"] },
-    { name: "Novi Beograd", eurPerM2: [15, 22], streets: ["Bulevar Mihajla Pupina", "Jurija Gagarina", "Omladinskih brigada", "Nehruova"] },
-    { name: "Palilula", eurPerM2: [12, 16], streets: ["Takovska", "Starine Novaka", "Cvijićeva"] },
-    { name: "Zemun", eurPerM2: [12, 16], streets: ["Glavna", "Gospodska", "Ugrinovačka", "Prvomajska"] },
-    { name: "Zvezdara", eurPerM2: [11, 15], streets: ["Bulevar kralja Aleksandra", "Dimitrija Tucovića", "Vojislava Ilića"] },
-    { name: "Voždovac", eurPerM2: [11, 15], streets: ["Ustanička", "Vojvode Stepe", "Braće Jerković"] },
-    { name: "Banovo brdo", eurPerM2: [11, 14], streets: ["Požeška", "Pere Velimirovića", "Trgovačka"] },
-    { name: "Karaburma", eurPerM2: [9, 12], streets: ["Mije Kovačevića", "Ivana Milutinovića", "Marijane Gregoran"] },
-    { name: "Mirijevo", eurPerM2: [8, 11], streets: ["Mirijevski bulevar", "Vitezova Karađorđeve zvezde", "Matice srpske"] },
+    { name: "Stari grad", eurPerM2: [26, 35], streets: ["Knez Mihailova", "Kralja Petra", "Čika Ljubina", "Kosančićev venac"] },
+    { name: "Vračar", eurPerM2: [24, 33], streets: ["Njegoševa", "Kalenićeva", "Maksima Gorkog", "Kursulina"] },
+    { name: "Dorćol", eurPerM2: [22, 30], streets: ["Cara Dušana", "Strahinjića bana", "Dobračina", "Gospodar Jevremova"] },
+    { name: "Savski venac", eurPerM2: [22, 30], streets: ["Nemanjina", "Kneza Miloša", "Sarajevska"] },
+    { name: "Novi Beograd", eurPerM2: [16, 22], streets: ["Bulevar Mihajla Pupina", "Jurija Gagarina", "Omladinskih brigada", "Nehruova"] },
+    { name: "Palilula", eurPerM2: [15, 19], streets: ["Takovska", "Starine Novaka", "Cvijićeva"] },
+    { name: "Zemun", eurPerM2: [15, 19], streets: ["Glavna", "Gospodska", "Ugrinovačka", "Prvomajska"] },
+    { name: "Zvezdara", eurPerM2: [13, 16], streets: ["Bulevar kralja Aleksandra", "Dimitrija Tucovića", "Vojislava Ilića"] },
+    { name: "Voždovac", eurPerM2: [13, 16], streets: ["Ustanička", "Vojvode Stepe", "Braće Jerković"] },
+    { name: "Banovo brdo", eurPerM2: [12, 15], streets: ["Požeška", "Pere Velimirovića", "Trgovačka"] },
+    { name: "Karaburma", eurPerM2: [10, 13], streets: ["Mije Kovačevića", "Ivana Milutinovića", "Marijane Gregoran"] },
+    { name: "Mirijevo", eurPerM2: [10, 13], streets: ["Mirijevski bulevar", "Vitezova Karađorđeve zvezde", "Matice srpske"] },
   ],
 }
+
+/** Commercial space clusters in the centre and the business districts, so those parts of town are picked more often. */
+const BUSY: Record<string, number> = { "Novi Sad/Centar": 3, "Novi Sad/Stari grad": 3, "Novi Sad/Liman 1": 3, "Beograd/Novi Beograd": 3, "Beograd/Vračar": 2, "Beograd/Stari grad": 2 }
+const WEIGHTED_DISTRICTS = Object.fromEntries(
+  (Object.keys(DISTRICTS) as SupportedCity[]).map((city) => [city, DISTRICTS[city].flatMap((d) => Array.from({ length: BUSY[`${city}/${d.name}`] ?? 1 }, () => d))]),
+) as Record<SupportedCity, readonly District[]>
 
 const MALE = ["Marko", "Nikola", "Stefan", "Milan", "Aleksandar", "Nemanja", "Dragan", "Zoran", "Miloš", "Dušan", "Lazar", "Vladimir", "Ivan", "Petar", "Đorđe", "Bojan", "Goran", "Srđan", "Uroš", "Filip", "Luka", "Dejan", "Branislav", "Saša"] as const
 const FEMALE = ["Milica", "Jelena", "Ana", "Marija", "Jovana", "Ivana", "Dragana", "Snežana", "Tamara", "Teodora", "Katarina", "Sanja", "Mirjana", "Biljana", "Nataša", "Gordana", "Sara", "Tijana", "Vesna", "Ljiljana", "Nevena", "Danijela", "Maja", "Kristina"] as const
@@ -232,13 +241,13 @@ export function generateSeed(): Seed {
   for (const [city, code] of cities) {
     for (let i = 1; i <= 50; i++) {
       const index = listings.length
-      const district = rng.pick(DISTRICTS[city])
+      const district = rng.pick(WEIGHTED_DISTRICTS[city])
       const a = area(rng)
       const fl = floor(rng)
       const us = uses(rng, fl)
       // Bigger spaces and spaces off the street cost less per m2.
-      const sizeFactor = a <= 45 ? 1.12 : a <= 90 ? 1 : a <= 160 ? 0.88 : 0.78
-      const floorFactor = fl === 0 ? 1 : fl < 0 ? 0.6 : 0.8
+      const sizeFactor = a <= 45 ? 1.1 : a <= 90 ? 1 : a <= 160 ? 0.93 : 0.86
+      const floorFactor = fl === 0 ? 1 : fl < 0 ? 0.7 : 0.9
       const perM2 = district.eurPerM2[0] + rng.next() * (district.eurPerM2[1] - district.eurPerM2[0])
       const rent = round(a * perM2 * sizeFactor * floorFactor, 10)
       const traits: SeedTrait[] = []
