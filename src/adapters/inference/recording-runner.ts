@@ -31,7 +31,7 @@ export function recordingKey(input: InferenceInput): string {
 }
 
 /** House style: no long dashes anywhere, also in recorded model text (a plain hyphen with spaces instead). */
-const plainDashes = (text: string) => text.replace(/\s*[–—]\s*/g, " - ")
+const plainDashes = (text: string) => text.replace(/\s*[\u2013\u2014]\s*/g, " - ")
 
 const toRecorded = (output: InferenceOutput): RecordedItem[] =>
   output.items.flatMap((item): RecordedItem[] => {
