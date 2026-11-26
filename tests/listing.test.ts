@@ -97,7 +97,7 @@ describe("buildListing: plain code checks every value against the listing text",
   it("rejects a quote that is not in the text (an invented source)", () => {
     const answer = goodAnswer()
     answer.deposit = { found: true, amount: 1000, currency: "EUR", quote: "Depozit: 1.000 €" }
-    expectDomainError(() => buildListing(demo01!, answer), "invalid_extraction", "does not appear in the listing text")
+    expectDomainError(() => buildListing(demo01!, answer), "invalid_extraction", "does not appear in the text")
   })
   it("rejects a number that does not match its own quote", () => {
     const answer = goodAnswer()

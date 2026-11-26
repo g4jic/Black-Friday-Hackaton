@@ -26,7 +26,12 @@ export type SourceRef = {
 /** Id of a listing text: "pasted-<n>" (user paste) or "demo-<id>" (synthetic fixture). */
 export const LISTING_TEXT_ID = /^(pasted|demo)-[a-z0-9-]+$/
 
+/** Per quote part. A quote may have up to MAX_QUOTE_PARTS parts, each found verbatim in the text. */
 export const MAX_QUOTE_LENGTH = 200
+export const MAX_QUOTE_PARTS = 3
+/** The stored quote joins the parts with " ... ". */
+export const QUOTE_PART_SEPARATOR = " ... "
+export const MAX_SOURCE_QUOTE_LENGTH = MAX_QUOTE_LENGTH * MAX_QUOTE_PARTS + QUOTE_PART_SEPARATOR.length * (MAX_QUOTE_PARTS - 1)
 
 export type Sourced<T> = { readonly value: T; readonly source: SourceRef }
 
@@ -44,7 +49,7 @@ export function validateSource(source: unknown): SourceRef {
         if (typeof s.quote !== "string" || s.quote.trim() === "") {
           throw new DomainError("invalid_source", `Listing text source "${s.ref}" must carry a quote from the text`)
         }
-        if (s.quote.length > MAX_QUOTE_LENGTH) throw new DomainError("invalid_source", `Quote is longer than ${MAX_QUOTE_LENGTH} characters`)
+        if (s.quote.length > MAX_SOURCE_QUOTE_LENGTH) throw new DomainError("invalid_source", `Quote is longer than ${MAX_SOURCE_QUOTE_LENGTH} characters`)
         break
       }
       if (!/^https?:\/\/\S+$/i.test(s.ref)) {

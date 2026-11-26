@@ -84,6 +84,8 @@ photos, or be replaced by synthetic data.
 - No long dashes anywhere. Never print or commit `.env` or keys. Update this file and run `npm test` before every push.
 
 **Open questions**
+- Fixed questionnaire instead of an Interviewer agent? For now `fixtures/requirements/demo.json` is the profile and
+  the requirements; the Interviewer (follow-up questions, requirements list) is not built.
 - Design direction chosen: see DESIGN.md (Era and Spade concepts are superseded). Next: the design pass.
 - Terms of use read; option D chosen (see "Decisions log"). Permission emails to the three sites: drafted, Aleksa
   sends them. Waiting for replies.
@@ -91,6 +93,47 @@ photos, or be replaced by synthetic data.
 - Railway datacenter IPs may be blocked by listing sites; test live mode from the deployed service.
 
 ## Current state
+- Step 2.3 (Finance analyst + Lease reader in parallel) built on 26 Nov 2026, 85 tests pass, typecheck clean.
+  Committed and pushed after Aleksa's OK.
+  - Fixtures: `fixtures/requirements/demo.json` (fixed demo questionnaire: cafe, 50-90 m2, budget 1,500 EUR, revenue
+    9,000 EUR, 36 months; gross margin left out on purpose), `fixtures/leases/lease-demo-01|04|07.txt` (SYNTHETIC:
+    clean / soft flags / hard flag), scripted answers `fixtures/mock-answers/lease-reader.json`.
+  - Domain: `quoted-extraction.ts` (shared quote rules for listings and leases; `buildListing` now uses it),
+    `lease.ts` (`LEASE_FIELDS`, `buildLease`, `evaluateLease`: code decides hard flags `locked_in_without_exit`,
+    `unlimited_rent_increase` and soft concerns), `lease-terms.ts` (calculator inputs from listing + lease + profile),
+    `number-check.ts` (`unsourcedNumbers`: an explanation may only contain numbers the code gave the agent).
+  - Application: `agents/finance-analyst.ts` (tool `calculate` runs the domain calculator; term-level calculations
+    wait for the Lease reader through shared state; budget hard flag decided by code; explanation with an unsourced
+    number is sent back once), `agents/lease-reader.ts`, `agents/quoted-schema.ts` (shared schema builder). Runtime
+    has a loop tracker (loop status from events); `candidate.rejected` carries `cancelledLoops`; new event
+    `loop.cancelled` (where the loop was cut). Other new events: `lease.read`, `lease.extraction_rejected`,
+    `lease.failed`, `finance.explained`, `finance.explanation_rejected`, `finance.failed`.
+  - `src/adapters/inference/live-runner.ts`: Mozaik runner with `disable_parallel_tool_use` for Anthropic.
+  - `npm run demo:evaluate` (mock, demo-01/04/07) and `npm run demo:evaluate -- --live` (haiku-4-5, demo-07).
+  - Mock run: demo-07's Finance loop is cut mid tool call (while waiting for the lease) at 124 ms; demo-01 and
+    demo-04 finish; 9 loops, peak 6 in parallel, 1 rejection, 1 cancelled loop, 3 soft flags.
+  - **First live problem (fixed):** the Lease reader computed the deposit ("jedna mesečna zakupnina" -> 1050) and on
+    retry stitched two sentences into one quote; the whole lease failed, so no hard flag. Fixes (Aleksa's decision):
+    - Partial acceptance on the last attempt (Scout and Lease reader): verified fields stay, a failing field becomes
+      MissingData marked `unverified` (+ a soft "check before signing" concern for leases, `Listing.unverified` and
+      `candidate.found.unverified` for listings). Only invalid JSON or a provider error goes to the failed queue.
+    - Amounts as months of rent: the model answers `{monthsOfRent: N, quote}` (digit or Serbian word in the quote);
+      code computes the amount from the sourced rent (`amountFromRentMultiple`, source calc with both quotes).
+    - A quote may have up to 3 parts joined with " ... "; code checks every part against the text.
+    - Finance: when the lease is not verified (or has no verified term), term-level figures say "lease not verified:
+      term from the questionnaire", carry profile sources only, and get a check-before-signing note.
+  - **Learned limit:** quotes as JSON arrays in every field made the API reject the schema ("The compiled grammar is
+    too large", 400, no cost). Quotes are one string again; parts are split by code. schema-rules test checks it.
+  - **Live check after the fixes (claude-haiku-4-5, demo-07, 3 runs):** hard flag raised 3/3, Finance cut 3/3 (ran
+    7.4 s, 4.5 s and 5.5 s before the cut; twice mid tool call, once before its next tool call), 0 rejected
+    extractions, deposit reported as 1 month of rent each time; about $0.013 per run ($0.040 for 3 runs, plus 3
+    failed schema runs at $0).
+  - Known limit: when the flag lands during a model call, that call finishes and is paid for (Mozaik cannot abort an
+    in-flight inference); its answer is replaced.
+  - Known limit: the quote part separator " ... " breaks when the listing or lease text itself contains "..." (or
+    the ellipsis character): a real quote with "..." is split into parts at that point. Each part must still appear
+    in the text, so nothing unverified gets in, but a valid quote may be rejected (the field then becomes
+    unverified MissingData).
 - Step 2.2 (Scout) done on 26 Nov 2026, 65 tests pass (`npm test`), typecheck clean. Committed and pushed.
   - `fixtures/listings/demo-01..08.txt`: 8 SYNTHETIC raw-text listings for Novi Sad, different styles, each starting
     with "SYNTHETIC DEMO DATA", no contacts. demo-02 = hard flag (3,200 EUR rent), demo-04 = soft flag (private vs
@@ -249,6 +292,9 @@ photos, or be replaced by synthetic data.
   OpenStreetMap for area data; Supabase for history; Railway for deploy; Stripe and Solana not used.
 
 ## Session log
+- 2026-11-26 18:40 (Aleksa): partial acceptance, months of rent, quote parts, "lease not verified"; live demo-07 3/3 cut. 85 tests pass. Not committed.
+- 2026-11-26 18:00 (Aleksa): step 2.3 Finance analyst + Lease reader built, 79 tests pass, mock demo OK; live run
+  on demo-07 found the partial-extraction problem. Not committed.
 - 2026-11-26 17:00 (Aleksa): Scout schema fixed against Anthropic's structured output rules, schema rule test,
   provider-error handling, demo script; live haiku-4-5 run on demo-01 and demo-03 passed. 71 tests pass. Pushed.
 - 2026-11-26 16:30 (Aleksa): DESIGN.md edits committed and pushed (dbf8818). Step 2.2 Scout built with 8 synthetic

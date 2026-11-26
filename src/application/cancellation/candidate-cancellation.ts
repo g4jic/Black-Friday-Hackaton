@@ -10,6 +10,23 @@ import type { AppRuntime } from "../runtime.js"
 
 export const STOPPED_PREFIX = "stopped:"
 
+/** Where a loop was stopped, for the timeline and the Rejected row in the UI. */
+export type StopPoint = "mid tool call" | "answer replaced" | `before ${string}`
+
+/**
+ * Publishes loop.cancelled once per loop (a loop can pass several breakpoints after the flag). Producer is the
+ * stopped agent, so the event sits in that agent's lane.
+ */
+export function cancellationReporter(rt: AppRuntime, candidateId: string, loopKey: string, agentId: string, agentName: string): (where: StopPoint) => void {
+  let reported = false
+  return (where) => {
+    if (reported) return
+    reported = true
+    const flag = rt.state.candidate(candidateId).rejection
+    rt.sendEvent(SemanticEvent.create("loop.cancelled", agentId, { candidateId, loopKey, agent: agentName, where, rule: flag?.rule, raisedBy: flag?.raisedBy }), agentId)
+  }
+}
+
 /** Steps we hold at the breakpoint once the candidate is rejected. */
 const HELD_STEPS = new Set<ExecutableTransition["nextStateId"]>([
   "message_received",
@@ -35,6 +52,8 @@ export class CandidateCancellation implements InterceptionHandler {
   constructor(
     private readonly candidate: Candidate,
     private readonly agentName: string,
+    /** Called when this breakpoint stops the loop (once per step it rewrites). */
+    private readonly onStop?: (where: StopPoint) => void,
   ) {}
 
   isSatisfiedBy(transition: ExecutableTransition): boolean {
@@ -49,6 +68,7 @@ export class CandidateCancellation implements InterceptionHandler {
   async handle(transition: ExecutableTransition): Promise<ExecutableTransition> {
     const flag = this.candidate.rejection
     if (!flag) return transition
+    this.onStop?.(transition.nextStateId === "model_message" ? "answer replaced" : `before ${transition.nextStateId}`)
     return { nextStateId: "model_message", input: { answer: ModelMessageItem.rehydrate({ text: stoppedText(flag) }) } }
   }
 }
@@ -66,6 +86,7 @@ export function cancellableTool(
   candidate: Candidate,
   agentName: string,
   invoke: CancellableInvoke,
+  onStop?: (where: StopPoint) => void,
 ): Tool {
   // The agent that raises the flag is never cancelled by it (its own tool is usually what raised it).
   const stoppedByOther = () => (candidate.rejection && candidate.rejection.raisedBy !== agentName ? candidate.rejection : null)
@@ -82,6 +103,7 @@ export function cancellableTool(
         const flag = stoppedByOther()
         if (!flag) return
         controller.abort(flag)
+        if (onStop) queueMicrotask(() => onStop("mid tool call")) // after candidate.rejected is published
         settleAborted?.(`Aborted mid-call: ${stoppedText(flag)}`)
       }
       candidate.signal.addEventListener("abort", onCandidateAbort, { once: true })
@@ -104,6 +126,8 @@ export function cancellableTool(
  */
 export function rejectCandidate(rt: AppRuntime, candidateId: string, flag: HardFlag, producerId: string): boolean {
   const first = rt.state.rejectCandidate(candidateId, flag)
-  rt.sendEvent(SemanticEvent.create(first ? "candidate.rejected" : "candidate.flag_recorded", producerId, { candidateId, flag }), producerId)
+  // The loops this rejection stops: every loop on the candidate still running, except the agent that raised it.
+  const cancelledLoops = first ? rt.runningLoopsOf(candidateId, flag.raisedBy).map((l) => ({ loopKey: l.key, agent: l.agentName })) : []
+  rt.sendEvent(SemanticEvent.create(first ? "candidate.rejected" : "candidate.flag_recorded", producerId, { candidateId, flag, cancelledLoops }), producerId)
   return first
 }

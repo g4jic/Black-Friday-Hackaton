@@ -98,9 +98,13 @@ describe("Scout (keyless, MockRunner)", () => {
     // What the text does state carries its source and quote.
     expect(demo03.rentMonthly).toMatchObject({ source: { kind: "listing", ref: "demo-03", field: "rentMonthly", quote: "cena 900e" } })
     expect(isMissingData(demo03.rentMonthly)).toBe(false)
-    // "Cena na upit" (price on request) stays missing; "jedna kirija" (one month's rent) is not computed.
+    // "Cena na upit" (price on request) stays missing.
     expect(isMissingData(rt.state.candidate("demo-08").listing.rentMonthly)).toBe(true)
-    expect(isMissingData(rt.state.candidate("demo-07").listing.deposit)).toBe(true)
+    // "depozit: jedna kirija": the Scout reports 1 month of rent, code computes the amount from the sourced rent.
+    expect(rt.state.candidate("demo-07").listing.deposit).toMatchObject({
+      value: { cents: 105000, currency: "EUR" },
+      source: { kind: "calc", inputs: [{ kind: "listing", ref: "demo-07", field: "deposit", quote: "depozit: jedna kirija" }, { kind: "listing", field: "rentMonthly" }] },
+    })
 
     const announced = recorder.events.find((e) => e.type === "candidate.found" && payload<{ candidateId: string }>(e).candidateId === "demo-03")
     expect(payload<{ missing: string[] }>(announced!).missing).toContain("area")
@@ -174,19 +178,39 @@ describe("Scout (keyless, MockRunner)", () => {
     expect(unhandled).toEqual([])
   })
 
-  it("a listing that stays invalid goes to the failed queue; the other listings are not affected", async () => {
+  it("a field that stays wrong after the retry becomes unverified MissingData; the verified fields are kept", async () => {
     const answers = loadScoutAnswers()
     const script: MockScript = async (input): Promise<MockReply> => {
       const id = listingIdOf(input)
-      if (id === "demo-02") return { text: JSON.stringify({ ...(answers[id] as object), area: { found: true, value: 999, quote: "58m2 u prizemlju" } }) }
+      if (id === "demo-02") return { text: JSON.stringify({ ...(answers[id] as object), area: { found: true, value: 999, quote: ["58m2 u prizemlju"] } }) }
       return { text: JSON.stringify(answers[id!]) }
+    }
+    const { rt, recorder, user } = setup(script)
+    submitListings(rt, loadDemoListings().slice(0, 3), user.getId())
+    await waitFor(() => rt.state.candidates.size === 3, 3000, "3 candidates")
+
+    const demo02 = rt.state.candidate("demo-02").listing
+    expect(demo02.area).toEqual({ status: "missing_data", missing: ["area"], unverified: "value 999 does not appear in its quote" })
+    expect(demo02.unverified).toEqual([{ field: "area", reason: "value 999 does not appear in its quote" }])
+    expect(demo02.rentMonthly).toMatchObject({ value: { cents: 320000 } }) // verified fields stay
+    const found = recorder.events.find((e) => e.type === "candidate.found" && payload<{ candidateId: string }>(e).candidateId === "demo-02")!
+    expect(payload<{ unverified: unknown[] }>(found).unverified).toHaveLength(1)
+    expect(recorder.events.filter((e) => e.type === "listing.extraction_rejected")).toHaveLength(1)
+    expect(rt.state.failedListings).toEqual([])
+    expect(unhandled).toEqual([])
+  })
+
+  it("an answer that is not JSON twice goes to the failed queue; the other listings are not affected", async () => {
+    const answers = loadScoutAnswers()
+    const script: MockScript = async (input): Promise<MockReply> => {
+      const id = listingIdOf(input)
+      return id === "demo-02" ? { text: "I could not read this listing." } : { text: JSON.stringify(answers[id!]) }
     }
     const { rt, recorder, user } = setup(script)
     submitListings(rt, loadDemoListings().slice(0, 3), user.getId())
     await waitFor(() => recorder.events.some((e) => e.type === "listing.extraction_failed") && rt.state.candidates.size === 2, 3000, "1 failed, 2 found")
 
-    expect(rt.state.failedListings).toHaveLength(1)
-    expect(rt.state.failedListings[0]).toMatchObject({ listingId: "demo-02", attempts: 2 })
+    expect(rt.state.failedListings[0]).toMatchObject({ listingId: "demo-02", attempts: 2, reason: "The answer is not valid JSON" })
     expect(rt.state.candidates.has("demo-02")).toBe(false)
     expect(recorder.events.filter((e) => e.type === "candidate.found").map((e) => payload<{ candidateId: string }>(e).candidateId).sort()).toEqual(["demo-01", "demo-03"])
     expect(unhandled).toEqual([])

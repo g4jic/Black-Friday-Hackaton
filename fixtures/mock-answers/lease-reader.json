@@ -1,0 +1,152 @@
+{
+  "_note": "SYNTHETIC DEMO DATA. Scripted Lease reader answers replayed by the MockRunner in demo mode. Same shape as the live structured output; buildLease checks every quote against the lease text.",
+  "answers": {
+    "lease-demo-01": {
+      "term": {
+        "found": true,
+        "value": 36,
+        "unit": "months",
+        "quote": "na period od 36 meseci"
+      },
+      "tenantMayTerminateEarly": {
+        "found": true,
+        "value": true,
+        "quote": "Zakupac može otkazati ugovor i pre isteka roka"
+      },
+      "noticePeriod": {
+        "found": true,
+        "value": 3,
+        "unit": "months",
+        "quote": "uz otkazni rok od 3 meseca"
+      },
+      "earlyExitPenalty": {
+        "found": false
+      },
+      "indexationKind": {
+        "found": true,
+        "value": "cpi",
+        "quote": "usklađuje jednom godišnje sa indeksom potrošačkih cena"
+      },
+      "indexationRatePercent": {
+        "found": false
+      },
+      "deposit": {
+        "found": true,
+        "amount": 2500,
+        "currency": "EUR",
+        "quote": "depozit od 2.500 EUR"
+      },
+      "personalGuarantee": {
+        "found": false
+      },
+      "tenantPaysStructuralRepairs": {
+        "found": true,
+        "value": false,
+        "quote": "Investiciono održavanje (krov, fasada, instalacije) snosi zakupodavac."
+      },
+      "permittedUse": {
+        "found": true,
+        "value": "ugostiteljska delatnost (kafić) i prodaja hrane za poneti",
+        "quote": "Prostor se koristi za ugostiteljsku delatnost (kafić) i prodaju hrane za poneti."
+      }
+    },
+    "lease-demo-04": {
+      "term": {
+        "found": true,
+        "value": 60,
+        "unit": "months",
+        "quote": "odnosno 60 meseci"
+      },
+      "tenantMayTerminateEarly": {
+        "found": true,
+        "value": true,
+        "quote": "Zakupac može raskinuti ugovor pre isteka roka"
+      },
+      "noticePeriod": {
+        "found": true,
+        "value": 6,
+        "unit": "months",
+        "quote": "uz otkazni rok od 6 meseci"
+      },
+      "earlyExitPenalty": {
+        "found": false
+      },
+      "indexationKind": {
+        "found": true,
+        "value": "fixed_rate",
+        "quote": "povećava se svake godine za 4%"
+      },
+      "indexationRatePercent": {
+        "found": true,
+        "value": 4,
+        "quote": "povećava se svake godine za 4%"
+      },
+      "deposit": {
+        "found": true,
+        "amount": 1400,
+        "currency": "EUR",
+        "quote": "Depozit iznosi 1.400 EUR."
+      },
+      "personalGuarantee": {
+        "found": true,
+        "value": true,
+        "quote": "Direktor zakupca lično jemči za sve obaveze zakupca"
+      },
+      "tenantPaysStructuralRepairs": {
+        "found": true,
+        "value": true,
+        "quote": "Zakupac o svom trošku snosi sve popravke na objektu, uključujući krov, zidove i instalacije."
+      },
+      "permittedUse": {
+        "found": true,
+        "value": "ugostiteljska delatnost",
+        "quote": "Prostor se izdaje za obavljanje ugostiteljske delatnosti."
+      }
+    },
+    "lease-demo-07": {
+      "term": {
+        "found": true,
+        "value": 10,
+        "unit": "years",
+        "quote": "na period od 10 (deset) godina"
+      },
+      "tenantMayTerminateEarly": {
+        "found": true,
+        "value": false,
+        "quote": "Zakupac nema pravo da otkaže ugovor pre isteka ugovorenog roka."
+      },
+      "noticePeriod": {
+        "found": false
+      },
+      "earlyExitPenalty": {
+        "found": false
+      },
+      "indexationKind": {
+        "found": true,
+        "value": "landlord_unilateral",
+        "quote": "Zakupodavac ima pravo da jednostrano promeni visinu zakupnine u bilo kom trenutku, bez ograničenja"
+      },
+      "indexationRatePercent": {
+        "found": false
+      },
+      "deposit": {
+        "found": true,
+        "monthsOfRent": 1,
+        "quote": "depozit u visini jedne mesečne zakupnine"
+      },
+      "personalGuarantee": {
+        "found": false
+      },
+      "tenantPaysStructuralRepairs": {
+        "found": true,
+        "value": false,
+        "quote": "Investiciono održavanje snosi zakupodavac."
+      },
+      "permittedUse": {
+        "found": true,
+        "value": "trgovinska i ugostiteljska delatnost",
+        "quote": "za obavljanje trgovinske i ugostiteljske delatnosti"
+      }
+    }
+  }
+}

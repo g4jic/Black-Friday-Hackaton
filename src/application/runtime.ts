@@ -10,9 +10,17 @@ import {
   type StructuredOutputFormat,
   type Tool,
 } from "@mozaik-ai/core"
+import { createHuman, SituationSpecification } from "@mozaik-ai/core"
 import { ResilientRunner, type ResilientRunnerOptions } from "./resilience/resilient-runner.js"
+import { safeHandler } from "./resilience/safe-handler.js"
 import { Semaphore } from "./resilience/semaphore.js"
 import { SuiteSpotState } from "./state.js"
+
+class AnyLoopEvent extends SituationSpecification {
+  isSatisfiedBy({ event }: { event: SemanticEvent }): boolean {
+    return typeof (event.payload as { loopId?: unknown } | null)?.loopId === "string" || event.type === "message_received.started"
+  }
+}
 
 /** What we know about a loop we started. Mozaik's own loopId is only visible in event payloads. */
 export type LoopInfo = {
@@ -23,6 +31,10 @@ export type LoopInfo = {
   candidateId?: string
   /** Mozaik loopId, filled in when the first loop event is seen. */
   loopId?: string
+  /** Lifecycle from runtime events (the loop tracker): running until the loop's model.answer arrives. */
+  status: "running" | "done"
+  startedAt: number
+  endedAt?: number
 }
 
 export type StartLoopOptions = {
@@ -78,6 +90,8 @@ export function createAppRuntime(options: AppRuntimeOptions) {
       agentId: opts.agent.getId(),
       agentName: opts.agent.getManifest().name,
       candidateId: opts.candidateId,
+      status: "running",
+      startedAt: Date.now(),
     })
     const input: InferenceInput = {
       model: opts.model,
@@ -104,7 +118,36 @@ export function createAppRuntime(options: AppRuntimeOptions) {
     return undefined
   }
 
-  return { ...rt, service, state, semaphore, startLoop, loopForEvent, loops: () => [...loopsByContext.values()] }
+  /**
+   * Plain-code observer that keeps every loop's lifecycle from the bus: it links Mozaik's loopId to our loop on the
+   * first event and marks the loop done when its answer arrives. "busy", "peak" and "cancelled loops" come from here.
+   */
+  const tracker = createHuman({
+    name: "Loop tracker",
+    capabilities: ["observe"],
+    handlers: [
+      safeHandler({
+        specification: new AnyLoopEvent(),
+        processor: {
+          apply({ event }) {
+            const loop = loopForEvent(event)
+            if (loop && event.type === "model.answer") {
+              loop.status = "done"
+              loop.endedAt = Date.now()
+            }
+          },
+        },
+      }),
+    ],
+  })
+  rt.join(tracker)
+
+  /** Loops of one candidate that are still running, optionally without the given agent. */
+  function runningLoopsOf(candidateId: string, exceptAgentName?: string): LoopInfo[] {
+    return [...loopsByContext.values()].filter((l) => l.candidateId === candidateId && l.status === "running" && l.agentName !== exceptAgentName)
+  }
+
+  return { ...rt, service, state, semaphore, startLoop, loopForEvent, runningLoopsOf, loops: () => [...loopsByContext.values()] }
 }
 
 export type AppRuntime = ReturnType<typeof createAppRuntime>

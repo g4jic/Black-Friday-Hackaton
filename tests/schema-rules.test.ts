@@ -11,7 +11,7 @@ const isFormat = (x: unknown): x is StructuredOutputFormat =>
 async function allAgentSchemas(): Promise<[string, StructuredOutputFormat][]> {
   const found: [string, StructuredOutputFormat][] = []
   for (const file of readdirSync("src/application/agents").filter((f) => f.endsWith(".ts"))) {
-    const mod = (await import(`../src/application/agents/${file}`)) as Record<string, unknown>
+    const mod = (await import(/* @vite-ignore */ `../src/application/agents/${file}`)) as Record<string, unknown>
     for (const [name, value] of Object.entries(mod)) if (isFormat(value)) found.push([`${file}:${name}`, value])
   }
   return found
@@ -22,7 +22,12 @@ const format = (schema: Record<string, unknown>): StructuredOutputFormat => ({ n
 describe("structured output schemas follow Anthropic's rules", () => {
   it("every agent schema passes (Scout today, future agents automatically)", async () => {
     const schemas = await allAgentSchemas()
-    expect(schemas.map(([n]) => n)).toContain("scout.ts:LISTING_EXTRACTION_SCHEMA")
+    expect(schemas.map(([n]) => n).sort()).toEqual([
+      "finance-analyst.ts:CALCULATE_TOOL_SCHEMA",
+      "finance-analyst.ts:FINANCE_EXPLANATION_SCHEMA",
+      "lease-reader.ts:LEASE_EXTRACTION_SCHEMA",
+      "scout.ts:LISTING_EXTRACTION_SCHEMA",
+    ])
     for (const [name, schema] of schemas) expect({ name, problems: structuredOutputProblems(schema) }).toEqual({ name, problems: [] })
   })
 
@@ -30,6 +35,17 @@ describe("structured output schemas follow Anthropic's rules", () => {
     const json = JSON.stringify(LISTING_EXTRACTION_SCHEMA.schema)
     expect((json.match(/"anyOf"/g) ?? []).length).toBeLessThanOrEqual(SCHEMA_LIMITS.unionParameters)
     expect(json).not.toMatch(/"type":\[/)
+  })
+
+  it("every quote in a quoted-fields schema is one string (arrays made the grammar too large; parts are split by code)", async () => {
+    let checked = 0
+    for (const [name, schema] of await allAgentSchemas()) {
+      const quotes = [...JSON.stringify(schema.schema).matchAll(/"quote":(\{[^{}]*(?:\{[^{}]*\}[^{}]*)?\})/g)].map((m) => JSON.parse(m[1]!))
+      for (const q of quotes) expect({ name, q }).toEqual({ name, q: expect.objectContaining({ type: "string" }) })
+      checked += quotes.length
+    }
+    // Scout: 11 fields + 1 extra deposit branch; Lease reader: 10 fields + 2 extra branches.
+    expect(checked).toBe(12 + 12)
   })
 
   it("catches enum next to a type array (the 400 we got from the live API)", () => {

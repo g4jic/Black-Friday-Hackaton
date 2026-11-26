@@ -1,0 +1,25 @@
+SYNTHETIC DEMO DATA - invented lease draft, not a real contract.
+
+UGOVOR O ZAKUPU POSLOVNOG PROSTORA (NACRT)
+Poslovni prostor: lokal 72 m2, Liman 2, ulica Narodnog fronta, Novi Sad
+
+Član 1. Predmet zakupa
+Zakupodavac daje u zakup, a zakupac uzima u zakup poslovni prostor iz zaglavlja ovog ugovora.
+
+Član 2. Namena
+Prostor se koristi za ugostiteljsku delatnost (kafić) i prodaju hrane za poneti.
+
+Član 3. Trajanje
+Ugovor se zaključuje na period od 36 meseci od dana primopredaje prostora.
+
+Član 4. Zakupnina i usklađivanje
+Mesečna zakupnina iznosi 1.250 EUR. Zakupnina se usklađuje jednom godišnje sa indeksom potrošačkih cena koji objavljuje Republički zavod za statistiku.
+
+Član 5. Depozit
+Zakupac pri potpisivanju uplaćuje depozit od 2.500 EUR, koji se vraća po isteku ugovora.
+
+Član 6. Otkaz
+Zakupac može otkazati ugovor i pre isteka roka, uz otkazni rok od 3 meseca.
+
+Član 7. Održavanje
+Tekuće održavanje snosi zakupac. Investiciono održavanje (krov, fasada, instalacije) snosi zakupodavac.

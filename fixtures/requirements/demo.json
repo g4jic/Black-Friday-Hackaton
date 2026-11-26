@@ -1,0 +1,24 @@
+{
+  "_note": "SYNTHETIC DEMO DATA. The fixed demo questionnaire (used instead of an Interviewer agent for now). grossMarginRate is optional and left out on purpose: break-even and payback then show 'missing data'.",
+  "profile": {
+    "businessType": "cafe_food",
+    "description": "Specialty coffee bar with a small kitchen, take-away and about 20 seats",
+    "headcount": 3,
+    "areaMinM2": 50,
+    "areaMaxM2": 90,
+    "currency": "EUR",
+    "monthlyBudget": 1500,
+    "expectedMonthlyRevenue": 9000,
+    "walkInCustomers": true,
+    "leaseMonths": 36,
+    "city": "Novi Sad",
+    "fitOutBudget": 15000,
+    "equipmentBudget": 20000,
+    "specialNeeds": "Water and drain for the coffee machine, a customer toilet"
+  },
+  "requirements": [
+    { "id": "req-storefront", "text": "Ground floor with a shop window and direct street entrance (walk-in customers)", "hard": true, "aspect": "premises", "field": "walkInCustomers" },
+    { "id": "req-water", "text": "Water connection and drain for the coffee machine", "hard": true, "aspect": "premises", "field": "specialNeeds" },
+    { "id": "req-toilet", "text": "A toilet for customers", "hard": false, "aspect": "premises", "field": "specialNeeds" }
+  ]
+}

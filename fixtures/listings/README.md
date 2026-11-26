@@ -18,5 +18,5 @@ Planned demo profile (for the evaluators, later steps): a specialty cafe, 50 to 
 | demo-04 | bullet list, former restaurant | **soft flag**: title says private parking, the features say shared parking (check before signing) |
 | demo-05 | office building | soft flag material: price "+ PDV" (VAT on top), first floor, no shop window |
 | demo-06 | ALL CAPS | needs renovation (fit-out cost) |
-| demo-07 | bullet points | deposit "one month's rent" stays missing (the Scout never computes), service charge "included" |
+| demo-07 | bullet points | deposit "jedna kirija": the Scout reports 1 month of rent and code computes the amount (source calc); service charge "included" stays missing |
 | demo-08 | short | missing rent: "Cena na upit" (price on request) |

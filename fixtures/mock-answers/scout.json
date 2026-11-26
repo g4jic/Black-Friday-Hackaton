@@ -94,7 +94,9 @@
         "quote": "58m2 u prizemlju"
       },
       "deposit": {
-        "found": false
+        "found": true,
+        "monthsOfRent": 3,
+        "quote": "Depozit tri zakupnine."
       },
       "serviceChargeMonthly": {
         "found": false
@@ -362,7 +364,9 @@
         "quote": "80 m2, prizemlje, izlog 6 m"
       },
       "deposit": {
-        "found": false
+        "found": true,
+        "monthsOfRent": 1,
+        "quote": "depozit: jedna kirija"
       },
       "serviceChargeMonthly": {
         "found": false

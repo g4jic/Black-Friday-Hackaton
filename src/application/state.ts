@@ -7,6 +7,8 @@ import {
   type BusinessProfile,
   type Finding,
   type HardFlag,
+  type LeaseClauses,
+  type LeaseText,
   type ListingText,
   type ListingTextInput,
   type Requirement,
@@ -31,6 +33,46 @@ export class SuiteSpotState extends RuntimeState {
   readonly findings: Finding[] = []
   /** The "failed items" queue: listings the Scout could not turn into a valid candidate. */
   readonly failedListings: FailedListing[] = []
+  /** Lease drafts by listing id (optional, one per listing), and what the Lease reader extracted from them. */
+  readonly leaseTexts = new Map<string, LeaseText>()
+  readonly leaseClauses = new Map<string, LeaseClauses>()
+  private readonly leaseWaiters = new Map<string, { promise: Promise<LeaseClauses | null>; resolve: (c: LeaseClauses | null) => void }>()
+
+  /** The questionnaire (a fixed demo file for now; the Interviewer agent comes later). */
+  setQuestionnaire(profile: BusinessProfile, requirements: readonly Requirement[]): void {
+    this.profile = profile
+    this.requirements = [...requirements]
+  }
+
+  requireProfile(): BusinessProfile {
+    if (!this.profile) throw new DomainError("invalid_input", "The questionnaire is not filled in yet")
+    return this.profile
+  }
+
+  submitLeases(leases: readonly LeaseText[]): void {
+    for (const lease of leases) {
+      if (this.leaseTexts.has(lease.listingId)) throw new DomainError("invalid_input", `A lease for "${lease.listingId}" was already submitted`)
+      this.leaseTexts.set(lease.listingId, lease)
+      let resolve!: (c: LeaseClauses | null) => void
+      const promise = new Promise<LeaseClauses | null>((r) => (resolve = r))
+      this.leaseWaiters.set(lease.listingId, { promise, resolve })
+    }
+  }
+
+  hasLease(candidateId: string): boolean {
+    return this.leaseTexts.has(candidateId)
+  }
+
+  /** The Lease reader's result (null = could not be read). Wakes whoever waits for it. Idempotent. */
+  recordLeaseResult(candidateId: string, clauses: LeaseClauses | null): void {
+    if (clauses && !this.leaseClauses.has(candidateId)) this.leaseClauses.set(candidateId, clauses)
+    this.leaseWaiters.get(candidateId)?.resolve(clauses)
+  }
+
+  /** Resolves with the lease clauses once the Lease reader is done; at once with null when there is no lease. */
+  waitForLease(candidateId: string): Promise<LeaseClauses | null> {
+    return this.leaseWaiters.get(candidateId)?.promise ?? Promise.resolve(null)
+  }
 
   /** Validates the batch (1 to 8 listings) and removes phone numbers and emails before storing anything. */
   submitListings(inputs: readonly ListingTextInput[]): ListingText[] {
