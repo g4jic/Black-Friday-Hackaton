@@ -3,7 +3,64 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
-## HANDOFF (27 Nov 2026, early morning, Andrej's night shift): READ THIS FIRST
+## HANDOFF (27 Nov 2026, after midnight, Andrej's second night shift): READ THIS FIRST
+Whoever continues starts a new session without this context. Read this section, then CLAUDE.md. The sections below
+(P4 table, the earlier 27 Nov handoff, the 26 Nov handoff) are still true unless this one says otherwise.
+
+### Deadline
+- Submissions close **Friday 27 Nov 2026 at midnight CET** (end of Friday). No demo slot: the jury sees only the
+  public repo, the README and our video link. Feature freeze Fri 18:00.
+
+### Done in this shift (one commit each, all pushed to main)
+1. **Browser check of every page and flow** (d4474d6): assumptions, history, listings, show contact, Find spaces with
+   the real model, results list, report tab, candidate page, history entry, My spaces for a guest, sign in with
+   redirect, Save, My spaces list, My listings, sign out: 16 of 16 pass (temporary account created and deleted with
+   its saved rows). Fixed: a first visit had an empty questionnaire so Search refused to start (now prefilled from the
+   demo example); missing favicon (inline SVG).
+2. **P4, ten real-model evaluations** (697b940): table and fixes in "P4 quality check" below. Two wrong verdicts fixed
+   in code with tests: lease terms only from the listing form give at most medium confidence; a space outside the
+   required area range is never Good. The Report writer gets the code verdict and never calls a single candidate
+   "ranked". Rerun any time: `npx tsx scripts/eval-scenarios.ts` (server running with a key).
+3. **Outside listing, pasted listing text** (c813aec): optional "Listing text" on Evaluate an outside listing. The
+   Scout reads it in its own loop (parallel with Lease reader and Finance analyst); `compareTypedWithText`
+   (`src/domain/listing-compare.ts`) compares rent, monthly costs, deposit, area and city; each difference is a point
+   to check before signing with both sources (typed field + quote) and lowers the checks part of the score. Verified
+   live (typed 950 EUR / 58 m2, text 1,100 EUR / 52 m2: two points to check).
+4. **P5, recorded runs** (849e856, 8f3dbb1, 90c806e): `RecordingRunner` / `ReplayRunner`
+   (`src/adapters/inference/recording-runner.ts`), `npm run record:demo`, three scenarios with locked questionnaires
+   (`fixtures/requirements/demo.json`, `office-beograd.json`, `shop-novi-sad.json`), recorded with claude-haiku-4-5
+   into `fixtures/recordings/*.json` (22, 27, 25 model calls, about $0.30 in total). Without a key, Find spaces offers
+   the three scenarios and every result screen says "Recorded run". `tests/recorded-demo.test.ts` replays all three
+   to an audited report. Re-record after changing an agent instruction or message format (a request that is not in
+   the recording becomes a provider failure, never an invented answer; the test catches it).
+
+### Exact state
+- Tests: 25 files, 170 tests pass. `npm run typecheck` clean (server and web). No new dependencies.
+- Keyless: Find spaces = recorded scenarios (label "Recorded run"); "Evaluate for my business" on a demo listing still
+  uses scripted answers (label "Scripted demo answers, no AI model"); Evaluate an outside listing needs a key.
+- With a key: everything runs live (about $0.05 to $0.10 per run).
+- Supabase unchanged since the last handoff (migrations applied, RLS checks pass, only advisor warning: leaked
+  password protection off).
+
+### For Aleksa, in this order
+1. **Railway deploy**: one service, `npm run build` then `npm start`. Variables: `ANTHROPIC_API_KEY`,
+   `SUITESPOT_ACCESS_CODE` (so a public URL cannot spend our key), `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
+   `SUPABASE_SERVICE_ROLE_KEY`. In Supabase (Authentication, URL configuration) set Site URL and redirect URL to the
+   Railway address. Decide whether the public URL runs with the key (needs the access code) or keyless (recorded).
+2. **README** (scored): pitch, hero image, keyless quick start (`npm install`, `npm run dev`, Find spaces, pick a
+   scenario), how the agents run concurrently (mechanism table + Mermaid + Mozaik Cloud screenshot), the P4 table as
+   evidence, what is real / recorded / scripted, synthetic data, not financial advice, limits, credits.
+3. **Short video** (2-3 min) and its link in the README.
+4. **Fresh-clone test**: clone into a new folder, follow the README word for word, it must work the first time.
+5. Only then, if time is left: offers and inquiries between users; lease records and the rent schedule; test rent
+   payment through Stripe test mode (not Solana); the optional "Listing check" before publishing.
+
+### Known limits (say them in the README)
+- The score does not weigh rent against expected revenue (occupancy cost); the report states that share as a fact.
+- `RequireLandlord` and `auth.landlord` keep old names in code (UI texts are neutral).
+- The old `source: "pasted"` server path (1 to 8 pasted listings) still exists but the UI no longer uses it.
+
+## EARLIER HANDOFF (27 Nov 2026, early morning): partly SUPERSEDED by the one above (P4, P5 and the pasted text are now done)
 Whoever continues starts a new session without this context. Read this section, then CLAUDE.md. The handoff from
 26 Nov late night (right below) is still true for Supabase, the decisions and the deadline, except where this one
 says otherwise.

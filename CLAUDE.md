@@ -19,7 +19,7 @@ Mozaik agents evaluate every candidate at the same time from different angles an
 lease a good financial decision for my business?"**
 The full build plan is **`2026-11-26-plan-lease-decision.md`**. Work state is in **`PROGRESS.md`** (read it at the start
 of every session, update it before every push). If the plan and this file disagree, ask the user.
-**Current state (27 Nov, early morning): read the HANDOFF section at the top of `PROGRESS.md` first** (steps 0 to 6
+**Current state (27 Nov, after midnight): read the HANDOFF section at the top of `PROGRESS.md` first** (steps 0 to 6
 done, exact state, next steps in order, how to run locally, Supabase, tonight's decisions with reasons).
 - Repo: https://github.com/g4jic/Black-Friday-Hackaton. Local path (Andrej): `C:\Users\Lenovo LOQ\Desktop\SuiteSpot`.
 - Two people work in relay through Claude Code CLI in PowerShell: one works, pushes, the other continues.
@@ -40,8 +40,8 @@ done, exact state, next steps in order, how to run locally, Supabase, tonight's 
   mailto:). The seed generator is FROZEN. **Keys are never in the repo**: `.env` is ignored; Aleksa gets the
   Supabase keys privately from Andrej; the service role key is server and seed script only.
 - **Keyless honesty:** without a key the agents replay scripted demo answers and every result screen says "Scripted
-  demo answers, no AI model". After step 8 (recorded scenarios, `npm run record:demo`) the keyless demo replays
-  recorded real runs labelled "Recorded run". Never present scripted answers as a model's work.
+  demo answers, no AI model". Since 27 Nov the keyless "Find spaces" replays recorded real runs of
+  three scenarios (`npm run record:demo`), labelled "Recorded run". Never present scripted answers as a model's work.
 - Deploy on Railway: not done yet (after steps 7 to 9). Needs `SUITESPOT_ACCESS_CODE`, the SUPABASE_* values and
   ANTHROPIC_API_KEY as Railway variables, and the Supabase Site URL set to the Railway address.
 - **No demo slot for us.** The jury only sees the public repo and the README (plus our video link).
