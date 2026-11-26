@@ -34,7 +34,22 @@ What changed (commits 1c11f9e to the last one of the day; 122 tests pass, typech
 - Screenshots: `npm run screenshots` writes `design/screenshots/run-mid.png`, `results-list.png`, `candidate.png`,
   `results-rejected-open.png`, `timeline.png`, `report.png`, `assumptions.png`, `new-research.png` (older
   `live-*.png` files are from the previous UI).
-Next: README, deploy (Railway), Mozaik Cloud pairing, then a fresh-clone test.
+Steps done today, in order: (1) exit-cost fix and table bugs, (2) router, shell, Guest identity, Settings, history,
+(3) cancel, access code, live profile, verdict by code, (4) questionnaire with both modes, (5) run orbit, (6) orbit
+polish and two small bugs, (7) listing URL, demo gross margin, results list and candidate page, (8) screenshots and
+this entry.
+
+### Next: a two-sided platform (decided 26 Nov, evening)
+- **What:** listings live on SuiteSpot itself. Landlords (or our seed script) publish commercial listings on
+  SuiteSpot; tenants run the research over them. Storage in Supabase (listings, runs, reports); the guest
+  `HistoryStore` gets a Supabase implementation behind the same interface. Seed data: 100 SYNTHETIC listings, clearly
+  labelled, in the same shape as a pasted listing (with optional lease drafts), so the demo and mode B run on a real
+  catalogue instead of 8 fixtures.
+- **Why:** the terms of use of 4zida.rs (automated use forbidden by the letter of its terms), oglasi.rs and
+  svenekretnine.com (unclear, and both restrict copying) do not allow us to read their listings automatically, and no
+  site has given written permission. Listings that are published on SuiteSpot are ours to read, so mode B ("find
+  spaces") can work for real without scraping anyone.
+- **Then:** README, deploy (Railway), Mozaik Cloud pairing, a fresh-clone test.
 
 ## HANDOFF: Aleksa -> Andrej (26 Nov 2026, evening)
 Aleksa stops for today; Andrej continues with his own agent. Read this section first, then CLAUDE.md, then the plan.
