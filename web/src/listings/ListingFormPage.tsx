@@ -8,7 +8,7 @@ import { cx } from "../ui"
 import { ApiError, CITIES, listingsApi, type ContactInput, type Indexation, type ListingInput, type ListingProblem } from "./listings-api"
 
 /** The form as typed (strings), so half-typed numbers survive while the landlord edits. */
-type Form = {
+export type Form = {
   title: string
   city: string
   district: string
@@ -33,7 +33,7 @@ type Form = {
   consent: boolean
 }
 
-const EMPTY: Form = {
+export const EMPTY_LISTING_FORM: Form = {
   title: "",
   city: "",
   district: "",
@@ -61,7 +61,7 @@ const EMPTY: Form = {
 const num = (s: string) => (s.trim() === "" ? Number.NaN : Number(s.replace(",", ".")))
 const text = (s: string) => (s.trim() === "" ? null : s.trim())
 
-function toInput(f: Form): ListingInput {
+export function toInput(f: Form): ListingInput {
   return {
     title: f.title,
     city: f.city,
@@ -111,7 +111,7 @@ function fromListing(l: ListingInput, contact: { phone: string | null; email: st
 }
 
 /** Plain-language names for the fields the server names in a problem. */
-const FIELD_NAMES: Record<string, string> = {
+export const FIELD_NAMES: Record<string, string> = {
   title: "Title",
   city: "City",
   district: "Part of town",
@@ -138,7 +138,7 @@ const FIELD_NAMES: Record<string, string> = {
 }
 
 export function ListingFormPage({ id }: { id?: string }) {
-  const [form, setForm] = useState<Form | null>(id ? null : EMPTY)
+  const [form, setForm] = useState<Form | null>(id ? null : EMPTY_LISTING_FORM)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [problems, setProblems] = useState<ListingProblem[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -194,6 +194,71 @@ export function ListingFormPage({ id }: { id?: string }) {
       noValidate
     >
       <div className="flex flex-col gap-4">
+        <ListingTermsFields form={form} set={set} problemFor={problemFor} />
+        <Card title="Optional">
+          <div className="grid gap-3">
+            <Field label="Description" problem={problemFor("description")}>
+              <textarea rows={3} value={form.description} onChange={(e) => set({ description: e.target.value })} className={cx(INPUT, "h-auto py-3")} />
+            </Field>
+            <Field label="Lease draft" unit="text" problem={problemFor("leaseDraft")}>
+              <textarea rows={6} value={form.leaseDraft} onChange={(e) => set({ leaseDraft: e.target.value })} placeholder="Paste the lease draft. SuiteSpot compares it with the terms above." className={cx(INPUT, "h-auto py-3")} />
+            </Field>
+            {field("imageUrl", "Image link", { placeholder: "https://..." })}
+          </div>
+        </Card>
+      </div>
+      <div className="flex flex-col gap-4">
+        <Card title="Contact">
+          <p className="mb-3 text-[13px]">Tenants see it only after they click "Show contact". Give a phone number, an email or both.</p>
+          <div className="grid gap-3">
+            {field("phone", "Phone", { placeholder: "+381 64 123 45 67", problem: ["contact.phone", "contact"] })}
+            {field("email", "Email", { problem: ["contact.email"] })}
+            <label className="flex items-start gap-2.5 text-[13px] text-ink">
+              <input type="checkbox" checked={form.consent} onChange={(e) => set({ consent: e.target.checked })} className="mt-0.5 h-4 w-4 accent-[var(--color-brand)]" />
+              <span>I agree that this contact is shown publicly on the listing page.</span>
+            </label>
+            {problemFor("contact.consentToPublish") && <p className="text-[13px] text-hard">{problemFor("contact.consentToPublish")}</p>}
+          </div>
+        </Card>
+        <button type="submit" disabled={saving} className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e] disabled:opacity-40">
+          <Save size={16} aria-hidden /> {saving ? "Saving..." : id ? "Save changes" : "Publish listing"}
+        </button>
+        {error && (
+          <div role="alert" className="rounded-[18px] bg-hard-50 p-4 text-[13px] text-hard">
+            {problems.length > 0 ? (
+              <ul className="list-disc pl-4">
+                {problems.map((p) => (
+                  <li key={p.field}>
+                    {FIELD_NAMES[p.field] ?? p.field}: {p.message}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              error
+            )}
+          </div>
+        )}
+      </div>
+    </form>
+  )
+}
+
+/** The required fields of a listing: the same on "List a space" and on "Evaluate an outside listing". */
+export function ListingTermsFields({ form, set, problemFor }: { form: Form; set: (patch: Partial<Form>) => void; problemFor: (...fields: string[]) => string | undefined }) {
+  const field = (key: keyof Form, label: string, opts: { unit?: string; numeric?: boolean; placeholder?: string; problem?: string[] } = {}) => (
+    <Field label={label} unit={opts.unit} problem={problemFor(...(opts.problem ?? [key]))}>
+      <input
+        value={form[key] as string}
+        onChange={(e) => set({ [key]: e.target.value })}
+        inputMode={opts.numeric ? "decimal" : undefined}
+        placeholder={opts.placeholder}
+        className={cx(INPUT, opts.numeric && "tnum")}
+      />
+    </Field>
+  )
+
+  return (
+    <>
         <Card title="The space">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="sm:col-span-2">{field("title", "Title", { placeholder: "Lokal 60 m2 na Limanu" })}</div>
@@ -272,51 +337,7 @@ export function ListingFormPage({ id }: { id?: string }) {
             </Field>
           </div>
         </Card>
-        <Card title="Optional">
-          <div className="grid gap-3">
-            <Field label="Description" problem={problemFor("description")}>
-              <textarea rows={3} value={form.description} onChange={(e) => set({ description: e.target.value })} className={cx(INPUT, "h-auto py-3")} />
-            </Field>
-            <Field label="Lease draft" unit="text" problem={problemFor("leaseDraft")}>
-              <textarea rows={6} value={form.leaseDraft} onChange={(e) => set({ leaseDraft: e.target.value })} placeholder="Paste the lease draft. SuiteSpot compares it with the terms above." className={cx(INPUT, "h-auto py-3")} />
-            </Field>
-            {field("imageUrl", "Image link", { placeholder: "https://..." })}
-          </div>
-        </Card>
-      </div>
-      <div className="flex flex-col gap-4">
-        <Card title="Contact">
-          <p className="mb-3 text-[13px]">Tenants see it only after they click "Show contact". Give a phone number, an email or both.</p>
-          <div className="grid gap-3">
-            {field("phone", "Phone", { placeholder: "+381 64 123 45 67", problem: ["contact.phone", "contact"] })}
-            {field("email", "Email", { problem: ["contact.email"] })}
-            <label className="flex items-start gap-2.5 text-[13px] text-ink">
-              <input type="checkbox" checked={form.consent} onChange={(e) => set({ consent: e.target.checked })} className="mt-0.5 h-4 w-4 accent-[var(--color-brand)]" />
-              <span>I agree that this contact is shown publicly on the listing page.</span>
-            </label>
-            {problemFor("contact.consentToPublish") && <p className="text-[13px] text-hard">{problemFor("contact.consentToPublish")}</p>}
-          </div>
-        </Card>
-        <button type="submit" disabled={saving} className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e] disabled:opacity-40">
-          <Save size={16} aria-hidden /> {saving ? "Saving..." : id ? "Save changes" : "Publish listing"}
-        </button>
-        {error && (
-          <div role="alert" className="rounded-[18px] bg-hard-50 p-4 text-[13px] text-hard">
-            {problems.length > 0 ? (
-              <ul className="list-disc pl-4">
-                {problems.map((p) => (
-                  <li key={p.field}>
-                    {FIELD_NAMES[p.field] ?? p.field}: {p.message}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              error
-            )}
-          </div>
-        )}
-      </div>
-    </form>
+    </>
   )
 }
 

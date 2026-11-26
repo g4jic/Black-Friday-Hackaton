@@ -114,7 +114,18 @@ export type StartRequest =
   | { source: "demo" }
   | { mode: "live"; source: "pasted"; listings: { text: string; url?: string; lease?: string }[]; profile?: unknown }
   | { mode: "live"; source: "search"; profile?: unknown }
+  | { mode: "live"; source: "outside"; outside: { listing: unknown; leaseDraft?: string; url?: string }; profile?: unknown }
   | { mode?: "live"; source: "listing"; listingId: string; profile?: unknown }
+
+/** A refused start: the server's message, plus the field problems when the typed listing is incomplete. */
+export class StartError extends Error {
+  constructor(
+    message: string,
+    readonly problems: { field: string; message: string }[],
+  ) {
+    super(message)
+  }
+}
 
 /** Starts a run on the server and begins streaming it. Throws with the server's message on refusal. */
 export async function startResearch(request: StartRequest, accessCode?: string): Promise<string> {
@@ -123,8 +134,8 @@ export async function startResearch(request: StartRequest, accessCode?: string):
     headers: { "Content-Type": "application/json", ...(accessCode ? { "X-Access-Code": accessCode } : {}) },
     body: JSON.stringify(request),
   })
-  const answer = (await response.json().catch(() => ({}))) as { id?: string; error?: string; mode?: "demo" | "live"; answers?: AnswerSource; synthetic?: boolean }
-  if (!response.ok || !answer.id) throw new Error(answer.error ?? `The server answered ${response.status}`)
+  const answer = (await response.json().catch(() => ({}))) as { id?: string; error?: string; problems?: { field: string; message: string }[]; mode?: "demo" | "live"; answers?: AnswerSource; synthetic?: boolean }
+  if (!response.ok || !answer.id) throw new StartError(answer.error ?? `The server answered ${response.status}`, answer.problems ?? [])
   entries.set(answer.id, {
     eventSource: null,
     snapshot: { researchId: answer.id, status: "connecting", state: initialResearch(answer.id), mode: answer.mode ?? "demo", synthetic: Boolean(answer.synthetic), answers: answer.answers ?? null, clientStartMs: null },

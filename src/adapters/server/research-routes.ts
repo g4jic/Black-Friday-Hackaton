@@ -16,10 +16,13 @@ import {
   createListingBatch,
   catalogueCandidate,
   leaseTextOf,
+  sourced,
   matchListings,
   type BusinessProfileInput,
   type CatalogueCandidate,
-  type SpaceListing,
+  SpaceListing,
+  ListingValidationError,
+  type SpaceListingInput,
   type LeaseText,
   type ListingTextInput,
 } from "../../domain/index.js"
@@ -69,7 +72,8 @@ export type ResearchRoutesOptions = {
   readonly liveRunner?: () => InferenceRunner
 }
 
-type Body = { mode?: ResearchMode; source?: "demo" | "pasted" | "search" | "listing"; listingId?: unknown; listings?: { text?: unknown; lease?: unknown; url?: unknown }[]; profile?: Partial<BusinessProfileInput> }
+type OutsideBody = { listing?: unknown; leaseDraft?: unknown; url?: unknown }
+type Body = { mode?: ResearchMode; source?: "demo" | "pasted" | "search" | "listing" | "outside"; listingId?: unknown; outside?: OutsideBody; listings?: { text?: unknown; lease?: unknown; url?: unknown }[]; profile?: Partial<BusinessProfileInput> }
 
 /** Name of the environment variable with the live mode access code (also in .env.example, PROGRESS.md, CLAUDE.md). */
 export const ACCESS_CODE_ENV = "SUITESPOT_ACCESS_CODE"
@@ -110,6 +114,22 @@ const fromCatalogue = (spaces: readonly SpaceListing[]): { catalogue: CatalogueC
   catalogue: spaces.map(catalogueCandidate),
   leases: spaces.flatMap((s) => leaseTextOf(s) ?? []),
 })
+
+/**
+ * "Evaluate an outside listing": the user types the same required fields as the SuiteSpot listing form (the domain
+ * validates them; without them there is no evaluation). The listing is never stored. Its lease draft, if pasted, goes
+ * to the Lease reader like any other draft.
+ */
+export function outsideCandidate(outside: OutsideBody | undefined): { catalogue: CatalogueCandidate[]; leases: LeaseText[] } {
+  const input = (outside?.listing && typeof outside.listing === "object" ? outside.listing : {}) as SpaceListingInput
+  const leaseDraft = typeof outside?.leaseDraft === "string" ? outside.leaseDraft : null
+  const space = SpaceListing.create({ ...input, leaseDraft, description: null, imageUrl: null }, { id: OUTSIDE_LISTING_ID, ownerId: "outside", isDemo: false, now: new Date().toISOString() })
+  const url = typeof outside?.url === "string" && /^https?:\/\/\S+$/.test(outside.url.trim()) ? outside.url.trim() : null
+  const candidate = catalogueCandidate(space)
+  return { catalogue: [{ ...candidate, listing: { ...candidate.listing, url: url ? sourced(url, { kind: "listing", ref: OUTSIDE_LISTING_ID, field: "url", form: true }) : null } }], leases: leaseTextOf(space) ? [leaseTextOf(space)!] : [] }
+}
+
+export const OUTSIDE_LISTING_ID = "listing-outside"
 
 const NO_MATCH = "No SuiteSpot listing matches this questionnaire (city, area range, budget and type of business). Widen the area range or the budget."
 
@@ -186,6 +206,9 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
           throw new HttpError(mode === "live" ? 404 : 400, mode === "live" ? "Unknown listing" : "Without live mode only a demo listing can be evaluated (with the demo questionnaire).")
         }
         ;({ catalogue, leases } = fromCatalogue([space]))
+      } else if (source === "outside") {
+        if (mode !== "live") throw new HttpError(400, "Evaluating an outside listing needs an AI model key on the server. Without one, try a demo listing from Listings.")
+        ;({ catalogue, leases } = outsideCandidate(body.outside))
       } else {
         if (mode !== "live") throw new HttpError(400, "Pasted listings need live mode: demo mode replays scripted answers for the demo listings only.")
         const raw = Array.isArray(body.listings) ? body.listings : []
@@ -216,6 +239,7 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
       for (const old of [...sessions.keys()].slice(0, Math.max(0, sessions.size - KEEP_SESSIONS))) sessions.delete(old)
       return reply.code(201).send({ id, mode, answers: session.answers, listings: listings.length + catalogue.length, synthetic: source !== "pasted" && catalogue.every((c) => c.listing.synthetic) })
     } catch (error) {
+      if (error instanceof ListingValidationError) return reply.code(400).send({ error: "Some required fields are missing or wrong.", problems: error.problems })
       const status = error instanceof HttpError ? error.status : error instanceof DomainError ? 400 : 500
       const message = error instanceof HttpError || error instanceof DomainError ? error.message : "Could not start the research"
       if (status === 500) req.log.error(error)

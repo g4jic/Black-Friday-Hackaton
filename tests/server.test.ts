@@ -163,3 +163,33 @@ describe("server", () => {
     await app.close()
   })
 })
+
+describe("Evaluate an outside listing", () => {
+  it("needs the required listing fields; the domain lists every missing one and no run starts", async () => {
+    const { outsideCandidate } = await import("../src/adapters/server/research-routes.js")
+    const { ListingValidationError } = await import("../src/domain/index.js")
+    let problems: readonly { field: string }[] = []
+    try {
+      outsideCandidate({ listing: { title: "Lokal" } })
+    } catch (error) {
+      expect(error).toBeInstanceOf(ListingValidationError)
+      problems = (error as InstanceType<typeof ListingValidationError>).problems
+    }
+    expect(problems.map((p) => p.field)).toEqual(expect.arrayContaining(["city", "areaM2", "rentMonthly", "permittedUses"]))
+  })
+
+  it("builds one candidate from the typed fields, with the lease draft and the link kept as form sources", async () => {
+    const { outsideCandidate, OUTSIDE_LISTING_ID } = await import("../src/adapters/server/research-routes.js")
+    const listing = {
+      title: "Lokal 60 m2 na Limanu", city: "Novi Sad", district: "Liman 3", street: "Bulevar cara Lazara", areaM2: 60, floor: 0,
+      rentMonthly: 900, serviceChargeMonthly: 50, deposit: 1800, minimumTermMonths: 24, earlyTermination: { allowed: true, noticeMonths: 3 },
+      indexation: { kind: "cpi" }, permittedUses: ["cafe_food"], tenantPaysStructuralRepairs: false,
+    }
+    const { catalogue, leases } = outsideCandidate({ listing, leaseDraft: "Clan 1. Zakupnina iznosi 900 EUR mesecno.", url: "https://example.com/oglas/1" })
+    expect(catalogue).toHaveLength(1)
+    expect(catalogue[0]!.listing.ref).toBe(OUTSIDE_LISTING_ID)
+    expect(catalogue[0]!.listing.synthetic).toBe(false)
+    expect(catalogue[0]!.listing.url?.value).toBe("https://example.com/oglas/1")
+    expect(leases).toHaveLength(1)
+  })
+})

@@ -1,6 +1,7 @@
-import { Building2, FileSearch, Lock, Play, Plus, Search, Trash2, type LucideIcon } from "lucide-react"
+import { Building2, FileSearch, Lock, Play, Search, type LucideIcon } from "lucide-react"
 import { useEffect, useState } from "react"
-import { startResearch, type StartRequest } from "../app/research-store"
+import { StartError, startResearch, type StartRequest } from "../app/research-store"
+import { EMPTY_LISTING_FORM, FIELD_NAMES, ListingTermsFields, toInput, type Form as ListingForm } from "../listings/ListingFormPage"
 import { Link, navigate, paths, setSearchParam, useLocation } from "../app/router"
 import { BUSINESS_TYPE_LABELS, CURRENCIES, useSettings, type Settings } from "../app/settings"
 import { Card } from "../app/Shell"
@@ -11,8 +12,6 @@ import { floorLabel, listingsApi, useLoad } from "../listings/listings-api"
 import { formatMoney } from "../format"
 
 type Mode = "evaluate" | "find"
-type ListingDraft = { text: string; url: string; lease: string; showLease: boolean }
-const emptyDraft = (): ListingDraft => ({ text: "", url: "", lease: "", showLease: false })
 
 /** The questionnaire as typed (strings), so half-typed numbers are kept while the user edits. */
 type ProfileForm = Record<"businessType" | "city" | "currency" | "monthlyBudget" | "expectedMonthlyRevenue" | "areaMinM2" | "areaMaxM2" | "leaseMonths" | "fitOutBudget" | "equipmentBudget" | "grossMarginPercent", string>
@@ -88,7 +87,7 @@ export function NewResearchPage({ config }: { config: Config | null }) {
   const settings = useSettings()
   const [demoProfile, setDemoProfile] = useState<ProfileInput | null>(null)
   const [form, setForm] = useState<ProfileForm>(() => fromSettings(settings))
-  const [drafts, setDrafts] = useState<ListingDraft[]>([emptyDraft()])
+  const [problems, setProblems] = useState<{ field: string; message: string }[]>([])
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -103,25 +102,19 @@ export function NewResearchPage({ config }: { config: Config | null }) {
   // Without live mode every run uses the fixed demo profile (the scripted answers were made for it).
   const profileLocked = !liveAvailable
   const shownForm = profileLocked && demoProfile ? toForm(demoProfile) : form
-  const maxListings = config?.maxListings ?? 8
-  const filledDrafts = drafts.filter((d) => d.text.trim())
   const accessCodeMissing = Boolean(config?.liveNeedsAccessCode) && !settings.liveAccessCode
 
   const start = async (request: StartRequest, accessCode?: string) => {
     setError(null)
+    setProblems([])
     setStarting(true)
     try {
       navigate(paths.run(await startResearch(request, accessCode)))
     } catch (failure) {
       setError((failure as Error).message)
+      if (failure instanceof StartError) setProblems(failure.problems)
       setStarting(false)
     }
-  }
-
-  const runEvaluate = () => {
-    const checked = profileFromForm(form)
-    if ("error" in checked) return setError(checked.error)
-    void start({ mode: "live", source: "pasted", profile: checked.profile, listings: filledDrafts.map((d) => ({ text: d.text, ...(d.url.trim() ? { url: d.url.trim() } : {}), ...(d.lease.trim() ? { lease: d.lease } : {}) })) }, settings.liveAccessCode)
   }
 
   /** Live runs on SuiteSpot listings use the questionnaire as typed; demo runs use the demo profile. */
@@ -132,13 +125,11 @@ export function NewResearchPage({ config }: { config: Config | null }) {
     void start({ mode: "live", ...request, profile: checked.profile }, settings.liveAccessCode)
   }
 
-  const updateDraft = (index: number, patch: Partial<ListingDraft>) => setDrafts(drafts.map((d, i) => (i === index ? { ...d, ...patch } : d)))
-
   return (
     <div className="flex flex-col gap-4">
       <div role="tablist" aria-label="Research mode" className="grid gap-3 md:grid-cols-2">
-        <ModeTab active={mode === "evaluate"} icon={FileSearch} title="Evaluate a space" text="One listing: from SuiteSpot or one you found elsewhere" onSelect={() => setSearchParam("mode", "evaluate")} />
-        <ModeTab active={mode === "find"} icon={Search} title="Find spaces" text="SuiteSpot brings the candidates" onSelect={() => setSearchParam("mode", "find")} />
+        <ModeTab active={mode === "evaluate"} icon={FileSearch} title="Evaluate an outside listing" text="A space you found elsewhere: type in its terms" onSelect={() => setSearchParam("mode", "evaluate")} />
+        <ModeTab active={mode === "find"} icon={Search} title="Find spaces" text="SuiteSpot finds the spaces that fit" onSelect={() => setSearchParam("mode", "find")} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
@@ -151,7 +142,7 @@ export function NewResearchPage({ config }: { config: Config | null }) {
                 </span>
               </Pill>
               <span className="text-[13px] text-ink-2">
-                Demo runs use this fixed profile. Your own profile is used in live mode.
+                Without an AI model key on the server, runs use this fixed profile.
               </span>
             </div>
           ) : (
@@ -184,83 +175,18 @@ export function NewResearchPage({ config }: { config: Config | null }) {
         ) : listingId ? (
           <ListingToEvaluate listingId={listingId} liveAvailable={liveAvailable} starting={starting} error={error} blocked={liveAvailable && accessCodeMissing} onStart={() => startOnCatalogue({ source: "listing", listingId })} />
         ) : (
-          <Card title="Listings">
-            {!liveAvailable && (
-              <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[18px] bg-white/70 px-4 py-3">
-                <Lock size={16} className="text-ink" aria-hidden />
-                <span className="font-medium text-ink">Available in live mode</span>
-                <span className="text-[13px]">Reading pasted listings needs a model ({config?.liveModel ?? "claude-haiku-4-5"}). This server runs the keyless demo.</span>
-                <Link to={`${paths.newResearch()}?mode=find`} className="text-[13px] font-medium text-ink underline">
-                  Run the demo instead
-                </Link>
-              </div>
-            )}
-            <p className="mb-3 text-[13px]">1 to {maxListings} listings, pasted as text. SuiteSpot never opens listing sites. Phone numbers and emails are removed before anything is stored.</p>
-            <fieldset disabled={!liveAvailable} className="flex flex-col gap-3 disabled:opacity-60">
-              {drafts.map((draft, index) => (
-                <div key={index} className="glass-strong rounded-[24px] p-4">
-                  <div className="mb-2 flex items-center justify-between">
-                    <label htmlFor={`listing-${index}`} className="text-xs font-medium text-ink">
-                      Listing {index + 1}
-                    </label>
-                    {drafts.length > 1 && (
-                      <button type="button" onClick={() => setDrafts(drafts.filter((_, i) => i !== index))} aria-label={`Remove listing ${index + 1}`} className="rounded-full p-1 text-ink-3 hover:bg-white hover:text-ink">
-                        <Trash2 size={16} aria-hidden />
-                      </button>
-                    )}
-                  </div>
-                  <textarea id={`listing-${index}`} rows={4} value={draft.text} onChange={(e) => updateDraft(index, { text: e.target.value })} placeholder="Paste the full text of the listing" className={cx(INPUT, "h-auto py-3")} />
-                  <input
-                    type="url"
-                    inputMode="url"
-                    value={draft.url}
-                    onChange={(e) => updateDraft(index, { url: e.target.value })}
-                    placeholder="Listing URL (optional, https://...)"
-                    aria-label={`Listing URL for listing ${index + 1} (optional)`}
-                    className={cx(INPUT, "mt-2")}
-                  />
-                  {draft.showLease ? (
-                    <textarea rows={3} value={draft.lease} onChange={(e) => updateDraft(index, { lease: e.target.value })} placeholder="Paste the lease draft (optional)" className={cx(INPUT, "mt-2 h-auto py-3")} aria-label={`Lease draft for listing ${index + 1}`} />
-                  ) : (
-                    <button type="button" onClick={() => updateDraft(index, { showLease: true })} className="mt-2 text-xs font-medium text-ink hover:underline">
-                      Add lease draft
-                    </button>
-                  )}
-                </div>
-              ))}
-            </fieldset>
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setDrafts([...drafts, emptyDraft()])}
-                disabled={!liveAvailable || drafts.length >= maxListings}
-                className="inline-flex h-10 items-center gap-2 rounded-full glass-strong px-[18px] text-sm font-medium text-ink hover:bg-white disabled:opacity-50"
-              >
-                <Plus size={16} aria-hidden /> Add listing
-              </button>
-              <button
-                type="button"
-                onClick={runEvaluate}
-                disabled={!liveAvailable || starting || filledDrafts.length === 0 || accessCodeMissing}
-                className="inline-flex h-10 items-center gap-2 rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e] disabled:opacity-40"
-              >
-                <Play size={16} aria-hidden /> {starting ? "Starting..." : `Evaluate ${filledDrafts.length || ""} listing${filledDrafts.length === 1 ? "" : "s"}`}
-              </button>
-              {liveAvailable && accessCodeMissing && (
-                <span className="text-[13px]">
-                  Live mode needs an access code.{" "}
-                  <Link to={paths.settings()} className="font-medium text-ink underline">
-                    Enter it in Settings
-                  </Link>
-                </span>
-              )}
-            </div>
-            {error && (
-              <p role="alert" className="mt-3 text-[13px] text-hard">
-                {error}
-              </p>
-            )}
-          </Card>
+          <OutsideListingForm
+            liveAvailable={liveAvailable}
+            starting={starting}
+            accessCodeMissing={accessCodeMissing}
+            onStart={(outside) => {
+              const checked = profileFromForm(form)
+              if ("error" in checked) return setError(checked.error)
+              void start({ mode: "live", source: "outside", outside, profile: checked.profile }, settings.liveAccessCode)
+            }}
+            error={error}
+            problems={problems}
+          />
         )}
       </div>
     </div>
@@ -403,5 +329,88 @@ function NoKeyNotice() {
     <p className="mt-4 rounded-[18px] bg-white/70 px-4 py-3 text-[13px] leading-5 text-ink-2">
       This server has no AI model key, so runs use scripted demo answers and the demo profile. Add ANTHROPIC_API_KEY to .env and restart to use the real model.
     </p>
+  )
+}
+
+/**
+ * "Evaluate an outside listing": the same required fields as the SuiteSpot listing form, plus an optional lease draft
+ * and link. Without the required fields there is no evaluation; the server's domain check lists what is missing.
+ */
+function OutsideListingForm({
+  liveAvailable,
+  starting,
+  accessCodeMissing,
+  onStart,
+  error,
+  problems,
+}: {
+  liveAvailable: boolean
+  starting: boolean
+  accessCodeMissing: boolean
+  onStart: (outside: { listing: unknown; leaseDraft?: string; url?: string }) => void
+  error: string | null
+  problems: { field: string; message: string }[]
+}) {
+  const [listing, setListing] = useState<ListingForm>(EMPTY_LISTING_FORM)
+  const [leaseDraft, setLeaseDraft] = useState("")
+  const [url, setUrl] = useState("")
+  const problemFor = (...fields: string[]) => problems.find((p) => fields.includes(p.field))?.message
+  return (
+    <div className="flex flex-col gap-4">
+      {!liveAvailable && <NoKeyNotice />}
+      <fieldset disabled={!liveAvailable} className="flex flex-col gap-4 disabled:opacity-60">
+        <ListingTermsFields form={listing} set={(patch) => setListing({ ...listing, ...patch })} problemFor={problemFor} />
+        <Card title="Optional">
+          <div className="grid gap-3">
+            <label className="block">
+              <span className={LABEL}>
+                Lease draft <span className="font-normal text-ink-3">(text)</span>
+              </span>
+              <textarea rows={6} value={leaseDraft} onChange={(e) => setLeaseDraft(e.target.value)} placeholder="Paste the lease draft. The Lease reader compares it with the terms above." className={cx(INPUT, "h-auto py-3")} />
+            </label>
+            <label className="block">
+              <span className={LABEL}>Listing link</span>
+              <input type="url" inputMode="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://... (kept as a reference, SuiteSpot never opens it)" className={INPUT} />
+            </label>
+          </div>
+        </Card>
+      </fieldset>
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={() => onStart({ listing: toInput(listing), ...(leaseDraft.trim() ? { leaseDraft } : {}), ...(url.trim() ? { url: url.trim() } : {}) })}
+          disabled={!liveAvailable || starting || accessCodeMissing}
+          className="inline-flex h-10 items-center gap-2 rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e] disabled:opacity-40"
+        >
+          <Play size={16} aria-hidden /> {starting ? "Starting..." : "Evaluate this listing"}
+        </button>
+        {liveAvailable && accessCodeMissing && (
+          <span className="text-[13px]">
+            This server asks for an access code.{" "}
+            <Link to={paths.settings()} className="font-medium text-ink underline">
+              Enter it in Settings
+            </Link>
+          </span>
+        )}
+      </div>
+      {error && (
+        <div role="alert" className="rounded-[18px] bg-hard-50 p-4 text-[13px] text-hard">
+          {problems.length > 0 ? (
+            <>
+              <p className="mb-1 font-medium">Fill in these fields first:</p>
+              <ul className="list-disc pl-4">
+                {problems.map((p) => (
+                  <li key={p.field}>
+                    {FIELD_NAMES[p.field] ?? p.field}: {p.message}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            error
+          )}
+        </div>
+      )}
+    </div>
   )
 }
