@@ -131,6 +131,8 @@ export function createFinanceAnalyst(rt: AppRuntime, options: FinanceOptions): A
     if (!lease && names.some((n) => NEEDS_LEASE.has(n)) && rt.state.hasLease(candidateId)) {
       lease = await abortable(rt.state.waitForLease(candidateId), signal) // waits for the Lease reader
     }
+    // The user cancelled the run (possibly while this call waited for the lease): record nothing.
+    if (rt.state.runStop) return `Not executed: ${rt.state.runStop.reason}`
     const terms = leaseTermsFor(candidate.listing, profile, lease)
     if (isMissingData(terms)) return "missing data: the listing does not state the rent, so nothing can be computed"
     // Never let a questionnaire value look like a lease term: say where the term came from.

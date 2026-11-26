@@ -143,6 +143,16 @@ export class ResearchSession {
     return this.rt.state.report ? reportDTO(this.rt.state) : null
   }
 
+  /**
+   * The user pressed Cancel: every loop stops at its next breakpoint, nothing is ranked or reported, and the run
+   * ends with research.done { cancelled: true } as soon as no loop is running. Returns false when it already ended.
+   */
+  cancel(): boolean {
+    if (this.status === "done") return false
+    if (this.rt.state.stopRun("the research was cancelled by the user")) this.emit("research.cancel_requested", { agent: "User" })
+    return true
+  }
+
   subscribe(listener: (e: WireEvent) => void): () => void {
     this.listeners.add(listener)
     return () => this.listeners.delete(listener)
@@ -218,20 +228,22 @@ export class ResearchSession {
     const state = this.rt.state
     // Finance writes findings inside tool calls: refresh running candidates so the UI sees new figures.
     for (const id of state.candidates.keys()) this.snapshot(id)
-    const settled =
-      state.candidates.size + state.failedListings.length >= this.input.listings.length &&
-      this.rt.loops().length > 0 &&
-      this.rt.loops().every((l) => l.status === "done") &&
-      (this.rankingDone || state.candidates.size === 0) &&
-      (this.reportDone || !this.rankingDone)
+    const loopsDone = this.rt.loops().every((l) => l.status === "done")
+    const settled = state.runStop
+      ? loopsDone // cancelled: done as soon as every loop has stopped
+      : state.candidates.size + state.failedListings.length >= this.input.listings.length &&
+        this.rt.loops().length > 0 &&
+        loopsDone &&
+        (this.rankingDone || state.candidates.size === 0) &&
+        (this.reportDone || !this.rankingDone)
     const timedOut = Date.now() - this.started > (this.input.timeoutMs ?? 120_000)
     if (settled) this.stableSince ||= Date.now()
     else this.stableSince = 0
     if (!(settled && Date.now() - this.stableSince > 150) && !timedOut) return
-    this.finish(timedOut && !settled)
+    this.finish(timedOut && !settled, Boolean(state.runStop))
   }
 
-  private finish(timedOut: boolean): void {
+  private finish(timedOut: boolean, cancelled = false): void {
     clearInterval(this.timer)
     this.status = "done"
     const count = (type: string) => this.events.filter((e) => e.type === type).length
@@ -251,6 +263,6 @@ export class ResearchSession {
       costUsd: this.input.mode === "live" && price ? Math.round(((this.tokens.input * price.input + this.tokens.output * price.output) / 1_000_000) * 10_000) / 10_000 : null,
       timedOut,
     }
-    this.emit("research.done", { data: { metrics: this.metrics } })
+    this.emit("research.done", { data: { metrics: this.metrics, cancelled } })
   }
 }

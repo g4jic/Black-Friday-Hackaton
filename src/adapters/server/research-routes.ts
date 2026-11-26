@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto"
+import { createHash, randomUUID, timingSafeEqual } from "node:crypto"
 import type { FastifyInstance } from "fastify"
 import type { InferenceRunner } from "@mozaik-ai/core"
 import { ResearchSession, type ResearchMode } from "../../application/research/research-session.js"
@@ -10,8 +10,11 @@ import {
   MAX_NOTICE_MONTHS,
   MAX_TERM_WITHOUT_EXIT_MONTHS,
   RANKING_ASSUMPTIONS,
+  VERDICT_RULES,
+  BusinessProfile,
   createLeaseText,
   createListingBatch,
+  type BusinessProfileInput,
   type LeaseText,
   type ListingTextInput,
 } from "../../domain/index.js"
@@ -44,7 +47,28 @@ export type ResearchRoutesOptions = {
   readonly liveRunner?: () => InferenceRunner
 }
 
-type Body = { mode?: ResearchMode; source?: "demo" | "pasted"; listings?: { text?: unknown; lease?: unknown }[] }
+type Body = { mode?: ResearchMode; source?: "demo" | "pasted"; listings?: { text?: unknown; lease?: unknown }[]; profile?: Partial<BusinessProfileInput> }
+
+/** Name of the environment variable with the live mode access code (also in .env.example, PROGRESS.md, CLAUDE.md). */
+export const ACCESS_CODE_ENV = "SUITESPOT_ACCESS_CODE"
+const accessCode = () => process.env[ACCESS_CODE_ENV]?.trim() ?? ""
+
+/** Constant-time comparison (hashes first, so different lengths do not leak through timing either). */
+function accessCodeMatches(given: unknown): boolean {
+  const expected = accessCode()
+  if (!expected) return true // no code configured: live mode is open (local development)
+  if (typeof given !== "string" || !given) return false
+  const digest = (s: string) => createHash("sha256").update(s).digest()
+  return timingSafeEqual(digest(given.trim()), digest(expected))
+}
+
+/** The questionnaire of a live run, validated by the domain. Fields the form does not ask keep the demo values. */
+function liveProfile(input: Partial<BusinessProfileInput> | undefined, demo: BusinessProfile): BusinessProfile {
+  if (!input) return demo
+  const allowed: (keyof BusinessProfileInput)[] = ["businessType", "description", "headcount", "areaMinM2", "areaMaxM2", "currency", "monthlyBudget", "expectedMonthlyRevenue", "grossMarginRate", "walkInCustomers", "leaseMonths", "city", "fitOutBudget", "equipmentBudget"]
+  const picked = Object.fromEntries(allowed.filter((k) => input[k] !== undefined && input[k] !== null).map((k) => [k, input[k]]))
+  return BusinessProfile.create({ ...demo.input, specialNeeds: undefined, ...picked } as BusinessProfileInput)
+}
 
 class HttpError extends Error {
   constructor(
@@ -59,7 +83,13 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
   const sessions = new Map<string, ResearchSession>()
   const secrets = () => [process.env.ANTHROPIC_API_KEY ?? ""].filter((s) => s.length >= 8)
 
-  app.get("/api/config", async () => ({ liveAvailable: options.liveAvailable(), maxListings: MAX_LISTINGS, liveModel: LIVE_MODEL }))
+  app.get("/api/config", async () => ({ liveAvailable: options.liveAvailable(), liveNeedsAccessCode: Boolean(accessCode()), maxListings: MAX_LISTINGS, liveModel: LIVE_MODEL }))
+
+  /** The fixed demo questionnaire, shown locked on the New research screen (demo runs always use it). */
+  app.get("/api/demo-questionnaire", async () => {
+    const { profile, requirements } = loadDemoQuestionnaire()
+    return { profile: profile.input, requirements: requirements.map((r) => ({ id: r.id, text: r.text, hard: r.hard })) }
+  })
 
   /** The rules the code uses, served from the code itself (the Assumptions screen can never drift from them). */
   app.get("/api/assumptions", async () => {
@@ -71,6 +101,7 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
         budgetTolerance: BUDGET_TOLERANCE,
         maxTermWithoutExitMonths: MAX_TERM_WITHOUT_EXIT_MONTHS,
       },
+      verdict: VERDICT_RULES,
       leaseConcerns: { maxNoticeMonths: MAX_NOTICE_MONTHS, maxFixedIndexationPercent: MAX_FIXED_INDEXATION_PERCENT },
       demoQuestionnaire: {
         business: p.description,
@@ -90,6 +121,7 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
       const mode: ResearchMode = body.mode === "live" ? "live" : "demo"
       if (mode === "live") {
         if (!options.liveAvailable()) throw new HttpError(403, "Live mode is off on this server (demo mode only).")
+        if (!accessCodeMatches(req.headers["x-access-code"])) throw new HttpError(401, "Live mode needs a valid access code. Enter it under Settings.")
         const active = [...sessions.values()].filter((s) => s.mode === "live" && s.status === "running").length
         if (active >= MAX_ACTIVE_LIVE) throw new HttpError(429, "A live research is already running. Wait for it to finish.")
       }
@@ -105,7 +137,10 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
         createListingBatch(listings) // validates 1 to 8, empty texts; throws DomainError
         leases = raw.flatMap((l, i) => (typeof l.lease === "string" && l.lease.trim() ? [createLeaseText(`pasted-${i + 1}`, l.lease, false)] : []))
       }
-      const { profile, requirements } = loadDemoQuestionnaire()
+      const demo = loadDemoQuestionnaire()
+      // Demo runs always use the fixed demo profile (the scripted answers were recorded for it).
+      const profile = mode === "live" ? liveProfile(body.profile, demo.profile) : demo.profile
+      const requirements = profile === demo.profile ? demo.requirements : []
       const id = randomUUID()
       const session = new ResearchSession({
         id,
@@ -137,6 +172,14 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
     const report = session.report()
     if (!report) return reply.code(404).send({ error: "The report is not ready yet" })
     return report
+  })
+
+  /** Cancel: every agent loop stops at its next breakpoint; the run ends with research.done { cancelled: true }. */
+  app.post("/api/research/:id/cancel", async (req, reply) => {
+    const session = sessions.get((req.params as { id: string }).id)
+    if (!session) return reply.code(404).send({ error: "Unknown research" })
+    if (!session.cancel()) return reply.code(409).send({ error: "The research has already finished" })
+    return reply.code(202).send({ status: "cancelling" })
   })
 
   app.get("/api/research/:id", async (req, reply) => {

@@ -3,9 +3,11 @@ import {
   Money,
   isMissingData,
   isRentMultiple,
+  verdictFor,
   type Candidate,
   type Finding,
   type SourceRef,
+  type Verdict,
 } from "../../domain/index.js"
 import type { SuiteSpotState } from "../state.js"
 
@@ -73,6 +75,8 @@ export type RankingDTO = {
   tier: number
   reasons: { text: string; effect: string; source: SourceDTO }[]
   components: { name: string; weight: number; value: number | null }[]
+  /** Decided by code (domain/verdict.ts). */
+  verdict: { verdict: Verdict; why: string }
 }
 
 export function sourceDTO(s: SourceRef): SourceDTO {
@@ -189,5 +193,6 @@ function rankingDTO(state: SuiteSpotState, id: string): RankingDTO | null {
     tier: r.tier,
     reasons: r.reasons.map((x) => ({ text: x.text, effect: x.effect, source: sourceDTO(x.source) })),
     components: r.components.map((c) => ({ name: c.name, weight: c.weight, value: c.value })),
+    verdict: verdictFor(r, false),
   }
 }

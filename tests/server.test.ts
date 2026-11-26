@@ -89,6 +89,60 @@ describe("server", () => {
     await app.close()
   })
 
+  it("cancel: every loop stops at its next breakpoint, nothing is ranked, and the run ends as cancelled", async () => {
+    delete process.env.SUITESPOT_MODE
+    // Demo pace slow enough that loops are still running when Cancel arrives.
+    const app = await buildServer({ demoPace: { scout: () => 300, leaseReader: 600, financeStep: 300, reportWriter: 300 } })
+    const { id } = (await app.inject({ method: "POST", url: "/api/research", payload: { source: "demo" } })).json() as { id: string }
+    expect((await app.inject({ method: "POST", url: "/api/research/unknown-id/cancel" })).statusCode).toBe(404)
+    await new Promise((r) => setTimeout(r, 450)) // the Scout has started, Finance and Lease reader are working
+    const cancel = await app.inject({ method: "POST", url: `/api/research/${id}/cancel` })
+    expect(cancel.statusCode).toBe(202)
+    const started = Date.now()
+    const events = parseSse((await app.inject({ method: "GET", url: `/api/research/${id}/events` })).body).map((e) => e.data)
+    expect(Date.now() - started).toBeLessThan(3000) // no timeout: it ends as soon as the loops have stopped
+    const done = events.at(-1)!
+    expect(done).toMatchObject({ type: "research.done", data: { cancelled: true, metrics: { timedOut: false } } })
+    const cancelAt = events.findIndex((e) => e.type === "research.cancel_requested")
+    expect(cancelAt).toBeGreaterThan(0)
+    // Nothing new starts after Cancel, nothing is ranked or reported.
+    expect(events.slice(cancelAt).filter((e) => e.type === "loop.started")).toHaveLength(0)
+    expect(events.some((e) => e.type === "candidate.scored" || e.type === "ranking.done" || e.type === "report.ready")).toBe(false)
+    // Every loop that started has ended.
+    const startedLoops = events.filter((e) => e.type === "loop.started").length
+    expect(events.filter((e) => e.type === "loop.answered")).toHaveLength(startedLoops)
+    expect((await app.inject({ method: "POST", url: `/api/research/${id}/cancel` })).statusCode).toBe(409)
+    await app.close()
+  })
+
+  it("live mode needs the access code when SUITESPOT_ACCESS_CODE is set; demo mode never does", async () => {
+    process.env.ANTHROPIC_API_KEY = FAKE_KEY
+    process.env.SUITESPOT_MODE = "live"
+    process.env.SUITESPOT_ACCESS_CODE = "open-sesame"
+    const app = await buildServer({ demoPace: FAST_PACE, liveRunner: () => new MockRunner({ latencyMs: 50, script: () => ({ text: "{}" }) }) })
+    expect((await app.inject({ method: "GET", url: "/api/config" })).json()).toMatchObject({ liveAvailable: true, liveNeedsAccessCode: true })
+    const live = { mode: "live", source: "pasted", listings: [{ text: "Lokal 60 m2, Novi Sad, 900 EUR" }] }
+    const missing = await app.inject({ method: "POST", url: "/api/research", payload: live })
+    expect(missing.statusCode).toBe(401)
+    expect(missing.body).not.toContain("open-sesame")
+    expect((await app.inject({ method: "POST", url: "/api/research", payload: live, headers: { "x-access-code": "wrong" } })).statusCode).toBe(401)
+    expect((await app.inject({ method: "POST", url: "/api/research", payload: { source: "demo" } })).statusCode).toBe(201)
+    // A live profile from the questionnaire is validated by the domain.
+    const badProfile = await app.inject({ method: "POST", url: "/api/research", payload: { ...live, profile: { monthlyBudget: -5 } }, headers: { "x-access-code": "open-sesame" } })
+    expect(badProfile.statusCode).toBe(400)
+    const ok = await app.inject({ method: "POST", url: "/api/research", payload: { ...live, profile: { city: "Beograd", monthlyBudget: 2000 } }, headers: { "x-access-code": "open-sesame" } })
+    expect(ok.statusCode).toBe(201)
+    await app.close()
+  })
+
+  it("serves the fixed demo questionnaire for the locked form", async () => {
+    delete process.env.SUITESPOT_MODE
+    const app = await buildServer()
+    const body = (await app.inject({ method: "GET", url: "/api/demo-questionnaire" })).json() as { profile: { monthlyBudget: number; city: string } }
+    expect(body.profile).toMatchObject({ monthlyBudget: 1500, city: "Novi Sad" })
+    await app.close()
+  })
+
   it("cost guard: at most 8 listings, and at most one live research at a time", async () => {
     process.env.ANTHROPIC_API_KEY = FAKE_KEY
     process.env.SUITESPOT_MODE = "live"

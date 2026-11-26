@@ -55,6 +55,20 @@ export class SuiteSpotState extends RuntimeState {
   readonly reportDrafts: { attempt: number; draft: ReportDraft | null; error?: string; providerError?: boolean }[] = []
   report: FinalReport | null = null
 
+  /** Set when the user stops the run: no new loops start, and every running loop ends at its next breakpoint. */
+  runStop: { readonly reason: string; readonly at: number } | null = null
+
+  /**
+   * Stops the whole run (the user pressed Cancel). Idempotent: returns false when it was already stopped.
+   * Loops waiting for a lease are released (with no lease), so nothing waits forever; they are stopped right after.
+   */
+  stopRun(reason: string): boolean {
+    if (this.runStop) return false
+    this.runStop = Object.freeze({ reason, at: Date.now() })
+    for (const waiter of this.leaseWaiters.values()) waiter.resolve(null)
+    return true
+  }
+
   /** The Ranker's result per candidate (rejected candidates are never ranked). */
   readonly rankings = new Map<string, RankedCandidate>()
 

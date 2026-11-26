@@ -11,6 +11,7 @@ import {
   type Tool,
 } from "@mozaik-ai/core"
 import { createHuman, SituationSpecification } from "@mozaik-ai/core"
+import { RunStopBreakpoint } from "./cancellation/run-cancellation.js"
 import { ResilientRunner, type ResilientRunnerOptions } from "./resilience/resilient-runner.js"
 import { safeHandler } from "./resilience/safe-handler.js"
 import { Semaphore } from "./resilience/semaphore.js"
@@ -85,6 +86,8 @@ export function createAppRuntime(options: AppRuntimeOptions) {
    */
   function startLoop(opts: StartLoopOptions): ModelContext {
     const context = ModelContext.create().addContextItem(DeveloperMessageItem.create(opts.agent.getDeveloperMessage()))
+    // A cancelled run starts no new loops (for example a retry with feedback).
+    if (state.runStop) return context
     loopsByContext.set(context.id, {
       key: opts.key,
       agentId: opts.agent.getId(),
@@ -100,7 +103,8 @@ export function createAppRuntime(options: AppRuntimeOptions) {
       structuredOutput: opts.structuredOutput,
       maxOutputTokens: opts.maxOutputTokens ?? 1024,
     }
-    rt.runLoop(opts.agent.getId(), opts.message, input, opts.interception)
+    // Every loop gets the run-level breakpoint (Cancel) in front of its own one.
+    rt.runLoop(opts.agent.getId(), opts.message, input, new RunStopBreakpoint(state, opts.interception))
     return context
   }
 

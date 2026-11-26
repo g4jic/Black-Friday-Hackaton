@@ -556,6 +556,10 @@ He is a QA Automation Engineer. Judging from what he shares on LinkedIn:
      repo). Never pretend to be a browser or a search engine. **At most one request per 2 seconds per site.** Respect
      robots.txt. A 403 or a block page means skip that page (soft finding "listing page could not be read").
   3. `web_search` is always called with `allowed_domains` set to the approved sites only.
+- **Live mode env vars (one name each, used the same in code, `.env.example`, PROGRESS.md and here):**
+  `SUITESPOT_MODE` (`demo` default, `live` needs `ANTHROPIC_API_KEY`) and `SUITESPOT_ACCESS_CODE` (optional; when set,
+  live runs need the header `X-Access-Code` with this value, which users enter under Settings; demo runs never need it).
+  Never print or commit its value.
 - **Model key: Anthropic**, from the user's own Anthropic Console account (`ANTHROPIC_API_KEY` in `.env`). The user
   manages the budget himself. Default model: `claude-haiku-4-5` (cheapest model in Mozaik's bundled list). Mozaik
   6.0.0's bundled Anthropic names are `claude-haiku-4-5`, `claude-sonnet-4-6`, `claude-opus-4-7`, `claude-opus-4-8`.
