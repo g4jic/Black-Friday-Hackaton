@@ -53,6 +53,18 @@ No long dashes in this file; use a plain hyphen.
   form terms without a draft; main reason = strongest plus and biggest minus; no rent gives "Can't judge: rent not
   stated" (never the best option); no area gives "· area unknown". (4) Evaluate tab text updated. (5) .gitattributes
   LF in its own commit.
+- Step 6 DONE: Supabase project SuiteSpot (ref oetcunfrpnjtmcqbdrbn, org mRtw). Migration
+  `supabase/migrations/20261126220000_listings_and_contacts.sql` applied through the Supabase MCP (tables `listings`
+  and `listing_contacts`, domain rules as check constraints, RLS on both). Checks (`supabase/checks/rls-checks.sql`,
+  rolled back, plus a negative control and a REST check with the anon key): anon and authenticated read published
+  listings, the owner also reads own unpublished ones, anon gets "permission denied" on `listing_contacts`, nobody
+  changes, deletes or creates demo listings or switches `is_demo` off. Advisors: only `public.rls_auto_enable()`
+  (security definer, existed before our migration, not ours; left untouched pending a decision) and two expected
+  performance notes. `SupabaseListingStore` (`src/adapters/storage/`): public reads with the anon key, landlord
+  reads and writes with the landlord's token (RLS checks ownership a second time), only "Show contact" uses the
+  service role key. Used when all three SUPABASE_* values are set. `npm run seed:supabase` (idempotent): 100 demo
+  accounts (example.com, confirmed, random unknown password, app_metadata.is_demo) and 100 demo listings (50 Novi
+  Sad, 50 Beograd) with 100 contacts.
 - Local ports: another local project may hold 3000 and 5173; stop it before `npm run dev`.
 
 ## 26 Nov 2026, late evening (Andrej): app flow, run orbit, results redesign

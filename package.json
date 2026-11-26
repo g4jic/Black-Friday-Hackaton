@@ -17,7 +17,8 @@
     "test": "vitest run",
     "check:anthropic": "tsx scripts/check-anthropic-tools.ts",
     "screenshots": "tsx scripts/screenshots.ts",
-    "seed:report": "tsx scripts/seed-report.ts"
+    "seed:report": "tsx scripts/seed-report.ts",
+    "seed:supabase": "tsx scripts/seed-supabase.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.74.0",

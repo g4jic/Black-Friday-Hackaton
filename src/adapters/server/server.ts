@@ -7,6 +7,7 @@ import type { DemoLatency } from "../inference/scripts/demo-script.js"
 import type { ListingStore } from "../../application/listings/listing-store.js"
 import { seedCatalogue } from "../seed/seed-catalogue.js"
 import { LOCAL_LANDLORD, LOCAL_LISTINGS_FILE, LocalListingStore } from "../storage/local-listing-store.js"
+import { SupabaseListingStore, supabaseStoreConfig } from "../storage/supabase-listing-store.js"
 import { registerListingRoutes, type ActorResolver } from "./listing-routes.js"
 import { supabaseActorResolver, supabaseAuthConfig, type SupabaseAuthConfig } from "../auth/supabase-auth.js"
 import { registerResearchRoutes, type DemoCatalogue } from "./research-routes.js"
@@ -34,8 +35,10 @@ export async function buildServer(options: ServerOptions = {}): Promise<FastifyI
 
   app.get("/api/health", async () => ({ status: "ok", mode: runMode() }))
   // The API key stays in this process: no route returns it, and every outgoing event is scrubbed of it.
-  // Without Supabase: the local store, and every caller acts as the one Local demo landlord (clearly labelled).
-  const listingStore = options.listingStore ?? new LocalListingStore({ seed: seedCatalogue(), file: LOCAL_LISTINGS_FILE })
+  // With SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY: listings live in Supabase.
+  // Without them: the local store, and every caller acts as the one Local demo landlord (clearly labelled).
+  const storeConfig = supabaseStoreConfig()
+  const listingStore = options.listingStore ?? (storeConfig ? new SupabaseListingStore(storeConfig) : new LocalListingStore({ seed: seedCatalogue(), file: LOCAL_LISTINGS_FILE }))
   // With SUPABASE_URL and SUPABASE_ANON_KEY: landlord accounts (Supabase Auth). The anon key is public by design;
   // the browser gets it from /api/auth-config so the same env names work for the server and the frontend.
   const auth = options.auth === undefined ? supabaseAuthConfig() : options.auth
