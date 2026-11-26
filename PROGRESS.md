@@ -41,8 +41,10 @@ this entry.
 
 ### Next: a two-sided platform (decided 26 Nov, evening)
 - **What:** listings live on SuiteSpot itself. Landlords (or our seed script) publish commercial listings on
-  SuiteSpot; tenants run the research over them. Storage in Supabase (listings, runs, reports); the guest
-  `HistoryStore` gets a Supabase implementation behind the same interface. Seed data: 100 SYNTHETIC listings, clearly
+  SuiteSpot; tenants run the research over them. Supabase holds only landlord accounts (Supabase Auth) and the
+  listings (table `listings`). Tenants can stay Guest; landlords must have an account to publish. A guest's searches
+  and results stay in sessionStorage and are deleted when the tab is closed; they never go to Supabase. Seed data:
+  100 SYNTHETIC listings, clearly
   labelled, in the same shape as a pasted listing (with optional lease drafts), so the demo and mode B run on a real
   catalogue instead of 8 fixtures.
 - **Why:** the terms of use of 4zida.rs (automated use forbidden by the letter of its terms), oglasi.rs and
