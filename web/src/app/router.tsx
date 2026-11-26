@@ -9,6 +9,7 @@ export type Route =
   | { name: "newResearch" }
   | { name: "run"; researchId: string }
   | { name: "results"; researchId: string }
+  | { name: "candidate"; researchId: string; candidateId: string }
   | { name: "history" }
   | { name: "reports" }
   | { name: "assumptions" }
@@ -30,6 +31,8 @@ export function parseRoute(pathname: string): Route {
   if (staticRoute) return staticRoute
   const runMatch = /^\/research\/([A-Za-z0-9-]+)\/run$/.exec(path)
   if (runMatch) return { name: "run", researchId: runMatch[1]! }
+  const candidateMatch = /^\/research\/([A-Za-z0-9-]+)\/candidate\/([A-Za-z0-9-]+)$/.exec(path)
+  if (candidateMatch) return { name: "candidate", researchId: candidateMatch[1]!, candidateId: candidateMatch[2]! }
   const resultsMatch = /^\/research\/([A-Za-z0-9-]+)$/.exec(path)
   if (resultsMatch) return { name: "results", researchId: resultsMatch[1]! }
   return { name: "notFound", path }
@@ -40,6 +43,7 @@ export const paths = {
   newResearch: () => "/research/new",
   run: (researchId: string) => `/research/${researchId}/run`,
   results: (researchId: string, tab?: string) => `/research/${researchId}${tab ? `?tab=${tab}` : ""}`,
+  candidate: (researchId: string, candidateId: string) => `/research/${researchId}/candidate/${candidateId}`,
   history: () => "/history",
   reports: () => "/reports",
   assumptions: () => "/assumptions",

@@ -8,6 +8,7 @@ import { NewResearchPage } from "./pages/NewResearchPage"
 import { ResearchPage } from "./pages/ResearchPage"
 import { SettingsPage } from "./pages/SettingsPage"
 import { RunView } from "./run/RunView"
+import { CandidatePage } from "./results/CandidatePage"
 import { DashboardPage, NotFoundPage } from "./pages/SimplePages"
 import type { Config } from "./types"
 import { Pill } from "./ui"
@@ -17,6 +18,7 @@ const TITLES: Record<Route["name"], string> = {
   newResearch: "New research",
   run: "Research run",
   results: "Results",
+  candidate: "Candidate",
   history: "History",
   reports: "Reports",
   assumptions: "Assumptions",
@@ -48,7 +50,7 @@ export function App() {
     document.title = `${TITLES[route.name]} - SuiteSpot`
   }, [route.name])
 
-  const titleExtra = route.name === "run" || route.name === "results" ? <DemoDataPill researchId={route.researchId} /> : null
+  const titleExtra = route.name === "run" || route.name === "results" || route.name === "candidate" ? <DemoDataPill researchId={route.researchId} /> : null
 
   return (
     <Shell route={route} title={TITLES[route.name]} titleExtra={titleExtra}>
@@ -67,6 +69,8 @@ function Page({ route, config }: { route: Route; config: Config | null }) {
       return <RunView key={route.researchId} researchId={route.researchId} />
     case "results":
       return <ResearchPage researchId={route.researchId} />
+    case "candidate":
+      return <CandidatePage key={route.candidateId} researchId={route.researchId} candidateId={route.candidateId} />
     case "history":
       return <HistoryPage />
     case "reports":

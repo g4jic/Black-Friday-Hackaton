@@ -1,17 +1,17 @@
-import { ChartLine, FileChartColumn, LayoutGrid, List, type LucideIcon } from "lucide-react"
+import { ChartLine, FileChartColumn, List, type LucideIcon } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useResearch, type RunSnapshot } from "../app/research-store"
 import { Link, paths, setSearchParam, useLocation } from "../app/router"
 import { EmptyState } from "../app/Shell"
-import { CandidateSections, MetricsStrip } from "../LiveResearch"
+import { MetricsStrip } from "../results/MetricsStrip"
+import { ResultsList } from "../results/ResultsList"
 import { ReportsScreen } from "../Reports"
 import { Timeline } from "../Timeline"
 import { cx } from "../ui"
 
-export type ResearchTab = "table" | "cards" | "timeline" | "report"
+export type ResearchTab = "list" | "report" | "timeline"
 const TABS: { id: ResearchTab; label: string; icon: LucideIcon }[] = [
-  { id: "table", label: "Table", icon: List },
-  { id: "cards", label: "Cards", icon: LayoutGrid },
+  { id: "list", label: "List", icon: List },
   { id: "report", label: "Report", icon: FileChartColumn },
   { id: "timeline", label: "Timeline", icon: ChartLine },
 ]
@@ -41,11 +41,11 @@ export function ResearchMissing() {
   )
 }
 
-/** The candidates of one run as Table, Cards, Report or Timeline. */
+/** The results of one run: the ranked List (default), the audited Report, or the Timeline with "Under the hood". */
 export function ResearchPage({ researchId }: { researchId: string }) {
   const snapshot = useResearch(researchId)
   const { search } = useLocation()
-  const tab = (TABS.some((t) => t.id === search.get("tab")) ? search.get("tab") : "table") as ResearchTab
+  const tab = (TABS.some((t) => t.id === search.get("tab")) ? search.get("tab") : "list") as ResearchTab
   const now = useRunClock(snapshot)
   if (snapshot.status === "missing") return <ResearchMissing />
   const { state } = snapshot
@@ -57,12 +57,15 @@ export function ResearchPage({ researchId }: { researchId: string }) {
       {tab === "timeline" ? (
         <div className="flex flex-col gap-4">
           <Timeline s={state} now={now} />
-          <MetricsStrip s={state} />
+          <section aria-label="Under the hood">
+            <h2 className="mb-2 text-sm font-semibold text-ink">Under the hood</h2>
+            <MetricsStrip s={state} />
+          </section>
         </div>
       ) : tab === "report" ? (
         <ReportsScreen s={state} />
       ) : (
-        <CandidateSections s={state} view={tab} filter="" />
+        <ResultsList s={state} researchId={researchId} />
       )}
     </>
   )

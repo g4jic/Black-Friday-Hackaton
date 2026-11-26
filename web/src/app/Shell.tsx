@@ -24,10 +24,13 @@ const NAV_TOOLTIPS: Record<string, string> = {
 
 export const NOT_ADVICE = "Not financial or legal advice. SuiteSpot shows numbers with their sources; the decision is yours."
 
-/** The frame around every page: sidebar, page header (title, optional pills, New research) and the advice footer. */
+/**
+ * The frame around every page: sidebar (a bottom bar on a phone, so pages keep the full width), page header (title,
+ * optional pills, New research) and the advice footer.
+ */
 export function Shell({ route, title, titleExtra, children }: { route: Route; title: string; titleExtra?: ReactNode; children: ReactNode }) {
   return (
-    <div className="min-h-screen pr-4 pb-6 pl-[116px] text-ink sm:pr-6">
+    <div className="min-h-screen px-4 pb-28 text-ink sm:pr-6 sm:pb-6 sm:pl-[116px]">
       <Sidebar route={route} />
       <div className="mx-auto max-w-[1360px] pt-6">
         <header className="flex flex-wrap items-center justify-between gap-4">
@@ -55,11 +58,14 @@ export function Shell({ route, title, titleExtra, children }: { route: Route; ti
 
 function Sidebar({ route }: { route: Route }) {
   return (
-    <aside className="fixed top-4 bottom-4 left-4 z-30 flex w-[88px] flex-col items-center rounded-[32px] glass-strong py-5" aria-label="Main">
-      <Link to={paths.dashboard()} className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-brand text-xl font-bold text-ink" aria-label="SuiteSpot home" title="SuiteSpot">
+    <aside
+      className="fixed z-30 flex items-center glass-strong max-sm:inset-x-3 max-sm:bottom-3 max-sm:h-[68px] max-sm:justify-around max-sm:rounded-[28px] max-sm:px-1 sm:top-4 sm:bottom-4 sm:left-4 sm:w-[88px] sm:flex-col sm:rounded-[32px] sm:py-5"
+      aria-label="Main"
+    >
+      <Link to={paths.dashboard()} className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-brand text-xl font-bold text-ink max-sm:hidden" aria-label="SuiteSpot home" title="SuiteSpot">
         S
       </Link>
-      <nav className="flex flex-col items-center gap-2.5">
+      <nav className="flex flex-col items-center gap-2.5 max-sm:contents">
         {NAV_ITEMS.map((item) => {
           const active = item.isActive(route)
           const Icon = item.icon
@@ -69,7 +75,7 @@ function Sidebar({ route }: { route: Route }) {
               to={item.to}
               title={NAV_TOOLTIPS[item.label]}
               aria-current={active ? "page" : undefined}
-              className="group flex w-[72px] flex-col items-center gap-1 rounded-[18px] py-1.5"
+              className="group flex w-[58px] flex-col items-center gap-1 rounded-[18px] py-1.5 sm:w-[72px]"
             >
               <span
                 className={cx(
@@ -84,7 +90,7 @@ function Sidebar({ route }: { route: Route }) {
           )
         })}
       </nav>
-      <div className="mt-auto">
+      <div className="sm:mt-auto">
         <AvatarMenu settingsActive={route.name === "settings"} />
       </div>
     </aside>
@@ -119,13 +125,13 @@ function AvatarMenu({ settingsActive }: { settingsActive: boolean }) {
         aria-haspopup="menu"
         aria-expanded={open}
         title={`${user.name}: open the menu`}
-        className="flex w-[72px] flex-col items-center gap-1 rounded-[18px] py-1.5"
+        className="flex w-[58px] flex-col items-center gap-1 rounded-[18px] py-1.5 sm:w-[72px]"
       >
         <span className={cx("flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold", settingsActive ? "bg-brand text-ink" : "bg-lilac text-ink")}>{user.name[0]}</span>
         <span className="text-[11px] leading-3 font-medium text-ink-2">{user.name}</span>
       </button>
       {open && (
-        <div role="menu" className="pop-in absolute bottom-0 left-[84px] w-[220px] rounded-[20px] glass-strong p-2 shadow-[var(--shadow-pop)]">
+        <div role="menu" className="pop-in absolute w-[220px] max-sm:right-0 max-sm:bottom-[64px] sm:bottom-0 sm:left-[84px] rounded-[20px] glass-strong p-2 shadow-[var(--shadow-pop)]">
           <p className="px-3 pt-2 pb-2 text-xs text-ink-2">
             Using SuiteSpot as <span className="font-semibold text-ink">{user.name}</span>. Your runs are kept until this tab is closed.
           </p>

@@ -1,5 +1,6 @@
 import { Calculator, FileText, ListOrdered, PenLine, Search, ShieldCheck, OctagonAlert, TriangleAlert, Check, Info, type LucideIcon } from "lucide-react"
 import type { ReactNode } from "react"
+import { formatMoney } from "./format"
 import type { FieldDTO, SourceDTO, ValueDTO } from "./types"
 
 /** Agents that exist today (no placeholders for agents that are not built). */
@@ -17,10 +18,7 @@ export function cx(...parts: (string | false | null | undefined)[]): string {
   return parts.filter(Boolean).join(" ")
 }
 
-export function formatMoney(amount: number, currency: string): string {
-  const fraction = Math.round(amount * 100) % 100 !== 0
-  return `${new Intl.NumberFormat("en-US", { minimumFractionDigits: fraction ? 2 : 0, maximumFractionDigits: 2 }).format(amount)} ${currency}`
-}
+export { formatMoney }
 
 const KIND_LABEL: Record<string, string> = { listing: "listing", profile: "profile", osm: "osm", calc: "calc", estimate: "est", lease: "lease", assumption: "assumption" }
 
