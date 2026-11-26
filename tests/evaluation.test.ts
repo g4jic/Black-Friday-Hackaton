@@ -119,7 +119,9 @@ describe("Finance analyst + Lease reader (keyless, MockRunner)", () => {
   })
 
   it("break-even is MissingData without a gross margin, and a sourced figure with one", async () => {
-    const { rt } = await runThree()
+    // The demo questionnaire gives a margin, so the missing case builds a profile without one.
+    const { grossMarginRate: _margin, ...withoutMarginInput } = loadDemoQuestionnaire().profile.input
+    const { rt } = await runThree(room(), BusinessProfile.create(withoutMarginInput))
     const be = rt.state.findings.find((f) => f.id === "demo-01:finance:break_even_revenue")!
     expect(isMissingData(be.value)).toBe(true)
     expect(be.source).toEqual({ kind: "profile", ref: "questionnaire", field: "grossMarginRate" })

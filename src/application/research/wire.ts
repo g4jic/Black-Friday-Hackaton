@@ -56,6 +56,8 @@ export type FlagDTO = { rule: string; reason: string; raisedBy: string; aspect: 
 export type CandidateDTO = {
   id: string
   synthetic: boolean
+  /** The listing page address, only when really given (typed by the user); never built or guessed. */
+  listingUrl: { url: string; source: SourceDTO } | null
   status: string
   hasLease: boolean
   fields: Record<string, FieldDTO>
@@ -171,6 +173,7 @@ export function candidateDTO(c: Candidate, state: SuiteSpotState): CandidateDTO 
   return {
     id: c.id,
     synthetic: c.listing.synthetic,
+    listingUrl: c.listing.url ? { url: c.listing.url.value, source: sourceDTO(c.listing.url.source) } : null,
     status: c.status,
     hasLease: state.hasLease(c.id),
     fields: Object.fromEntries(LISTING_KEYS.map((k) => [k, fieldDTO(listing[k])])),

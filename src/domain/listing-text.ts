@@ -1,5 +1,5 @@
 import { DomainError } from "./errors.js"
-import { LISTING_TEXT_ID } from "./source.js"
+import { LISTING_TEXT_ID, type Sourced } from "./source.js"
 
 /** Mode A takes 1 to 8 listings per research run (decided 26 Nov). */
 export const MIN_LISTINGS = 1
@@ -14,11 +14,36 @@ export type ListingText = {
   readonly id: string
   readonly text: string
   readonly synthetic: boolean
+  /**
+   * The address of the listing page, only when it was really given: typed by the user in mode A, or (in the future,
+   * only for a site that gave written permission) the page the Scout actually opened. Never built or guessed.
+   */
+  readonly url: Sourced<string> | null
   /** How many contacts were removed (counts only, never the values). */
   readonly removed: { readonly phones: number; readonly emails: number }
 }
 
-export type ListingTextInput = { readonly text: string; readonly id?: string; readonly synthetic?: boolean }
+export type ListingTextInput = { readonly text: string; readonly id?: string; readonly synthetic?: boolean; readonly url?: string }
+
+export const MAX_LISTING_URL_LENGTH = 2048
+
+/** Accepts only a plain http(s) address: no other scheme, no user name or password in it. Empty means no URL. */
+export function validateListingUrl(raw: string | undefined, listingNumber: number): string | null {
+  const trimmed = raw?.trim() ?? ""
+  if (trimmed === "") return null
+  let parsed: URL
+  try {
+    parsed = new URL(trimmed)
+  } catch {
+    throw new DomainError("invalid_listing_url", `Listing ${listingNumber}: the listing URL is not a valid address`)
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new DomainError("invalid_listing_url", `Listing ${listingNumber}: the listing URL must start with http:// or https://`)
+  }
+  if (parsed.username || parsed.password) throw new DomainError("invalid_listing_url", `Listing ${listingNumber}: the listing URL must not contain a user name or password`)
+  if (trimmed.length > MAX_LISTING_URL_LENGTH) throw new DomainError("invalid_listing_url", `Listing ${listingNumber}: the listing URL is too long`)
+  return parsed.href
+}
 
 export const PHONE_PLACEHOLDER = "[phone removed]"
 export const EMAIL_PLACEHOLDER = "[email removed]"
@@ -68,7 +93,16 @@ export function createListingBatch(inputs: readonly ListingTextInput[]): Listing
     if (input.text.length > MAX_LISTING_TEXT_LENGTH) {
       throw new DomainError("invalid_listing_batch", `Listing ${i + 1} is longer than ${MAX_LISTING_TEXT_LENGTH} characters`)
     }
+    const url = validateListingUrl(input.url, i + 1)
     const { text, phones, emails } = redactContacts(input.text)
-    return Object.freeze({ id, text: text.trim(), synthetic: input.synthetic ?? false, removed: Object.freeze({ phones, emails }) })
+    return Object.freeze({
+      id,
+      text: text.trim(),
+      synthetic: input.synthetic ?? false,
+      // The URL is the user's own input for this listing, not part of its text, so it has no quote (validateSource
+      // asks listing-text sources for one). It is never shown as a number or a claim, only as a link.
+      url: url === null ? null : Object.freeze({ value: url, source: Object.freeze({ kind: "listing" as const, ref: id, field: "url" }) }),
+      removed: Object.freeze({ phones, emails }),
+    })
   })
 }

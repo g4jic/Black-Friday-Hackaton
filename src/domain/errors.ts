@@ -24,5 +24,6 @@ export type DomainErrorCode =
   | "invalid_transition"
   | "invalid_input"
   | "invalid_listing_batch"
+  | "invalid_listing_url"
   | "invalid_extraction"
   | "value_without_source"

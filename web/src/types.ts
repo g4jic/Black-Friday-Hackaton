@@ -41,6 +41,8 @@ export type FlagDTO = { rule: string; reason: string; raisedBy: string; aspect: 
 export type CandidateDTO = {
   id: string
   synthetic: boolean
+  /** the listing page address, only when really given (typed by the user); never built or guessed */
+  listingUrl: { url: string; source: SourceDTO } | null
   status: "pending" | "evaluating" | "rejected" | "scored"
   hasLease: boolean
   fields: Record<string, FieldDTO>

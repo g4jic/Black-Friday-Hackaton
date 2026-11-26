@@ -47,7 +47,7 @@ export type ResearchRoutesOptions = {
   readonly liveRunner?: () => InferenceRunner
 }
 
-type Body = { mode?: ResearchMode; source?: "demo" | "pasted"; listings?: { text?: unknown; lease?: unknown }[]; profile?: Partial<BusinessProfileInput> }
+type Body = { mode?: ResearchMode; source?: "demo" | "pasted"; listings?: { text?: unknown; lease?: unknown; url?: unknown }[]; profile?: Partial<BusinessProfileInput> }
 
 /** Name of the environment variable with the live mode access code (also in .env.example, PROGRESS.md, CLAUDE.md). */
 export const ACCESS_CODE_ENV = "SUITESPOT_ACCESS_CODE"
@@ -133,7 +133,7 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
       } else {
         if (mode !== "live") throw new HttpError(400, "Pasted listings need live mode: demo mode replays scripted answers for the demo listings only.")
         const raw = Array.isArray(body.listings) ? body.listings : []
-        listings = raw.map((l) => ({ text: typeof l.text === "string" ? l.text : "" }))
+        listings = raw.map((l) => ({ text: typeof l.text === "string" ? l.text : "", ...(typeof l.url === "string" && l.url.trim() ? { url: l.url } : {}) }))
         createListingBatch(listings) // validates 1 to 8, empty texts; throws DomainError
         leases = raw.flatMap((l, i) => (typeof l.lease === "string" && l.lease.trim() ? [createLeaseText(`pasted-${i + 1}`, l.lease, false)] : []))
       }

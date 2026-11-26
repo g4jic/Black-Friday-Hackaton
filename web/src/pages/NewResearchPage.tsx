@@ -9,8 +9,8 @@ import { Pill, cx } from "../ui"
 import { INPUT, LABEL } from "./SettingsPage"
 
 type Mode = "evaluate" | "find"
-type ListingDraft = { text: string; lease: string; showLease: boolean }
-const emptyDraft = (): ListingDraft => ({ text: "", lease: "", showLease: false })
+type ListingDraft = { text: string; url: string; lease: string; showLease: boolean }
+const emptyDraft = (): ListingDraft => ({ text: "", url: "", lease: "", showLease: false })
 
 /** The questionnaire as typed (strings), so half-typed numbers are kept while the user edits. */
 type ProfileForm = Record<"businessType" | "city" | "currency" | "monthlyBudget" | "expectedMonthlyRevenue" | "areaMinM2" | "areaMaxM2" | "leaseMonths" | "fitOutBudget" | "equipmentBudget" | "grossMarginPercent", string>
@@ -117,7 +117,7 @@ export function NewResearchPage({ config }: { config: Config | null }) {
   const runEvaluate = () => {
     const checked = profileFromForm(form)
     if ("error" in checked) return setError(checked.error)
-    void start({ mode: "live", source: "pasted", profile: checked.profile, listings: filledDrafts.map((d) => ({ text: d.text, ...(d.lease.trim() ? { lease: d.lease } : {}) })) }, settings.liveAccessCode)
+    void start({ mode: "live", source: "pasted", profile: checked.profile, listings: filledDrafts.map((d) => ({ text: d.text, ...(d.url.trim() ? { url: d.url.trim() } : {}), ...(d.lease.trim() ? { lease: d.lease } : {}) })) }, settings.liveAccessCode)
   }
 
   const updateDraft = (index: number, patch: Partial<ListingDraft>) => setDrafts(drafts.map((d, i) => (i === index ? { ...d, ...patch } : d)))
@@ -204,6 +204,15 @@ export function NewResearchPage({ config }: { config: Config | null }) {
                     )}
                   </div>
                   <textarea id={`listing-${index}`} rows={4} value={draft.text} onChange={(e) => updateDraft(index, { text: e.target.value })} placeholder="Paste the full text of the listing" className={cx(INPUT, "h-auto py-3")} />
+                  <input
+                    type="url"
+                    inputMode="url"
+                    value={draft.url}
+                    onChange={(e) => updateDraft(index, { url: e.target.value })}
+                    placeholder="Listing URL (optional, https://...)"
+                    aria-label={`Listing URL for listing ${index + 1} (optional)`}
+                    className={cx(INPUT, "mt-2")}
+                  />
                   {draft.showLease ? (
                     <textarea rows={3} value={draft.lease} onChange={(e) => updateDraft(index, { lease: e.target.value })} placeholder="Paste the lease draft (optional)" className={cx(INPUT, "mt-2 h-auto py-3")} aria-label={`Lease draft for listing ${index + 1}`} />
                   ) : (

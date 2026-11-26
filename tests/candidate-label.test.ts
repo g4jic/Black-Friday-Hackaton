@@ -5,6 +5,7 @@ import type { CandidateDTO } from "../web/src/types.js"
 const candidate = (fields: CandidateDTO["fields"]): CandidateDTO => ({
   id: "demo-01",
   synthetic: true,
+  listingUrl: null,
   status: "scored",
   hasLease: false,
   fields,

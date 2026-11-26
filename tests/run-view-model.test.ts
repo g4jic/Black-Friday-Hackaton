@@ -9,6 +9,7 @@ const play = (events: WireEvent[]): ResearchState => events.reduce(applyEvent, i
 const candidate = (id: string, patch: Partial<CandidateDTO> = {}): CandidateDTO => ({
   id,
   synthetic: true,
+  listingUrl: null,
   status: "evaluating",
   hasLease: false,
   fields: {},

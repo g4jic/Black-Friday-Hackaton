@@ -17,6 +17,8 @@ export type Listing = {
   /** The listing text with contact data removed. Other agents (Premises inspector, Auditor) read it. */
   readonly text: string
   readonly synthetic: boolean
+  /** The listing page address, only when really given (see ListingText.url). */
+  readonly url: Sourced<string> | null
   readonly title: Field<string>
   readonly kind: Field<ListingKind>
   readonly city: Field<string>
@@ -49,7 +51,7 @@ export const LISTING_FIELDS = [
   { name: "floor", type: text, what: "floor (ground floor, first floor, ...)" },
   { name: "heating", type: text, what: "heating type" },
   { name: "parking", type: text, what: "parking" },
-] as const satisfies readonly (QuotedFieldSpec & { name: Exclude<keyof Listing, "ref" | "text" | "synthetic" | "unverified"> })[]
+] as const satisfies readonly (QuotedFieldSpec & { name: Exclude<keyof Listing, "ref" | "text" | "synthetic" | "url" | "unverified"> })[]
 
 export type ListingFieldName = (typeof LISTING_FIELDS)[number]["name"]
 
@@ -72,11 +74,11 @@ export function buildListing(listingText: ListingText, answer: unknown, options:
   if (isMissingData(fields.deposit) && fields.deposit.unverified && !stillUnverified.some((u) => u.field === "deposit")) {
     stillUnverified.push({ field: "deposit", reason: fields.deposit.unverified })
   }
-  return Object.freeze({ ref: listingText.id, text: listingText.text, synthetic: listingText.synthetic, ...fields, unverified: stillUnverified }) as unknown as Listing
+  return Object.freeze({ ref: listingText.id, text: listingText.text, synthetic: listingText.synthetic, url: listingText.url, ...fields, unverified: stillUnverified }) as unknown as Listing
 }
 
 /** A listing with every field missing. For tests and for mode B stubs. */
 export function emptyListing(ref: string, text = "", synthetic = true): Listing {
   const fields = Object.fromEntries(LISTING_FIELDS.map((f) => [f.name, missingData(f.name)]))
-  return Object.freeze({ ref, text, synthetic, ...fields, unverified: [] }) as unknown as Listing
+  return Object.freeze({ ref, text, synthetic, url: null, ...fields, unverified: [] }) as unknown as Listing
 }
