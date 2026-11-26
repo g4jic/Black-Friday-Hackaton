@@ -1,21 +1,7 @@
-import type { AreaM2 } from "./area.js"
 import { DomainError } from "./errors.js"
-import type { Money } from "./money.js"
+import type { Listing } from "./listing-extraction.js"
 import type { Aspect } from "./requirement.js"
-import { validateSource, type SourceRef, type Sourced } from "./source.js"
-
-/** Listing values as found on the public page. A value the page does not state stays null, never a guess. */
-export type Listing = {
-  readonly url: string
-  readonly title: string
-  readonly rentMonthly: Sourced<Money> | null
-  readonly area: Sourced<AreaM2> | null
-  readonly deposit: Sourced<Money> | null
-  readonly serviceChargeMonthly: Sourced<Money> | null
-  readonly description: string
-  readonly updatedAt: string | null
-  readonly synthetic: boolean
-}
+import { validateSource, type SourceRef } from "./source.js"
 
 export type CandidateStatus = "pending" | "evaluating" | "rejected" | "scored"
 

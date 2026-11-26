@@ -3,11 +3,16 @@ import {
   Candidate,
   DomainError,
   createFinding,
+  createListingBatch,
   type BusinessProfile,
   type Finding,
   type HardFlag,
+  type ListingText,
+  type ListingTextInput,
   type Requirement,
 } from "../domain/index.js"
+
+export type FailedListing = { readonly listingId: string; readonly reason: string; readonly attempts: number }
 
 export type ResearchMode = "A" | "B"
 
@@ -20,8 +25,33 @@ export class SuiteSpotState extends RuntimeState {
   mode: ResearchMode = "B"
   profile: BusinessProfile | null = null
   requirements: Requirement[] = []
+  /** Listing texts of this run, contacts already removed (the raw paste is never stored). */
+  readonly listingTexts = new Map<string, ListingText>()
   readonly candidates = new Map<string, Candidate>()
   readonly findings: Finding[] = []
+  /** The "failed items" queue: listings the Scout could not turn into a valid candidate. */
+  readonly failedListings: FailedListing[] = []
+
+  /** Validates the batch (1 to 8 listings) and removes phone numbers and emails before storing anything. */
+  submitListings(inputs: readonly ListingTextInput[]): ListingText[] {
+    const batch = createListingBatch(inputs)
+    for (const t of batch) {
+      if (this.listingTexts.has(t.id)) throw new DomainError("invalid_listing_batch", `Listing "${t.id}" was already submitted`)
+    }
+    for (const t of batch) this.listingTexts.set(t.id, t)
+    return batch
+  }
+
+  listingText(id: string): ListingText {
+    const t = this.listingTexts.get(id)
+    if (!t) throw new DomainError("invalid_input", `Unknown listing "${id}"`)
+    return t
+  }
+
+  recordFailedListing(failed: FailedListing): void {
+    if (this.failedListings.some((f) => f.listingId === failed.listingId)) return // idempotent
+    this.failedListings.push(failed)
+  }
 
   addCandidate(candidate: Candidate): Candidate {
     const existing = this.candidates.get(candidate.id)

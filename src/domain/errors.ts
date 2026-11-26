@@ -23,3 +23,6 @@ export type DomainErrorCode =
   | "invalid_requirement"
   | "invalid_transition"
   | "invalid_input"
+  | "invalid_listing_batch"
+  | "invalid_extraction"
+  | "value_without_source"

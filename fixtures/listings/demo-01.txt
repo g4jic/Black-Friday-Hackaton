@@ -1,0 +1,15 @@
+SYNTHETIC DEMO DATA - invented listing, not a real property.
+
+Izdaje se lokal 72 m2, Liman 2, idealan za kafić
+
+Lokacija: Novi Sad, Liman 2, ulica Narodnog fronta
+Površina: 72 m2
+Cena: 1.250 € mesečno
+Depozit: 2.500 €
+Troškovi zgrade: 60 € mesečno
+Sprat: prizemlje, ulaz direktno sa ulice, dva izloga
+Grejanje: gas, sopstveni kotao
+Parking: javni parking ispred objekta
+
+Lokal je potpuno renoviran 2025. godine. Postoji priključak za vodu i odvod u zadnjem delu, mokri čvor za
+goste i manji magacin. Pogodan za kafić, pekaru ili prodavnicu. Minimalan period zakupa 3 godine.

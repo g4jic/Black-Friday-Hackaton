@@ -12,6 +12,7 @@ import {
   costShareOfRevenue,
   createFinding,
   createRequirement,
+  emptyListing,
   exitCostAfter,
   fairPriceCheck,
   hardRequirementNotMet,
@@ -155,17 +156,7 @@ describe("Requirement", () => {
 })
 
 describe("Candidate", () => {
-  const listing: Listing = {
-    url: URL,
-    title: "Shop 80 m2",
-    rentMonthly: null,
-    area: null,
-    deposit: null,
-    serviceChargeMonthly: null,
-    description: "",
-    updatedAt: null,
-    synthetic: true,
-  }
+  const listing: Listing = emptyListing(URL)
   const flag = (raisedBy: string): HardFlag => ({ aspect: "finance", rule: "r", reason: "too expensive", raisedBy, source: listingSrc("rent") })
 
   it("reject() is idempotent: the first flag wins, later ones are recorded", () => {

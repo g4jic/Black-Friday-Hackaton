@@ -1,6 +1,7 @@
 import type { AreaM2 } from "./area.js"
 import { DomainError } from "./errors.js"
 import { Money, type Currency } from "./money.js"
+import type { MissingData } from "./missing.js"
 import { calc, sourced, type Sourced } from "./source.js"
 
 /**
@@ -121,15 +122,6 @@ export function exitCostAfter(t: LeaseTerms, monthsUsed = 12): CostBreakdown {
 export function costShareOfRevenue(monthlyTotal: Sourced<Money>, revenue: Sourced<Money>): Sourced<number> {
   if (revenue.value.cents <= 0) throw new DomainError("invalid_input", "Expected revenue must be positive to compute the rent share")
   return calc(monthlyTotal.value.ratioTo(revenue.value), "monthly cost / expected monthly revenue", [monthlyTotal, revenue])
-}
-
-/**
- * A figure we cannot compute because an input is missing. Shown as "missing data" in the report, never estimated.
- */
-export type MissingData = { readonly status: "missing_data"; readonly missing: readonly string[] }
-
-export function isMissingData(x: unknown): x is MissingData {
-  return typeof x === "object" && x !== null && (x as MissingData).status === "missing_data"
 }
 
 const MISSING_MARGIN: MissingData = Object.freeze({ status: "missing_data", missing: Object.freeze(["Gross margin (optional in the questionnaire)"]) })

@@ -1,0 +1,16 @@
+SYNTHETIC DEMO DATA - invented listing, not a real property.
+
+Lokal 88 m2 sa privatnim parkingom - Detelinara, Novi Sad
+
+Izdaje se poslovni prostor na Detelinari, Bulevar Jaše Tomića. Prethodno je radio kao restoran, ostala je
+ugrađena ventilacija i masna kuhinja.
+
+Karakteristike:
+- Kvadratura: 88 m2
+- Kirija: 1.400 EUR/mesec
+- Depozit: 1.400 EUR
+- Prizemlje i galerija
+- Grejanje: TA peći
+- Parking: zajednički, u dvorištu zgrade
+
+Moguće preuzimanje opreme po dogovoru.

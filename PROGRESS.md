@@ -59,13 +59,9 @@ photos, or be replaced by synthetic data.
   repo as history. The app is not styled yet; the design pass follows DESIGN.md.
 
 **Aleksa's next step: plan step 2 (thin slice in demo mode)**
-1. Before the Scout: read the terms of use of 4zida.rs, oglasi.rs and svenekretnine.com (see "Next step" below) and
-   write the verdict here.
-2. Scout: in demo mode it reads synthetic fixtures shaped like listings from the approved sites (plan section 11 says
-   "Scout (fixtures)"). The live search tool follows CLAUDE.md "Listing sources": `allowed_domains` = approved sites
-   only, honest User-Agent, at most 1 request per 2 s per site, respect robots.txt, skip blocked pages. It publishes
-   `candidate.found` one by one, so evaluation starts while the search continues.
-3. Finance analyst and Lease reader on 3 candidates, in parallel, in demo mode (MockRunner scripts). Finance calls the
+1. DONE: terms of use read, option D chosen (table at the top, "Decisions log").
+2. DONE (26 Nov): Scout. See "Current state", step 2.2.
+3. NEXT: Finance analyst and Lease reader on 3 candidates, in parallel, in demo mode (MockRunner scripts). Finance calls the
    calculator in `src/domain/lease-cost.ts` through tools; it never computes numbers itself. Every finding goes through
    `SuiteSpotState.addFinding`, which rejects a value without a source.
 4. Events to the first live research screen: a Fastify SSE endpoint that streams bus events (loop events plus our
@@ -95,6 +91,35 @@ photos, or be replaced by synthetic data.
 - Railway datacenter IPs may be blocked by listing sites; test live mode from the deployed service.
 
 ## Current state
+- Step 2.2 (Scout) done on 26 Nov 2026, 65 tests pass (`npm test`), typecheck clean. Committed and pushed.
+  - `fixtures/listings/demo-01..08.txt`: 8 SYNTHETIC raw-text listings for Novi Sad, different styles, each starting
+    with "SYNTHETIC DEMO DATA", no contacts. demo-02 = hard flag (3,200 EUR rent), demo-04 = soft flag (private vs
+    shared parking), demo-03 = no area, demo-08 = no rent ("Cena na upit"). What each is for: `fixtures/listings/README.md`.
+  - `fixtures/mock-answers/scout.json`: the scripted structured answers the MockRunner replays in demo mode.
+  - Domain: `listing-text.ts` (`createListingBatch` enforces 1 to 8 listings and removes phones and emails with
+    `redactContacts` before anything is stored; only counts are kept), `listing-extraction.ts` (`Listing` with
+    `Field<T> = Sourced<T> | MissingData`, `buildListing` checks every value: quote required, quote must appear in the
+    text, a number must appear in its own quote; all problems in one DomainError), `missing.ts` (MissingData moved here
+    from lease-cost). `SourceRef` has an optional `quote`; a listing source is a text id (`pasted-<n>`, `demo-<id>`,
+    quote required) or a URL. `Listing` changed shape (no `url`, `description`, `updatedAt`; `ref` + `text` instead).
+  - Application: `src/application/agents/scout.ts`. `submitListings(rt, inputs, producerId)` is the single entry for
+    demo fixtures and pasted texts: state stores cleaned texts, then the domain event `listings.submitted`. The Scout
+    wakes on it and starts one loop per listing in parallel with `structuredOutput` (`LISTING_EXTRACTION_SCHEMA`), no
+    tools. On each loop's `model.answer` plain code runs `buildListing`; a valid listing becomes a Candidate and
+    `candidate.found` is published at once. A rejected extraction is sent back once as feedback
+    (`listing.extraction_rejected`), a second failure goes to `state.failedListings` (`listing.extraction_failed`).
+  - Adapters: `src/adapters/fixtures/demo-listings.ts` (loads fixtures), `src/adapters/inference/scripts/scout-script.ts`
+    (demo script, optional per-listing latency).
+  - Tests: `tests/listing.test.ts` (contact removal, batch size, quotes, number formats, value without source,
+    all scripted answers pass), `tests/scout.test.ts` (8 loops in parallel and candidates published in finishing
+    order, MissingData for the listing without area, contacts never reach state, model or bus, retry with feedback,
+    failed queue does not affect other listings).
+  - New domain events: `listings.submitted`, `listing.extraction_rejected`, `listing.extraction_failed`.
+  - Known limits: agents' names in pasted text are not detected by code (the Scout schema has no field for them and
+    the instruction forbids them, but the cleaned text can still contain a name); live structured output with the
+    real Anthropic model is not tested yet. The Scout wakes on `listings.submitted`, not `requirements.ready` (plan
+    section 7 says the latter); extraction does not need the requirements, so it runs in parallel with the
+    Interviewer.
 - Step 1 (skeleton) done: one root `package.json`, `@mozaik-ai/core` pinned to 6.0.0, Fastify server
   (`src/adapters/server/`, `/api/health`, serves `web/dist` in production), Vite + React + Tailwind 4 web app in `web/`,
   Vitest. Mode is `SUITESPOT_MODE` (default `demo`; `live` also needs `ANTHROPIC_API_KEY`).
@@ -210,6 +235,9 @@ photos, or be replaced by synthetic data.
   OpenStreetMap for area data; Supabase for history; Railway for deploy; Stripe and Solana not used.
 
 ## Session log
+- 2026-11-26 16:30 (Aleksa): DESIGN.md edits committed and pushed (dbf8818). Step 2.2 Scout built with 8 synthetic
+  listings and keyless tests (65 pass). Committed and pushed after Aleksa's OK. Next: step 2.3 (Finance analyst
+  and Lease reader).
 - 2026-11-26 15:40 (Aleksa): DESIGN.md written; design direction chosen. App code not changed. Not committed.
 - 2026-11-26 15:20 (Aleksa): option D chosen (mode A = 1 to 8 pasted listings); plan sections 2, 4.1, 4.4 updated;
   permission email drafted. Not committed.

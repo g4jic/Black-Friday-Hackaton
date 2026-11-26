@@ -10,22 +10,12 @@ import {
 import { createRecorder } from "../src/application/observers/recorder.js"
 import { safeHandler } from "../src/application/resilience/safe-handler.js"
 import { createAppRuntime, type AppRuntime } from "../src/application/runtime.js"
-import { Candidate, Money, budgetExceeded, sourced, type Candidate as CandidateT, type Listing } from "../src/domain/index.js"
+import { Candidate, Money, budgetExceeded, emptyListing, sourced, type Candidate as CandidateT, type Listing } from "../src/domain/index.js"
 import { answerText, waitFor } from "./helpers.js"
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
-const listing = (id: string): Listing => ({
-  url: `https://example.test/listing/${id}`,
-  title: `Synthetic shop ${id}`,
-  rentMonthly: null,
-  area: null,
-  deposit: null,
-  serviceChargeMonthly: null,
-  description: "",
-  updatedAt: null,
-  synthetic: true,
-})
+const listing = (id: string): Listing => emptyListing(`https://example.test/listing/${id}`)
 
 class WhenCandidateFound extends SituationSpecification {
   isSatisfiedBy({ event }: SituationContext): boolean {
@@ -45,7 +35,7 @@ function toolsFor(rt: AppRuntime, agentName: string, agentId: string, c: Candida
     return [
       cancellableTool({ type: "function", name: "check_budget", description: "Check monthly cost against budget", parameters: { type: "object", properties: {}, additionalProperties: false }, strict: true }, c, agentName, async () => {
         await sleep(20)
-        const monthly = sourced(Money.of(c.id === "c1" ? 1450 : 1100, "EUR"), { kind: "listing", ref: c.listing.url, field: "rent" })
+        const monthly = sourced(Money.of(c.id === "c1" ? 1450 : 1100, "EUR"), { kind: "listing", ref: c.listing.ref, field: "rent" })
         const budget = sourced(Money.of(1300, "EUR"), { kind: "profile", ref: "questionnaire", field: "monthlyBudget" })
         const flag = budgetExceeded(monthly, budget, "Finance")
         if (!flag) return "Within budget"
@@ -226,7 +216,7 @@ describe("hard flag cancels a candidate (interception spike, Mozaik 6.0.0)", () 
     rt.join(recorder.participant)
     rt.join(p)
     const c = rt.state.addCandidate(new Candidate("c1", listing("c1")))
-    const flag = { aspect: "finance" as const, rule: "r", reason: "x", raisedBy: "Finance", source: { kind: "listing" as const, ref: c.listing.url } }
+    const flag = { aspect: "finance" as const, rule: "r", reason: "x", raisedBy: "Finance", source: { kind: "listing" as const, ref: c.listing.ref } }
     expect(rejectCandidate(rt, "c1", flag, p.getId())).toBe(true)
     expect(rejectCandidate(rt, "c1", { ...flag, raisedBy: "Location" }, p.getId())).toBe(false)
     expect(c.rejection?.raisedBy).toBe("Finance")
