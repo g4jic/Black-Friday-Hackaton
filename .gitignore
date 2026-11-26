@@ -4,3 +4,4 @@ dist/
 web/dist/
 traces/
 *.log
+data/

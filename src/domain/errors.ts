@@ -27,3 +27,6 @@ export type DomainErrorCode =
   | "invalid_listing_url"
   | "invalid_extraction"
   | "value_without_source"
+  | "invalid_listing"
+  | "not_listing_owner"
+  | "listing_not_found"
