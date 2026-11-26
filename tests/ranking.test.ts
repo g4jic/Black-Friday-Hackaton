@@ -24,6 +24,7 @@ import {
   validateSource,
   type CandidateScore,
   type RankingInput,
+  type Sourced,
 } from "../src/domain/index.js"
 import { waitFor } from "./helpers.js"
 
@@ -106,6 +107,15 @@ describe("score rules (domain)", () => {
   const byHand = (s: CandidateScore) => ({
     low: Math.round(s.components.reduce((a, c) => a + c.weight * (c.value ?? 0), 0)),
     high: Math.round(s.components.reduce((a, c) => a + c.weight * (c.value ?? 1), 0)),
+  })
+
+  it("lease terms only from the listing form score, but give at most medium confidence (not a verified lease)", () => {
+    const fromForm = (c: Sourced<unknown> | unknown) => (c && typeof c === "object" && "source" in (c as object) ? { ...(c as Sourced<unknown>), source: { kind: "listing" as const, ref: "listing-01", field: "earlyTermination", form: true } } : c)
+    const formLease = Object.fromEntries(Object.entries(lease).map(([k, v]) => [k, fromForm(v)])) as typeof lease
+    const s = scoreCandidate({ ...base, lease: formLease, hasLeaseDraft: false })
+    expect(s.components.find((c) => c.name === "lease")!.value).toBe(scoreCandidate(base).components.find((c) => c.name === "lease")!.value)
+    expect(s.confidence).toBe("medium")
+    expect(s.reasons.some((r) => r.effect === "confidence" && r.text.includes("from the listing form"))).toBe(true)
   })
 
   it("with all data the score is one number; a missing part gives an exact range, never a re-weighted 100", () => {

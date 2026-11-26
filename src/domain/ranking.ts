@@ -40,7 +40,7 @@ export const RANKING_ASSUMPTIONS = {
   },
   missingData: "Unknown parts count as worst case for ranking.",
   missingDataDetail: "A part without data gives a score range: the low end counts it as 0, the high end as full. The rank uses the low end; the confidence says how much is unknown.",
-  confidence: { high: "no key input missing", medium: "one key input missing (area or verified lease terms) or an unverified field", low: "the rent is missing, or two or more key inputs are missing" },
+  confidence: { high: "no key input missing", medium: "one key input missing (area or verified lease terms; terms only from the listing form count as not verified) or an unverified field", low: "the rent is missing, or two or more key inputs are missing" },
   order: [
     "Candidates with a stated rent, by the low end of their score (worst case)",
     "Then candidates without a stated rent: they can never rank first",
@@ -151,6 +151,9 @@ export function scoreCandidate(input: RankingInput): CandidateScore {
             : null
       if (s !== null) parts.push({ score: s, text: kind === "fixed_rate" ? `rent rises ${rate}% a year` : kind === "cpi" ? "rent follows the price index" : "no rent increase clause", source: clauses.indexationKind.source })
     }
+    // Terms that only the listing form states (no lease draft read) are the landlord's claim, not a verified lease:
+    // they still score, but they cannot give high confidence.
+    if (parts.length > 0 && parts.every((p) => p.source.kind === "listing")) missing.push("verified lease")
     if (parts.length > 0) {
       lease = round2(parts.reduce((a, p) => a + p.score, 0) / parts.length)
       const worst = [...parts].sort((a, b) => a.score - b.score)[0]!
@@ -211,14 +214,18 @@ export function scoreCandidate(input: RankingInput): CandidateScore {
       ...what.map((m) =>
         m === "area"
           ? `area not stated: up to ${points("area")} points unknown`
-          : input.hasLeaseDraft
+          : m === "verified lease"
+            ? "lease terms come from the listing form, not from a lease draft"
+            : input.hasLeaseDraft
             ? `lease terms not verified: up to ${points("lease")} points unknown`
             : `no lease draft: up to ${points("lease")} points unknown`,
       ),
       ...(missing.includes("rent") ? [`rent not stated: up to ${points("cost")} points unknown`] : []),
       ...(unverified.length ? [`${unverified.length} unverified field${unverified.length > 1 ? "s" : ""}`] : []),
     ]
-    const source: SourceRef = what.includes("lease terms")
+    const source: SourceRef = what.includes("verified lease")
+      ? { kind: "listing", ref: listing.ref, field: "minimumTermMonths", form: true }
+      : what.includes("lease terms")
       ? input.hasLeaseDraft
         ? { kind: "lease", ref: `lease-${input.candidateId}`, clause: "term" }
         : { kind: "profile", ref: "questionnaire", field: "leaseMonths" }

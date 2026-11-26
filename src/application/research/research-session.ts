@@ -85,7 +85,7 @@ const PASS_THROUGH: Record<string, readonly string[]> = {
   "finance.explanation_rejected": ["candidateId", "attempt", "reason"],
   "finance.failed": ["candidateId", "reason"],
   "agent.halted": ["loopKey", "candidateId", "reason"],
-  "candidate.scored": ["candidateId", "rank", "score", "scoreHigh", "confidence"],
+  "candidate.scored": ["candidateId", "rank", "score", "scoreHigh", "confidence", "verdict"],
   "ranking.done": ["order", "excluded"],
   "report.drafted": ["attempt", "ok"],
   "audit.started": ["attempt"],

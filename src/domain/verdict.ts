@@ -7,7 +7,7 @@ import type { CandidateScore } from "./ranking.js"
 export const VERDICT_RULES = {
   goodMinScore: 70,
   notRecommendedBelowScore: 50,
-  good: "Good: ranked with high confidence, a score of at least 70 (worst case) and nothing to check before signing",
+  good: "Good: ranked with high confidence, a score of at least 70 (worst case), the area inside your range and nothing to check before signing",
   checkBeforeSigning: "Check before signing: ranked, but something is unknown or must be checked first",
   notRecommended: "Not recommended: rejected by a hard flag, no stated rent, or a score below 50 (worst case)",
 } as const
@@ -24,6 +24,8 @@ export function verdictFor(score: CandidateScore | null, rejected: boolean): Ver
   if (score.score < VERDICT_RULES.notRecommendedBelowScore) {
     return { verdict: "not_recommended", why: `The worst-case score is ${score.score}, below ${VERDICT_RULES.notRecommendedBelowScore}` }
   }
+  const area = score.components.find((c) => c.name === "area")
+  if (area?.value === 0) return { verdict: "check_before_signing", why: "Ranked, but the area is outside your required range" }
   const checks = score.components.find((c) => c.name === "checks")
   const pointsToCheck = checks?.value !== null && checks?.value !== undefined && checks.value < 1
   if (score.confidence === "high" && !pointsToCheck && score.score >= VERDICT_RULES.goodMinScore) {

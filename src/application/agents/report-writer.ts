@@ -1,5 +1,5 @@
 import { Agent, SemanticEvent, SituationSpecification, createAgent, type SituationContext, type StructuredOutputFormat } from "@mozaik-ai/core"
-import { createFact, parseReportDraft, isMissingData, type Fact, type FactKind, type Money, type SourceRef, type Sourced } from "../../domain/index.js"
+import { createFact, parseReportDraft, isMissingData, verdictFor, type Fact, type FactKind, type Money, type SourceRef, type Sourced } from "../../domain/index.js"
 import { INFERENCE_FAILED_PREFIX } from "../resilience/resilient-runner.js"
 import { safeHandler } from "../resilience/safe-handler.js"
 import type { AppRuntime } from "../runtime.js"
@@ -34,8 +34,11 @@ export const REPORT_WRITER_INSTRUCTION = [
   "Every sentence lists the ids of the facts it is based on. Copy every number exactly as it is written in those facts; never compute, round or convert.",
   "Sections: recommended (up to 3 candidate ids, in rank order, never a rejected one), recommendation (one or two sentences per recommended candidate with its main reasons),",
   "checkBeforeSigning (the most important points to check), rejected (why each rejected candidate was rejected), unknowns (what is not known and lowers the confidence).",
+  "Use the verdict exactly as a fact states it. If only one candidate was evaluated, never call it ranked, first or highest.",
   "Plain English, no advice to sign or not: the decision is the owner's. Keep it short. You have no tools. Answer only with the JSON object.",
 ].join(" ")
+
+const VERDICT_TEXT = { good: "Good", check_before_signing: "Check before signing", not_recommended: "Not recommended" } as const
 
 const fmtMoney = (m: Money) => `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(m.amount)} ${m.currency}`
 
@@ -52,7 +55,9 @@ export function buildFacts(state: SuiteSpotState): Fact[] {
     const id = r.candidateId
     const range = r.scoreHigh > r.score ? `${r.score}-${r.scoreHigh}` : `${r.score}`
     const inputs = r.reasons.map((x) => x.source)
-    add("rank", id, `${id} (${titleOf(id)}) is ranked #${r.rank} of ${ranked.length} with a score of ${range} out of 100, confidence ${r.confidence}.`, { kind: "calc", ref: "Ranker score (RANKING_ASSUMPTIONS)", inputs })
+    const verdict = VERDICT_TEXT[verdictFor(r, false).verdict]
+    const place = ranked.length === 1 ? "is the only candidate evaluated" : `is ranked #${r.rank} of ${ranked.length}`
+    add("rank", id, `${id} (${titleOf(id)}) ${place}, with a score of ${range} out of 100, confidence ${r.confidence}, verdict "${verdict}".`, { kind: "calc", ref: "Ranker score (RANKING_ASSUMPTIONS)", inputs })
     for (const reason of r.reasons) add(reason.effect === "confidence" || reason.effect === "order" ? "unknown" : "reason", id, `${id}: ${reason.text}.`, reason.source)
     const finding = (name: string) => state.findings.find((f) => f.id === `${id}:finance:${name}`)
     const monthly = finding("monthly_cost")

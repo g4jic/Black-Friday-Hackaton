@@ -1,5 +1,5 @@
 import { SemanticEvent, SituationSpecification, createHuman, type Participant, type SituationContext } from "@mozaik-ai/core"
-import { isMissingData, rankCandidates, scoreCandidate, type Money, type Sourced } from "../../domain/index.js"
+import { isMissingData, rankCandidates, scoreCandidate, verdictFor, type Money, type Sourced } from "../../domain/index.js"
 import { safeHandler } from "../resilience/safe-handler.js"
 import type { AppRuntime } from "../runtime.js"
 
@@ -53,7 +53,7 @@ export function createRanker(rt: AppRuntime): Participant {
       candidate.markScored(r.score)
       rt.state.recordRanking(r)
       rt.sendEvent(
-        SemanticEvent.create("candidate.scored", id, { candidateId: r.candidateId, rank: r.rank, score: r.score, scoreHigh: r.scoreHigh, confidence: r.confidence, reasons: r.reasons, components: r.components }),
+        SemanticEvent.create("candidate.scored", id, { candidateId: r.candidateId, rank: r.rank, score: r.score, scoreHigh: r.scoreHigh, confidence: r.confidence, verdict: verdictFor(r, false).verdict, reasons: r.reasons, components: r.components }),
         id,
       )
     }

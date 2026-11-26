@@ -74,6 +74,60 @@ npm run dev                   # API on 3000, web on 5173 (5174 if 5173 is taken)
   "Evaluate an outside listing" enabled. There is no mode variable any more.
 - The three `SUPABASE_*` values: accounts, listings, saved spaces and view counts from the database.
 
+## P4 quality check: 10 outside listings with the real model (27 Nov 2026, Andrej + Claude)
+Script: `scripts/eval-scenarios.ts` (server running with ANTHROPIC_API_KEY; one live run at a time; about $0.05 to
+$0.10 per scenario). Profiles: cafe Novi Sad (demo questionnaire), design office Beograd, food shop Novi Sad,
+furniture workshop Beograd.
+
+**First pass** (before the fixes). Columns: score (confidence), hard flags, concerns, first report sentence. The
+verdict was not on the event yet; by the rules, #5 and #9 would have been "Good":
+| Scenario | Expected | Score (confidence) | Hard flags | Concerns | First report sentence |
+|---|---|---|---|---|---|
+| 1 cafe NS, good lease | good, top score | 96 (high) | - | - | Lokal 58 m2 Liman 2 scores 96 out of 100 with monthly cost of 1,010 EUR, which is 67% of the 1,500 EUR budget and 11.2% of expected monthly revenue. |
+| 2 cafe NS, over budget | budget hard flag | REJECTED | monthly_cost_over_budget | - |  |
+| 3 cafe NS, office use only | permitted use hard flag | REJECTED | permitted_use_excludes_business | - |  |
+| 4 cafe NS, locked in + landlord raises rent | hard flags: no exit, unlimited increase | REJECTED | locked_in_without_exit,  | - |  |
+| 5 cafe NS, no lease draft | lower confidence, questions to ask | 92 (high) | - | - | Lokal 70 m2 Grbavica scores 92 out of 100 and fits your budget at 1,160 EUR monthly, which is 77% of your 1,500 EUR limit. |
+| 6 office BG, good | good | 85 (high) | - | - | Kancelarija 48 m2 Vracar ranks #1 with a score of 85 out of 100 and monthly cost of 980 EUR is 82% of the 1,200 EUR budget. |
+| 7 office BG, harsh lease | concerns: guarantee, penalty, structural, 8% a year | 66 (high) | - | , , , ,  | Kancelarija 55 m2 Novi Beograd is the only candidate with a space of 55 m² that fits the required 35-70 m² range at a monthly cost of 1,050 EUR. |
+| 8 shop NS, good | good | 84 (high) | - | - | Lokal 65 m2 Centar ranks highest with a score of 84 out of 100, offering 65 m² within your required 40-90 m² range at 1,170 EUR monthly. |
+| 9 shop NS, too big | area outside the range, lower score | 73 (high) | - | - | Lokal 140 m2 Novo naselje ranks highest at 73 out of 100 with monthly cost of 1,060 EUR, which is 76% of your 1,400 EUR budget. |
+| 10 workshop BG, vague lease | missing data, low confidence | 64-84 (medium) | - | - | Radionica 110 m2 Zemun is the only identified space and meets your size requirement at 110 m² within your 60-150 m² range. |
+
+**What was wrong and what changed (all in code, with tests):**
+1. **#5, no lease draft, 92 with high confidence, verdict Good.** Lease terms that only the listing form states
+   were scored as if read from a lease. The documented rule already said "medium when verified lease terms are
+   missing". Now terms only from the form still score but give at most medium confidence ("lease terms come from
+   the listing form, not from a lease draft"), so the verdict is Check before signing (`src/domain/ranking.ts`).
+2. **#9, 140 m2 when the business needs 40 to 90 m2, verdict Good.** The area scores 0 but the rest kept the score
+   at 73. Now a space outside the required area range is never Good: "Ranked, but the area is outside your
+   required range" (`src/domain/verdict.ts`).
+3. **Report wording with one candidate.** The Report writer said "ranks highest" for the only candidate. The rank
+   fact now says "is the only candidate evaluated" and carries the code verdict; the instruction forbids "ranked,
+   first, highest" with one candidate and says to use the verdict as stated.
+4. The verdict is now published on `candidate.scored` (and passes to the browser), so observers and this script
+   read it instead of guessing.
+
+**Second pass** (after the fixes):
+| Scenario | Expected | Score (confidence), verdict | Hard flags | Concerns | First report sentence |
+|---|---|---|---|---|---|
+| 1 cafe NS, good lease | good, top score | 96 (high), good | - | - | Lokal 58 m2 Liman 2 scores 96 out of 100 with a verdict of Good, with monthly cost of 1,010 EUR being 67% of the 1,500 EUR budget. |
+| 2 cafe NS, over budget | budget hard flag | rejected, not_recommended | monthly_cost_over_budget | - |  |
+| 3 cafe NS, office use only | permitted use hard flag | rejected, not_recommended | permitted_use_excludes_business | - |  |
+| 4 cafe NS, locked in + landlord raises rent | hard flags: no exit, unlimited increase | rejected, not_recommended | locked_in_without_exit, unlimited_rent_increase | - |  |
+| 5 cafe NS, no lease draft | lower confidence, questions to ask | 92 (medium), check_before_signing | - | - | Lokal 70 m2 Grbavica scores 92 out of 100 with monthly cost of 1,160 EUR at 77% of budget and 70 m² within the required 50-90 m² range. |
+| 6 office BG, good | good | 85 (high), good | - | - | Kancelarija 48 m2 Vracar scores 85 out of 100 with high confidence and a verdict of Good, with monthly cost of 980 EUR at 82% of the 1,200 EUR budget. |
+| 7 office BG, harsh lease | concerns: guarantee, penalty, structural, 8% a year | 66 (high), check_before_signing | - | personal_guarantee, tenant_pays_structural_repairs, long_notice, high_indexation, early_exit_penalty | Kancelarija 55 m2 Novi Beograd scores 66 out of 100 with high confidence and meets the size requirement of 55 m² within the 35-70 m² range. |
+| 8 shop NS, good | good | 84 (high), good | - | - | Lokal 65 m2 Centar is evaluated as Good with a score of 84 out of 100, meeting the size requirement of 65 m² within the 40-90 m² range. |
+| 9 shop NS, too big | area outside the range, lower score | 73 (high), check_before_signing | - | - | Lokal 140 m2 Novo naselje scores 73 out of 100 with high confidence and has a monthly cost of 1,060 EUR that is 76% of the 1,400 EUR budget. |
+| 10 workshop BG, vague lease | missing data, low confidence | 64-84 (medium), check_before_signing | - | - | Radionica 110 m2 Zemun meets the size requirement at 110 m² within the 60-150 m² range. |
+
+**Judgement.** All ten verdicts are right. Scores: #1 at 96 is a deliberately good case (verified lease, 67% of the
+budget, rent 11% of expected revenue, early exit with 3 months notice, CPI indexation, landlord pays structure); a
+high score is correct there and the verdict comes from code. The harsh office lease (#7) keeps 66 but is Check
+before signing with five concerns. Known limit: the score does not weigh rent against expected revenue (occupancy
+cost); the report states that share as a fact. Possible later rule, not done.
+
 ## PREVIOUS HANDOFF (26 Nov 2026, late night, Andrej): partly SUPERSEDED by the one above (SUITESPOT_MODE is gone; steps 7 to 9 were replaced by the night prompt)
 Whoever continues (Aleksa or Andrej) starts a new session without this context. Read this section, then CLAUDE.md,
 then the step entries right below. Older sections further down are history; anything marked SUPERSEDED is no longer
