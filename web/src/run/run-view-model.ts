@@ -1,3 +1,4 @@
+import { candidateShortName } from "../candidate-label"
 import type { ResearchState } from "../research-state"
 
 /**
@@ -5,8 +6,11 @@ import type { ResearchState } from "../research-state"
  * Pure functions, no DOM: tested in tests/run-view-model.test.ts.
  */
 
-/** Participants that can appear on the orbit, in their fixed slot order. Only agents that really worked appear. */
-export const ORBIT_AGENTS = ["Scout", "Finance analyst", "Lease reader", "Ranker", "Report writer", "Auditor"] as const
+/**
+ * Participants that can appear on the orbit. Each has a fixed slot (its index), decided before the run: a node
+ * appears on its own slot when it really starts working and never moves when another one appears.
+ */
+export const ORBIT_AGENTS = ["Scout", "Finance analyst", "Lease reader", "Ranker", "Auditor", "Report writer"] as const
 export type OrbitAgentName = (typeof ORBIT_AGENTS)[number]
 
 /** Plain-code participants (no model): labelled "code" on the orbit. */
@@ -28,7 +32,9 @@ export type CandidatePhase = "reading" | "found" | "evaluating" | "done" | "reje
 
 export type CandidateChip = {
   id: string
-  /** position around the circle, 0..1 (stable per candidate) */
+  /** short human label, e.g. "Liman 2 · 72 m2" ("Listing 3" until the Scout has read it) */
+  label: string
+  /** fixed slot around the inner ring, 0..1, evenly spaced (stable per candidate) */
   turn: number
   phase: CandidatePhase
   rank: number | null
@@ -76,13 +82,14 @@ export function candidateChips(s: ResearchState): CandidateChip[] {
     const c = s.candidates[id]
     if (!c) {
       const reason = failed.get(id)
-      return { id, turn, phase: reason ? "failed" : "reading", rank: null, reason: reason ? `The listing could not be read: ${reason}` : null }
+      return { id, label: candidateShortName(undefined, index + 1), turn, phase: reason ? "failed" : "reading", rank: null, reason: reason ? `The listing could not be read: ${reason}` : null }
     }
-    if (c.status === "rejected") return { id, turn, phase: "rejected", rank: null, reason: c.rejection ? `Hard flag: ${c.rejection.reason}` : "Rejected" }
+    const label = candidateShortName(c, index + 1)
+    if (c.status === "rejected") return { id, label, turn, phase: "rejected", rank: null, reason: c.rejection ? `Hard flag: ${c.rejection.reason}` : "Rejected" }
     const loops = Object.values(s.loops).filter((l) => l.candidateId === id)
     const running = loops.some((l) => l.end === undefined)
     const phase: CandidatePhase = c.ranking || (loops.length > 0 && !running) ? "done" : running ? "evaluating" : "found"
-    return { id, turn, phase, rank: c.ranking?.rank ?? null, reason: null }
+    return { id, label, turn, phase, rank: c.ranking?.rank ?? null, reason: null }
   })
 }
 
@@ -98,18 +105,25 @@ export function runCounters(s: ResearchState): RunCounters {
   }
 }
 
-const ACTIVITY: Record<string, (candidateId: string) => string> = {
-  Scout: (id) => `Scout is reading listing ${id}`,
-  "Finance analyst": (id) => `Finance analyst is checking the costs of ${id}`,
-  "Lease reader": (id) => `Lease reader is reading the lease of ${id}`,
+const ACTIVITY: Record<string, (candidateLabel: string) => string> = {
+  Scout: (label) => `Scout is reading ${label}`,
+  "Finance analyst": (label) => `Finance analyst is checking the costs of ${label}`,
+  "Lease reader": (label) => `Lease reader is reading the lease of ${label}`,
   "Report writer": () => "Report writer is writing the report from the facts",
+}
+
+/** The human label of a candidate for sentences; the raw id only if the candidate is unknown. */
+export function candidateLabel(s: ResearchState, candidateId: string): string {
+  const index = [...new Set([...s.submitted, ...s.order])].indexOf(candidateId)
+  if (index < 0) return candidateId
+  return candidateShortName(s.candidates[candidateId], index + 1)
 }
 
 /** The one-line live status in the centre, from the latest event that says what is happening. */
 export function statusLine(s: ResearchState): string {
   for (let i = s.events.length - 1; i >= 0; i--) {
     const e = s.events[i]!
-    const id = e.candidateId ?? ""
+    const id = candidateLabel(s, e.candidateId ?? "")
     switch (e.type) {
       case "research.done": {
         if (s.cancelled) return "Research cancelled. Every agent stopped at its next step."

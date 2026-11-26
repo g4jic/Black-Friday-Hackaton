@@ -6,9 +6,18 @@ import { ResearchMissing } from "../pages/ResearchPage"
 import { agentIcon, cx } from "../ui"
 import { CODE_PARTICIPANTS, ORBIT_AGENTS, agentNodes, candidateChips, runCounters, statusLine, type AgentNode, type CandidateChip, type CandidatePhase } from "./run-view-model"
 
-/** Radius of each candidate phase, as a share of the stage's half width: from the edge toward the centre. */
-const PHASE_RADIUS: Record<CandidatePhase, number> = { reading: 0.74, found: 0.66, evaluating: 0.6, done: 0.5, rejected: 1.12, failed: 1.12 }
-const AGENT_RING_RADIUS = 0.89
+/**
+ * Geometry, as shares of the stage's half width. Agents sit on the outer ring (0.9); candidates on an inner band
+ * (0.56 to 0.62) that their labels (at most 140 px wide) never leave, so an agent label passing by on the turning ring cannot touch a
+ * chip, and chips never reach the centre disc (radius 0.3). Candidates move inward a little as they progress.
+ */
+const PHASE_RADIUS: Record<CandidatePhase, number> = { reading: 0.62, found: 0.6, evaluating: 0.58, done: 0.56, rejected: 1.15, failed: 1.15 }
+const AGENT_RING_RADIUS = 0.9
+/**
+ * The first chip sits at the top. With evenly spaced slots no two chips then sit side by side near the top or the
+ * bottom, where wide labels would touch.
+ */
+const chipTurn = (turn: number) => turn - 0.25
 /** Slow and calm: one turn in 90 s while agents work. */
 const DEGREES_PER_SECOND = 4
 
@@ -116,7 +125,7 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
       </div>
       {/* candidates do not turn: they only move inward (or out of the orbit) */}
       {chips.map((chip) => (
-        <OrbitChip key={chip.id} chip={chip} />
+        <OrbitChip key={chip.id} chip={chip} slots={chips.length} />
       ))}
       <CentreStatus status={status} done={state.done} cancelled={state.cancelled} />
       {/* on a phone the centre is too small for the sentence: it goes under the orbit */}
@@ -151,9 +160,9 @@ function OrbitNode({ node, done }: { node: AgentNode; done: boolean }) {
               <span className="tnum absolute -top-1.5 -right-2 rounded-full bg-ink px-1.5 py-0.5 text-[10px] leading-none font-semibold text-white">×{node.running}</span>
             )}
           </div>
-          <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] leading-4 font-medium whitespace-nowrap text-ink max-sm:hidden">
-            {node.name}
-            {CODE_PARTICIPANTS.has(node.name) && <span className="ml-1 text-ink-3">code</span>}
+          <span className="flex flex-col items-center max-sm:hidden">
+            <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] leading-4 font-medium whitespace-nowrap text-ink">{node.name}</span>
+            {CODE_PARTICIPANTS.has(node.name) && <span className="mt-0.5 text-[10px] leading-3 font-medium tracking-[0.04em] text-ink-3 uppercase">code</span>}
           </span>
         </div>
       </div>
@@ -170,15 +179,16 @@ const CHIP_STYLE: Record<CandidatePhase, string> = {
   failed: "border-ink/20 bg-white/60 text-ink-2",
 }
 
-function OrbitChip({ chip }: { chip: CandidateChip }) {
-  const style = { "--turn": chip.turn - 0.25 + 0.0625, "--radius": PHASE_RADIUS[chip.phase] } as CSSProperties
+function OrbitChip({ chip, slots }: { chip: CandidateChip; slots: number }) {
+  const style = { "--turn": chipTurn(chip.turn), "--radius": PHASE_RADIUS[chip.phase] } as CSSProperties
   const leaving = chip.phase === "rejected" || chip.phase === "failed"
   return (
-    <div className="orbit-polar orbit-chip z-10" data-phase={chip.phase} style={style} title={chip.reason ?? `${chip.id}: ${chip.phase}`}>
+    <div className="orbit-polar orbit-chip z-10" data-phase={chip.phase} style={style} title={chip.reason ?? `${chip.label}: ${PHASE_LABEL[chip.phase]}`}>
       <span className={cx("relative inline-flex items-center gap-1 rounded-full border px-2.5 py-1 font-medium whitespace-nowrap", CHIP_STYLE[chip.phase])}>
         {leaving && chip.phase === "rejected" && <span className="orbit-pulse absolute inset-0 rounded-full bg-hard" aria-hidden />}
         {chip.phase === "rejected" && <OctagonAlert size={12} aria-hidden className="relative" />}
-        <span className="tnum relative">{chip.id}</span>
+        <span className="chip-full tnum relative max-w-[104px] truncate">{chip.label}</span>
+        <span className="chip-short tnum relative">{Math.round(chip.turn * slots) + 1}</span>
         {chip.rank !== null && <span className="tnum relative rounded-full bg-ink px-1.5 text-[10px] leading-4 text-white">#{chip.rank}</span>}
       </span>
     </div>
@@ -187,8 +197,10 @@ function OrbitChip({ chip }: { chip: CandidateChip }) {
 
 function CentreStatus({ status, done, cancelled }: { status: string; done: boolean; cancelled: boolean }) {
   return (
-    <div className="absolute inset-[33%] flex items-center justify-center rounded-full glass-strong p-[6%] text-center">
-      <div aria-live="polite" className="flex flex-col items-center gap-2">
+    <div className="absolute inset-[35%] flex items-center justify-center p-[5%] text-center">
+      {/* calm breathing while the agents work: its own layer, so the text never scales */}
+      <span className={cx("absolute inset-0 rounded-full glass-strong", !done && "orbit-breathe")} aria-hidden />
+      <div aria-live="polite" className="relative flex flex-col items-center gap-2">
         <span className={cx("inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.06em] uppercase", done ? "text-green-700" : "text-ink-2")}>
           {done ? (
             cancelled ? (
@@ -262,23 +274,30 @@ function Counter({ label, value, detail, tone }: { label: string; value: string;
   )
 }
 
-/** Candidates that left the orbit, each with its one-line reason. */
+/**
+ * Candidates that left the orbit, each with its one-line reason. Shown from the start with its space reserved
+ * (three rows), so nothing jumps when the first hard flag arrives.
+ */
 function LeftTheOrbit({ chips }: { chips: CandidateChip[] }) {
   const gone = chips.filter((c) => c.phase === "rejected" || c.phase === "failed")
-  if (gone.length === 0) return null
   return (
-    <section className="glass rounded-[28px] px-6 py-4" aria-label="Candidates that left the orbit">
-      <ul className="flex flex-col gap-2 text-[13px]">
-        {gone.map((chip) => (
-          <li key={chip.id} className="status-enter flex flex-wrap items-center gap-2">
-            <span className={cx("inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium", chip.phase === "rejected" ? "bg-hard-50 text-hard" : "bg-white text-ink-2")}>
-              {chip.phase === "rejected" && <OctagonAlert size={12} aria-hidden />}
-              <span className="tnum">{chip.id}</span>
-            </span>
-            <span className={chip.phase === "rejected" ? "text-hard" : "text-ink-2"}>{chip.reason}</span>
-          </li>
-        ))}
-      </ul>
+    <section className="glass min-h-[132px] rounded-[28px] px-6 py-4" aria-label="Candidates that left the orbit">
+      <h2 className="mb-2 text-xs font-semibold tracking-[0.06em] text-ink-2 uppercase">Left the orbit</h2>
+      {gone.length === 0 ? (
+        <p className="text-[13px] text-ink-2">No candidate rejected so far. A hard flag takes a candidate out of the orbit and lists it here.</p>
+      ) : (
+        <ul className="flex flex-col gap-2 text-[13px]">
+          {gone.map((chip) => (
+            <li key={chip.id} className="status-enter flex flex-wrap items-center gap-2">
+              <span className={cx("inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium", chip.phase === "rejected" ? "bg-hard-50 text-hard" : "bg-white text-ink-2")}>
+                {chip.phase === "rejected" && <OctagonAlert size={12} aria-hidden />}
+                {chip.label}
+              </span>
+              <span className={chip.phase === "rejected" ? "text-hard" : "text-ink-2"}>{chip.reason}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   )
 }
@@ -317,7 +336,7 @@ function StaticProgress({ snapshot }: { snapshot: RunSnapshot }) {
         <ul className="flex flex-col gap-1.5 text-sm">
           {chips.map((chip) => (
             <li key={chip.id} className="flex items-center gap-2">
-              <span className="tnum font-medium text-ink">{chip.id}</span>
+              <span className="tnum font-medium text-ink">{chip.label}</span>
               <span className={chip.phase === "rejected" ? "text-hard" : "text-ink-2"}>{PHASE_LABEL[chip.phase]}</span>
             </li>
           ))}

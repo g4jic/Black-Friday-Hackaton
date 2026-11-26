@@ -9,7 +9,7 @@ type NavItem = { label: string; to: string; icon: LucideIcon; isActive: (route: 
 const NAV_ITEMS: NavItem[] = [
   { label: "Home", to: paths.dashboard(), icon: House, isActive: (r) => r.name === "dashboard" },
   { label: "New", to: paths.newResearch(), icon: Plus, isActive: (r) => r.name === "newResearch" },
-  { label: "History", to: paths.history(), icon: History, isActive: (r) => r.name === "history" || r.name === "run" || r.name === "results" },
+  { label: "History", to: paths.history(), icon: History, isActive: (r) => r.name === "history" },
   { label: "Reports", to: paths.reports(), icon: FileChartColumn, isActive: (r) => r.name === "reports" },
   { label: "Assumptions", to: paths.assumptions(), icon: SlidersHorizontal, isActive: (r) => r.name === "assumptions" },
 ]

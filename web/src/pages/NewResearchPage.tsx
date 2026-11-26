@@ -284,27 +284,36 @@ function ProfileFields({ form, locked, onChange }: { form: ProfileForm; locked: 
   )
   return (
     <fieldset disabled={locked} className="grid gap-3 sm:grid-cols-2">
+      {/* Locked (demo profile): every field, including the choices, is a read-only value with no dropdown arrow. */}
       <label className="sm:col-span-2">
         <span className={LABEL}>Business type</span>
-        <select value={form.businessType} onChange={(e) => onChange({ businessType: e.target.value })} className={INPUT}>
-          {Object.entries(BUSINESS_TYPE_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
+        {locked ? (
+          <input value={BUSINESS_TYPE_LABELS[form.businessType as ProfileInput["businessType"]] ?? form.businessType} readOnly disabled className={INPUT} />
+        ) : (
+          <select value={form.businessType} onChange={(e) => onChange({ businessType: e.target.value })} className={INPUT}>
+            {Object.entries(BUSINESS_TYPE_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        )}
       </label>
       <label>
         <span className={LABEL}>City</span>
-        <input value={form.city} onChange={(e) => onChange({ city: e.target.value })} className={INPUT} />
+        <input value={form.city} onChange={(e) => onChange({ city: e.target.value })} readOnly={locked} disabled={locked} className={INPUT} />
       </label>
       <label>
         <span className={LABEL}>Currency</span>
-        <select value={form.currency} onChange={(e) => onChange({ currency: e.target.value })} className={INPUT}>
-          {CURRENCIES.map((currency) => (
-            <option key={currency}>{currency}</option>
-          ))}
-        </select>
+        {locked ? (
+          <input value={form.currency} readOnly disabled className={INPUT} />
+        ) : (
+          <select value={form.currency} onChange={(e) => onChange({ currency: e.target.value })} className={INPUT}>
+            {CURRENCIES.map((currency) => (
+              <option key={currency}>{currency}</option>
+            ))}
+          </select>
+        )}
       </label>
       {field("monthlyBudget", "Monthly budget for the space", form.currency)}
       {field("expectedMonthlyRevenue", "Expected monthly revenue", form.currency)}
