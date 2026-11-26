@@ -8,7 +8,7 @@
  *     Writes design/screenshots/*.png.
  *   npm run screenshots -- --live --url http://localhost:3001
  *     One LIVE run of the whole demo (claude-haiku-4-5, costs money) against a server started with
- *     SUITESPOT_MODE=live (see PROGRESS.md "How to run"). If the server sets SUITESPOT_ACCESS_CODE, put the same value
+ *     ANTHROPIC_API_KEY in .env (see PROGRESS.md "How to run"). If the server sets SUITESPOT_ACCESS_CODE, put the same value
  *     in this shell's environment. Writes design/screenshots/live-run-*.png and report-live.md.
  */
 import { mkdirSync, writeFileSync } from "node:fs"

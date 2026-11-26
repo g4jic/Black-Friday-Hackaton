@@ -163,23 +163,17 @@ export function NewResearchPage({ config }: { config: Config | null }) {
         {mode === "find" ? (
           <Card title="Find spaces">
             <p>
-              SuiteSpot picks up to {maxListings} listings published on SuiteSpot that fit the city, the area range, the budget and the type of business. The agents then
-              evaluate them all at the same time. SuiteSpot never reads other listing sites.
+              SuiteSpot searches every space published on SuiteSpot for the ones that fit your city, area, budget and type of business. The agents then evaluate the
+              best matches at the same time, and every number shows its source.
             </p>
-            <div className="mt-4 flex flex-wrap gap-1.5">
-              <Pill variant="brand" icon={false}>
-                Synthetic demo listings
-              </Pill>
-              <Pill icon={false}>up to {maxListings} candidates</Pill>
-              {!liveAvailable && <Pill icon={false}>no API key</Pill>}
-            </div>
+            {!liveAvailable && <NoKeyNotice />}
             <button
               type="button"
               onClick={() => startOnCatalogue({ source: "search" })}
               disabled={starting || (liveAvailable && accessCodeMissing)}
               className="mt-6 inline-flex h-10 items-center gap-2 rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e] disabled:opacity-50"
             >
-              <Play size={16} strokeWidth={2} aria-hidden /> {starting ? "Starting..." : liveAvailable ? "Search and evaluate" : "Run the demo search"}
+              <Play size={16} strokeWidth={2} aria-hidden /> {starting ? "Starting..." : "Search and evaluate"}
             </button>
             {error && (
               <p role="alert" className="mt-3 text-[13px] text-hard">
@@ -400,5 +394,14 @@ function ProfileFields({ form, locked, onChange }: { form: ProfileForm; locked: 
       {field("fitOutBudget", "Fit-out budget", form.currency)}
       {field("equipmentBudget", "Equipment budget", form.currency)}
     </fieldset>
+  )
+}
+
+/** The one message shown when the server has no model key: runs still work, with scripted answers, and say so. */
+function NoKeyNotice() {
+  return (
+    <p className="mt-4 rounded-[18px] bg-white/70 px-4 py-3 text-[13px] leading-5 text-ink-2">
+      This server has no AI model key, so runs use scripted demo answers and the demo profile. Add ANTHROPIC_API_KEY to .env and restart to use the real model.
+    </p>
   )
 }

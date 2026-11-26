@@ -23,18 +23,20 @@ describe("server", () => {
     process.env = { ...env }
   })
 
-  it("answers the health check in demo mode by default", async () => {
-    delete process.env.SUITESPOT_MODE
+  it("answers the health check in demo mode when there is no key, live with a key", async () => {
+    delete process.env.ANTHROPIC_API_KEY
     const app = await buildServer()
     const res = await app.inject({ method: "GET", url: "/api/health" })
     expect(res.statusCode).toBe(200)
     expect(res.json()).toEqual({ status: "ok", mode: "demo" })
+    process.env.ANTHROPIC_API_KEY = FAKE_KEY
+    expect((await app.inject({ method: "GET", url: "/api/health" })).json()).toEqual({ status: "ok", mode: "live" })
     await app.close()
   })
 
   it("streams the research events over SSE in bus order, and resumes after Last-Event-ID", async () => {
     process.env.ANTHROPIC_API_KEY = FAKE_KEY
-    delete process.env.SUITESPOT_MODE
+    delete process.env.ANTHROPIC_API_KEY
     const app = await buildServer({ demoCatalogue: SAMPLE_CATALOGUE, demoPace: FAST_PACE })
     const post = await app.inject({ method: "POST", url: "/api/research", payload: { source: "demo" } })
     expect(post.statusCode).toBe(201)
@@ -70,8 +72,8 @@ describe("server", () => {
 
   it("the API key never appears in any server response", async () => {
     process.env.ANTHROPIC_API_KEY = FAKE_KEY
-    process.env.SUITESPOT_MODE = "demo"
-    const app = await buildServer({ demoCatalogue: SAMPLE_CATALOGUE, demoPace: FAST_PACE })
+    // A key means live mode; the "model" here is a local fake (no network, no cost).
+    const app = await buildServer({ demoCatalogue: SAMPLE_CATALOGUE, demoPace: FAST_PACE, liveRunner: () => new MockRunner({ latencyMs: 10, script: () => ({ text: "{}" }) }) })
     const bodies: string[] = []
     const call = async (url: string, method: "GET" | "POST" = "GET", payload?: object) => {
       const res = await app.inject({ method, url, payload })
@@ -83,7 +85,7 @@ describe("server", () => {
     const { id } = (await call("/api/research", "POST", { source: "demo" })).json() as { id: string }
     await call(`/api/research/${id}/events`)
     await call(`/api/research/${id}`)
-    expect((await call("/api/research", "POST", { mode: "live", source: "demo" })).statusCode).toBe(403)
+    expect((await call("/api/research", "POST", { mode: "live", source: "demo" })).statusCode).toBe(201)
     expect((await call("/api/research", "POST", { source: "pasted", listings: [{ text: "lokal" }] })).statusCode).toBe(400)
     for (const body of bodies) expect(body).not.toContain(FAKE_KEY)
     for (const body of bodies) expect(body).not.toContain("sk-ant-")
@@ -91,7 +93,7 @@ describe("server", () => {
   })
 
   it("cancel: every loop stops at its next breakpoint, nothing is ranked, and the run ends as cancelled", async () => {
-    delete process.env.SUITESPOT_MODE
+    delete process.env.ANTHROPIC_API_KEY
     // Demo pace slow enough that loops are still running when Cancel arrives.
     const app = await buildServer({ demoCatalogue: SAMPLE_CATALOGUE, demoPace: { scout: () => 300, leaseReader: 600, financeStep: 300, reportWriter: 300 } })
     const { id } = (await app.inject({ method: "POST", url: "/api/research", payload: { source: "demo" } })).json() as { id: string }
@@ -118,7 +120,6 @@ describe("server", () => {
 
   it("live mode needs the access code when SUITESPOT_ACCESS_CODE is set; demo mode never does", async () => {
     process.env.ANTHROPIC_API_KEY = FAKE_KEY
-    process.env.SUITESPOT_MODE = "live"
     process.env.SUITESPOT_ACCESS_CODE = "open-sesame"
     const app = await buildServer({ demoCatalogue: SAMPLE_CATALOGUE, demoPace: FAST_PACE, liveRunner: () => new MockRunner({ latencyMs: 50, script: () => ({ text: "{}" }) }) })
     expect((await app.inject({ method: "GET", url: "/api/config" })).json()).toMatchObject({ liveAvailable: true, liveNeedsAccessCode: true })
@@ -137,7 +138,7 @@ describe("server", () => {
   })
 
   it("serves the fixed demo questionnaire for the locked form", async () => {
-    delete process.env.SUITESPOT_MODE
+    delete process.env.ANTHROPIC_API_KEY
     const app = await buildServer()
     const body = (await app.inject({ method: "GET", url: "/api/demo-questionnaire" })).json() as { profile: { monthlyBudget: number; city: string } }
     expect(body.profile).toMatchObject({ monthlyBudget: 1500, city: "Novi Sad" })
@@ -146,7 +147,6 @@ describe("server", () => {
 
   it("cost guard: at most 8 listings, and at most one live research at a time", async () => {
     process.env.ANTHROPIC_API_KEY = FAKE_KEY
-    process.env.SUITESPOT_MODE = "live"
     // A slow fake "live" model: no network, no cost.
     const app = await buildServer({ demoCatalogue: SAMPLE_CATALOGUE, demoPace: FAST_PACE, liveRunner: () => new MockRunner({ latencyMs: 400, script: () => ({ text: "{}" }) }) })
     const nine = Array.from({ length: 9 }, (_, i) => ({ text: `Lokal ${i + 1}, Novi Sad` }))

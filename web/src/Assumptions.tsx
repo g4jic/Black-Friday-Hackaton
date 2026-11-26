@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { humanError } from "./app/api-fetch"
 import { Pill } from "./ui"
 
 type Assumptions = {
@@ -30,13 +31,26 @@ const pct = (x: number) => `${Math.round(x * 100)}%`
 export function AssumptionsScreen() {
   const [a, setA] = useState<Assumptions | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [attempt, setAttempt] = useState(0)
   useEffect(() => {
+    setError(null)
     fetch("/api/assumptions")
-      .then((r) => r.json() as Promise<Assumptions>)
-      .then(setA)
-      .catch((e: unknown) => setError(String(e)))
-  }, [])
-  if (error) return <Card title="Assumptions">Could not load the assumptions: {error}</Card>
+      .then(async (r) => {
+        const body = (await r.json().catch(() => ({}))) as Assumptions & { error?: string }
+        if (!r.ok) throw new Error(body.error ?? "The assumptions could not be loaded.")
+        setA(body)
+      })
+      .catch((e: unknown) => setError(humanError(e)))
+  }, [attempt])
+  if (error)
+    return (
+      <Card title="Assumptions">
+        <p role="alert">{error}</p>
+        <button type="button" onClick={() => setAttempt(attempt + 1)} className="mt-4 inline-flex h-10 items-center rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e]">
+          Try again
+        </button>
+      </Card>
+    )
   if (!a) return <Card title="Assumptions">Loading...</Card>
   const r = a.ranking
   const q = a.demoQuestionnaire

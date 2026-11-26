@@ -14,9 +14,9 @@ import { registerResearchRoutes, type DemoCatalogue } from "./research-routes.js
 
 const webDist = fileURLToPath(new URL("../../../web/dist", import.meta.url))
 
-/** Demo mode is the default (keyless, deterministic). Live mode needs SUITESPOT_MODE=live and a key. */
+/** Live when the server has ANTHROPIC_API_KEY (real model runs); without a key the keyless demo (scripted answers). */
 export function runMode(): "demo" | "live" {
-  return process.env.SUITESPOT_MODE === "live" && Boolean(process.env.ANTHROPIC_API_KEY) ? "live" : "demo"
+  return process.env.ANTHROPIC_API_KEY?.trim() ? "live" : "demo"
 }
 
 export type ServerOptions = {

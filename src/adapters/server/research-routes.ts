@@ -62,7 +62,7 @@ export type ResearchRoutesOptions = {
   readonly demoCatalogue?: DemoCatalogue
   /** The published SuiteSpot listings ("Find spaces" and "Evaluate for my business" in live mode). */
   readonly listingStore?: ListingStore
-  /** Whether live mode may be used (SUITESPOT_MODE=live and a key on the server). */
+  /** Whether live mode may be used (ANTHROPIC_API_KEY is set on the server). */
   readonly liveAvailable: () => boolean
   readonly demoPace?: DemoLatency
   /** For tests: replaces the real Anthropic runner in live mode (no network, no cost). */
@@ -154,7 +154,7 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
       const body = (req.body ?? {}) as Body
       const mode: ResearchMode = body.mode === "live" ? "live" : "demo"
       if (mode === "live") {
-        if (!options.liveAvailable()) throw new HttpError(403, "Live mode is off on this server (demo mode only).")
+        if (!options.liveAvailable()) throw new HttpError(403, "This server has no ANTHROPIC_API_KEY, so it can only run the keyless demo with scripted answers.")
         if (!accessCodeMatches(req.headers["x-access-code"])) throw new HttpError(401, "Live mode needs a valid access code. Enter it under Settings.")
         const active = [...sessions.values()].filter((s) => s.mode === "live" && s.status === "running").length
         if (active >= MAX_ACTIVE_LIVE) throw new HttpError(429, "A live research is already running. Wait for it to finish.")
