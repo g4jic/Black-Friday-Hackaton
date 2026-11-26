@@ -2,7 +2,7 @@ import type { HardFlag } from "./candidate.js"
 import { DomainError } from "./errors.js"
 import { redactContacts } from "./listing-text.js"
 import { isMissingData, type MissingData } from "./missing.js"
-import type { Money } from "./money.js"
+import { Money } from "./money.js"
 import { extractQuotedFields, isRentMultiple, type QuotedFieldSpec, type RentMultiple, type UnverifiedField } from "./quoted-extraction.js"
 import type { SourceRef, Sourced } from "./source.js"
 
@@ -137,4 +137,55 @@ export function evaluateLease(lease: LeaseClauses, raisedBy: string): { hardFlag
     })
   }
   return { hardFlags, concerns }
+}
+
+/** Each rent increase kind in plain words (never the internal enum value on screen). */
+export const INDEXATION_TEXT: Record<IndexationKind, string> = {
+  none: "no increase during the lease",
+  cpi: "follows the consumer price index",
+  fixed_rate: "a fixed increase every year",
+  landlord_unilateral: "the landlord may raise it at will, with no limit",
+}
+
+const CLAUSE_LABEL: Record<(typeof LEASE_FIELDS)[number]["name"], string> = {
+  term: "Lease term",
+  tenantMayTerminateEarly: "Tenant may end the lease early",
+  noticePeriod: "Notice for early exit",
+  earlyExitPenalty: "Early exit penalty",
+  indexationKind: "Rent increases",
+  indexationRatePercent: "Yearly rent increase",
+  deposit: "Deposit",
+  personalGuarantee: "Personal guarantee required",
+  tenantPaysStructuralRepairs: "Tenant pays structural repairs",
+  permittedUse: "Permitted use (check before signing, not a legal opinion)",
+}
+
+const wholeMoney = (m: Money) => `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Math.round(m.amount))} ${m.currency}`
+
+/** One plain sentence per clause that is stated, with its value in words: "Rent increases: follows the consumer price index". */
+export function leaseClauseClaims(clauses: LeaseClauses): { name: (typeof LEASE_FIELDS)[number]["name"]; claim: string; field: Sourced<unknown> }[] {
+  const out: { name: (typeof LEASE_FIELDS)[number]["name"]; claim: string; field: Sourced<unknown> }[] = []
+  for (const spec of LEASE_FIELDS) {
+    const field = clauses[spec.name] as Sourced<unknown> | MissingData
+    if (isMissingData(field)) continue
+    const v = field.value
+    const text =
+      spec.name === "term" || spec.name === "noticePeriod"
+        ? `${v} months`
+        : spec.name === "indexationKind"
+          ? INDEXATION_TEXT[v as IndexationKind]
+          : spec.name === "indexationRatePercent"
+            ? `${v}%`
+            : typeof v === "boolean"
+              ? v
+                ? "yes"
+                : "no"
+              : isRentMultiple(v)
+                ? `${v.monthsOfRent} month(s) of rent (amount computed by code)`
+                : v instanceof Money
+                  ? wholeMoney(v)
+                  : String(v)
+    out.push({ name: spec.name, claim: `${CLAUSE_LABEL[spec.name]}: ${text}`, field: field as Sourced<unknown> })
+  }
+  return out
 }

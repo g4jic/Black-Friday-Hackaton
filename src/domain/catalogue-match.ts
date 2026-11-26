@@ -1,12 +1,12 @@
 import { AreaM2 } from "./area.js"
-import { BUDGET_TOLERANCE } from "./hard-flags.js"
+import { BUDGET_TOLERANCE, BUSINESS_TYPE_TEXT } from "./hard-flags.js"
 import { createLeaseText, type LeaseClauses, type LeaseText } from "./lease.js"
 import type { Listing } from "./listing-extraction.js"
 import { MAX_LISTINGS } from "./listing-text.js"
 import { missingData } from "./missing.js"
 import { Money } from "./money.js"
-import type { BusinessProfile } from "./profile.js"
-import { sourced, type SourceRef } from "./source.js"
+import type { BusinessProfile, BusinessType } from "./profile.js"
+import { sourced, type SourceRef, type Sourced } from "./source.js"
 import { floorLabel, type SpaceListing } from "./space-listing.js"
 
 /**
@@ -16,7 +16,7 @@ import { floorLabel, type SpaceListing } from "./space-listing.js"
  * the Lease reader.
  */
 
-const USE_TEXT = { cafe_food: "cafe or food", retail: "retail shop", office_studio: "office or studio", workshop: "small workshop" } as const
+const USE_TEXT = BUSINESS_TYPE_TEXT
 
 /** Plain-text summary of the form, for the agents that read a listing's text (never contact data: it is not here). */
 function summary(p: SpaceListing["props"]): string {
@@ -113,8 +113,12 @@ export function formLeaseTerms(space: SpaceListing): LeaseClauses {
 }
 
 /** One SuiteSpot listing ready for a research run: the candidate's listing and the lease terms from the form. */
-export type CatalogueCandidate = { readonly listing: Listing; readonly formTerms: LeaseClauses }
+export type CatalogueCandidate = { readonly listing: Listing; readonly formTerms: LeaseClauses; readonly permittedUses: Sourced<readonly BusinessType[]> }
 
 export function catalogueCandidate(space: SpaceListing): CatalogueCandidate {
-  return { listing: listingFromSpaceListing(space), formTerms: formLeaseTerms(space) }
+  return {
+    listing: listingFromSpaceListing(space),
+    formTerms: formLeaseTerms(space),
+    permittedUses: sourced(space.props.permittedUses, { kind: "listing", ref: space.id, field: "permittedUses", form: true }),
+  }
 }

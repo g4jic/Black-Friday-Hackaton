@@ -137,7 +137,7 @@ export function NewResearchPage({ config }: { config: Config | null }) {
   return (
     <div className="flex flex-col gap-4">
       <div role="tablist" aria-label="Research mode" className="grid gap-3 md:grid-cols-2">
-        <ModeTab active={mode === "evaluate"} icon={FileSearch} title="Evaluate a space" text="Paste 1 to 8 listings you are considering" onSelect={() => setSearchParam("mode", "evaluate")} />
+        <ModeTab active={mode === "evaluate"} icon={FileSearch} title="Evaluate a space" text="One listing: from SuiteSpot or one you found elsewhere" onSelect={() => setSearchParam("mode", "evaluate")} />
         <ModeTab active={mode === "find"} icon={Search} title="Find spaces" text="SuiteSpot brings the candidates" onSelect={() => setSearchParam("mode", "find")} />
       </div>
 

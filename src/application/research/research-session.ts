@@ -12,12 +12,16 @@ import { createAppRuntime, type AppRuntime } from "../runtime.js"
 import { candidateDTO, reportDTO, sourceDTO, type WireEvent } from "./wire.js"
 
 export type ResearchMode = "demo" | "live"
+/** Where the agents' answers come from: a real model, scripted demo answers (no model), or a recorded real run. */
+export type AnswerSource = "model" | "scripted" | "recorded"
 
 export type ResearchInput = {
   readonly id: string
   readonly mode: ResearchMode
   readonly model: string
   readonly runner: InferenceRunner
+  /** Default: "model" in live mode, "scripted" in demo mode. Shown on every result screen. */
+  readonly answers?: AnswerSource
   /** Pasted listing texts (the Scout reads them). May be empty when the run uses SuiteSpot listings. */
   readonly listings: readonly ListingTextInput[]
   /** SuiteSpot listings, built by code from the structured form (no Scout). */
@@ -131,6 +135,8 @@ export class ResearchSession {
     }
     this.rt.state.setQuestionnaire(input.profile, input.requirements)
     this.rt.state.submitLeases(input.leases)
+    // First event: how this run's answers are made, so every screen (also after a reload) can say it honestly.
+    this.emit("research.started", { data: { mode: input.mode, answers: this.answers } })
     this.timer = setInterval(() => this.checkDone(), 50)
     if (input.listings.length > 0) submitListings(this.rt, input.listings, user.getId())
     if (input.catalogue?.length) submitCatalogueListings(this.rt, input.catalogue, user.getId())
@@ -138,6 +144,10 @@ export class ResearchSession {
 
   get id(): string {
     return this.input.id
+  }
+
+  get answers(): AnswerSource {
+    return this.input.answers ?? (this.input.mode === "live" ? "model" : "scripted")
   }
 
   get mode(): ResearchMode {

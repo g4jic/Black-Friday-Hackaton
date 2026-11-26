@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { applyEvent, initialResearch, type ResearchState } from "../web/src/research-state.js"
-import { costRows, headline, leaseSection, plainSource, resultsList, strengthsAndRisks, unknowns } from "../web/src/results/results-model.js"
+import { allSources, costRows, headline, leaseSection, plainSource, resultsList, scoreReason, strengthsAndRisks, unknowns } from "../web/src/results/results-model.js"
+import { formatMoney } from "../web/src/format.js"
 import type { CandidateDTO, RankingDTO, WireEvent } from "../web/src/types.js"
 
 const text = (value: string) => ({ value: { kind: "text" as const, value } })
@@ -27,7 +28,7 @@ const candidate = (id: string, address: string, m2: number, patch: Partial<Candi
   listingUrl: null,
   status: "scored",
   hasLease: true,
-  fields: { city: text("Novi Sad"), address: text(address), area: { value: { kind: "area", m2 } } },
+  fields: { city: text("Novi Sad"), address: text(address), area: { value: { kind: "area", m2 } }, rentMonthly: { value: { kind: "money", amount: 900, currency: "EUR" } } },
   unverified: [],
   rejection: null,
   laterFlags: [],
@@ -89,5 +90,54 @@ describe("candidate page", () => {
     const { risks } = strengthsAndRisks(c)
     expect(risks[0]).toEqual({ text: "Hard flag: The tenant cannot end the lease early", hard: true, source: "from the lease draft" })
     expect(risks[1]!.text).toBe("Check before signing: the 9 months' notice")
+  })
+})
+
+describe("result wording (honest and readable)", () => {
+  const form = (field: string) => ({ kind: "listing", ref: "listing-ns020", field, form: true })
+  const reasons = [
+    { text: "Monthly cost 920 EUR is 61% of the 1,500 EUR budget", effect: "plus" as const, source: calc },
+    { text: "Lease: 6 months' notice", effect: "minus" as const, source: form("earlyTermination.noticeMonths") },
+  ]
+
+  it("main reason: the strongest plus and the biggest minus, not just the first finding", () => {
+    const c = candidate("listing-ns020", "Liman 1", 77, { ranking: ranking({ reasons }) })
+    expect(scoreReason(c)).toBe("Monthly cost 920 EUR is 61% of the 1,500 EUR budget; but 6 months' notice")
+    expect(resultsList(play(c)).ranked[0]!.mainReason).toBe(scoreReason(c))
+  })
+
+  it("a candidate without a rent cannot be judged and is never the best option; one without an area says so", () => {
+    const noRent = candidate("pasted-1", "Podbara", 60, { fields: { city: text("Novi Sad"), address: text("Podbara") }, ranking: ranking({ score: 90 }) })
+    const priced = candidate("pasted-2", "Liman 2", 70, { ranking: ranking({ score: 70 }) })
+    const s = play(noRent, priced)
+    expect(resultsList(s).ranked.find((e) => e.candidate.id === "pasted-1")!.verdict).toBe("cannot_judge")
+    expect(headline(s)).toBe("Best option: Liman 2, 70 m2 - Good, score 70.")
+    expect(resultsList(s).ranked.find((e) => e.candidate.id === "pasted-1")!.name).toBe("Podbara · area unknown")
+  })
+
+  it("every amount is formatted the same way, in whole units", () => {
+    expect(formatMoney(2500, "EUR")).toBe("2,500 EUR")
+    expect(formatMoney(1415.38, "EUR")).toBe("1,415 EUR")
+  })
+
+  it("sources are grouped by origin with plain field names", () => {
+    const c = candidate("listing-ns020", "Liman 1", 77, {
+      fields: { rentMonthly: { value: { kind: "money", amount: 840, currency: "EUR" }, source: form("rentMonthly") } },
+      findings: [{ id: "f1", candidateId: "listing-ns020", aspect: "finance", severity: "info", claim: "x", author: "Finance analyst", source: { kind: "calc", ref: "rent / area", inputs: [form("areaM2"), { kind: "profile", ref: "questionnaire", field: "monthlyBudget" }] } } as never],
+    })
+    const groups = allSources(c)
+    expect(groups.map((g) => g.title)).toEqual(["Listing form", "Your questionnaire", "Calculation"])
+    expect(groups[0]!.items).toEqual(["Monthly rent", "Area"])
+    expect(groups[1]!.items).toEqual(["Monthly budget"])
+  })
+
+  it("without a draft, the lease card shows the form terms (not 'no information')", () => {
+    const c = candidate("listing-ns020", "Liman 1", 77, {
+      hasLease: false,
+      findings: [{ id: "listing-ns020:lease:indexationKind", candidateId: "listing-ns020", aspect: "lease", severity: "info", claim: "Rent increases: follows the consumer price index", author: "Listing form check", source: form("indexation") } as never],
+    })
+    const lease = leaseSection(c)
+    expect(lease.fromForm).toBe(true)
+    expect(lease.terms[0]!.text).toBe("Rent increases: follows the consumer price index")
   })
 })

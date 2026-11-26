@@ -96,6 +96,29 @@ describe("server: the keyless demo searches the seeded catalogue", () => {
     await app.close()
   }, 30_000)
 
+  it("permitted use is checked on every evaluation: an office listing evaluated for a cafe is rejected by code", async () => {
+    const space = listings.find((l) => l.id === "listing-ns049")!
+    expect(space.props.permittedUses).not.toContain("cafe_food")
+    const app = await buildServer({ demoPace: FAST_PACE })
+    const post = await app.inject({ method: "POST", url: "/api/research", payload: { source: "listing", listingId: "listing-ns049" } })
+    const { id } = post.json() as { id: string }
+    const sse = await app.inject({ method: "GET", url: `/api/research/${id}/events` })
+    const events = sse.body
+      .split("\n\n")
+      .filter((b) => b.includes("data: "))
+      .map((b) => JSON.parse(b.split("\n").find((l) => l.startsWith("data: "))!.slice(6)) as WireEvent)
+    expect(events[0]).toMatchObject({ type: "research.started", data: { mode: "demo", answers: "scripted" } })
+    const rejected = events.find((e) => e.type === "candidate.rejected")
+    expect(rejected).toMatchObject({ candidateId: "listing-ns049" })
+    const snapshot = events.filter((e) => e.type === "candidate.snapshot" && e.candidateId === "listing-ns049").at(-1) as unknown as { data: { candidate: { status: string; rejection: { rule: string; reason: string; source: { inputs: { field?: string; form?: boolean }[] } } } } }
+    expect(snapshot.data.candidate.status).toBe("rejected")
+    expect(snapshot.data.candidate.rejection.rule).toBe("permitted_use_excludes_business")
+    expect(snapshot.data.candidate.rejection.reason).toMatch(/^Permitted use does not include your business type/)
+    expect(snapshot.data.candidate.rejection.source.inputs).toContainEqual(expect.objectContaining({ field: "permittedUses", form: true }))
+    expect(events.some((e) => e.type === "ranking.done")).toBe(true)
+    await app.close()
+  })
+
   it("Evaluate for my business: one demo listing without a key; search needs live mode", async () => {
     const app = await buildServer({ demoPace: FAST_PACE })
     const one = await app.inject({ method: "POST", url: "/api/research", payload: { source: "listing", listingId: "listing-ns001" } })

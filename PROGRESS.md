@@ -45,6 +45,14 @@ No long dashes in this file; use a plain hyphen.
   (`src/adapters/auth/supabase-auth.ts`). /login, /signup, log out in the avatar menu; My listings and the listing
   form ask a guest to log in. Without Supabase: no accounts, the Local demo landlord. Listings are still in the local
   store until step 6 (Supabase store + migration). `.env.example` lists the three Supabase names (empty).
+- Fixes before step 6 DONE: (1) permitted use is a hard flag in code on every catalogue evaluation
+  (`permittedUseExcludes`, rule `permitted_use_excludes_business`, form source; ns049 for a cafe is rejected, tested).
+  (2) Every run starts with `research.started {mode, answers}`; result screens show "Scripted demo answers, no AI
+  model" (later "Recorded run"). (3) Results: sources collapsed and grouped (listing form, lease draft, questionnaire,
+  calculation) with plain field names; amounts in whole units ("2,500 EUR"); lease clauses in plain words, also for
+  form terms without a draft; main reason = strongest plus and biggest minus; no rent gives "Can't judge: rent not
+  stated" (never the best option); no area gives "· area unknown". (4) Evaluate tab text updated. (5) .gitattributes
+  LF in its own commit.
 - Local ports: another local project may hold 3000 and 5173; stop it before `npm run dev`.
 
 ## 26 Nov 2026, late evening (Andrej): app flow, run orbit, results redesign

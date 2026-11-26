@@ -66,6 +66,10 @@ export class BusinessProfile {
     }
   }
 
+  businessType(): Sourced<BusinessType> {
+    return sourced(this.input.businessType, { kind: "profile", ref: "questionnaire", field: "businessType" })
+  }
+
   leaseMonths(): Sourced<number> {
     return sourced(this.input.leaseMonths, { kind: "profile", ref: "questionnaire", field: "leaseMonths" })
   }

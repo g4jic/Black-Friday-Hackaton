@@ -12,6 +12,8 @@ export type WireEvent = {
 }
 
 export type SourceDTO = { kind: string; ref: string; field?: string; clause?: string; quote?: string; missing?: boolean; form?: boolean; inputs?: SourceDTO[] }
+/** Where a run's agent answers come from (sent in the research.started event). */
+export type AnswerSource = "model" | "scripted" | "recorded"
 
 export type ValueDTO =
   | { kind: "money"; amount: number; currency: string }

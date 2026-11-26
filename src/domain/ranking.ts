@@ -80,7 +80,7 @@ export type RankingInput = {
 }
 
 const pct = (x: number) => `${Math.round(x * 100)}%`
-const fmt = (m: Money) => `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(m.amount)} ${m.currency}`
+const fmt = (m: Money) => `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Math.round(m.amount))} ${m.currency}`
 const has = <T>(f: Sourced<T> | MissingData | undefined): f is Sourced<T> => f !== undefined && !isMissingData(f)
 const round2 = (n: number) => Math.round(n * 100) / 100
 

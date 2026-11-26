@@ -1,4 +1,5 @@
 import type { ResearchState } from "../research-state"
+import type { AnswerSource } from "../types"
 
 /**
  * A finished research run as kept in the history: the final screen state (without the raw event list) plus a
@@ -10,6 +11,8 @@ export type HistoryRecord = {
   readonly finishedAt: string
   readonly mode: "demo" | "live"
   readonly synthetic: boolean
+  /** Where the answers came from (older records: unknown). */
+  readonly answers?: AnswerSource
   readonly cancelled: boolean
   readonly summary: {
     readonly candidates: number

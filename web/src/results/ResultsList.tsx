@@ -2,17 +2,17 @@ import { ChevronDown, ChevronRight, OctagonAlert } from "lucide-react"
 import { useState } from "react"
 import { Link, paths } from "../app/router"
 import type { ResearchState } from "../research-state"
-import type { Verdict } from "../types"
 import { cx } from "../ui"
-import { VERDICT_LABEL, headline, resultsList, type ListEntry } from "./results-model"
+import { VERDICT_LABEL, headline, resultsList, type DisplayVerdict, type ListEntry } from "./results-model"
 
-const VERDICT_STYLE: Record<Verdict, string> = {
+const VERDICT_STYLE: Record<DisplayVerdict, string> = {
   good: "bg-green-50 text-green-700",
   check_before_signing: "bg-amber-50 text-amber-800",
   not_recommended: "bg-hard-50 text-hard",
+  cannot_judge: "bg-white text-ink-2",
 }
 
-export function VerdictBadge({ verdict }: { verdict: Verdict }) {
+export function VerdictBadge({ verdict }: { verdict: DisplayVerdict }) {
   return <span className={cx("inline-flex h-7 items-center rounded-full px-3 text-xs font-semibold whitespace-nowrap", VERDICT_STYLE[verdict])}>{VERDICT_LABEL[verdict]}</span>
 }
 

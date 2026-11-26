@@ -22,7 +22,7 @@ describe("candidate labels (only from extracted fields)", () => {
     const c = candidate({ city: text("Novi Sad"), address: text("Liman 2, ulica Narodnog fronta"), area: { value: { kind: "area", m2: 72 } } })
     expect(candidateShortName(c, 1)).toBe("Liman 2 · 72 m2")
     expect(candidateLocation(c)).toBe("Liman 2, Novi Sad")
-    expect(candidateShortName(candidate({ address: text("Novi Sad, Podbara"), city: text("Novi Sad") }), 6)).toBe("Podbara")
+    expect(candidateShortName(candidate({ address: text("Novi Sad, Podbara"), city: text("Novi Sad") }), 6)).toBe("Podbara · area unknown")
   })
   it("falls back to the listing number, never an invented name", () => {
     expect(candidateShortName(undefined, 3)).toBe("Listing 3")

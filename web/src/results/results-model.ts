@@ -9,7 +9,9 @@ import { formatMoney } from "../format"
  * Tested in tests/results-model.test.ts.
  */
 
-export const VERDICT_LABEL: Record<Verdict, string> = { good: "Good", check_before_signing: "Check before signing", not_recommended: "Not recommended" }
+/** The server's verdict, plus "cannot_judge" for a candidate whose rent is not stated (a score without a price means little). */
+export type DisplayVerdict = Verdict | "cannot_judge"
+export const VERDICT_LABEL: Record<DisplayVerdict, string> = { good: "Good", check_before_signing: "Check before signing", not_recommended: "Not recommended", cannot_judge: "Can't judge: rent not stated" }
 export const CONFIDENCE_LABEL: Record<string, string> = { high: "High confidence", medium: "Medium confidence", low: "Low confidence" }
 
 /** Where a number comes from, in plain language. */
@@ -42,7 +44,7 @@ export type ListEntry = {
   location: string | null
   areaM2: number | null
   monthlyCost: string | null
-  verdict: Verdict
+  verdict: DisplayVerdict
   score: number | null
   confidence: string | null
   /** the scale behind the confidence label, for its tooltip */
@@ -70,15 +72,33 @@ const sentence = (reason: string | undefined) => {
   return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
+const lowerFirst = (s: string) => s.charAt(0).toLowerCase() + s.slice(1)
+
+/** Why the score is what it is, in one line: the strongest plus and the biggest minus (the Ranker's own reasons). */
+export function scoreReason(c: CandidateDTO): string | undefined {
+  const reasons = c.ranking?.reasons ?? []
+  const plus = sentence(reasons.find((r) => r.effect === "plus")?.text)
+  const minus = sentence(reasons.find((r) => r.effect === "minus")?.text)
+  if (plus && minus) return `${plus}; but ${lowerFirst(minus)}`
+  return plus ?? minus
+}
+
+const rentMissing = (c: CandidateDTO) => {
+  const rent = c.fields.rentMonthly?.value
+  return !rent || rent.kind === "missing"
+}
+
 function entryFor(c: CandidateDTO, listingNumber: number): ListEntry {
   const ranking = c.ranking
   const rejected = c.status === "rejected"
-  const verdict: Verdict = rejected ? "not_recommended" : (ranking?.verdict.verdict ?? "not_recommended")
+  const verdict: DisplayVerdict = rejected ? "not_recommended" : rentMissing(c) ? "cannot_judge" : (ranking?.verdict.verdict ?? "not_recommended")
   const mainReason = rejected
     ? (c.rejection?.reason ?? "Rejected by a hard flag")
-    : ranking
-      ? (sentence(ranking.reasons[0]?.text) ?? ranking.verdict.why)
-      : "This space could not be scored"
+    : verdict === "cannot_judge"
+      ? "The listing does not state the rent, so the cost cannot be judged"
+      : ranking
+        ? (scoreReason(c) ?? ranking.verdict.why)
+        : "This space could not be scored"
   return {
     candidate: c,
     listingNumber,
@@ -113,11 +133,13 @@ export function resultsList(s: ResearchState): { ranked: ListEntry[]; rejected: 
 /** The one sentence above the list. */
 export function headline(s: ResearchState): string {
   const { ranked, rejected } = resultsList(s)
-  const best = ranked.find((e) => e.score !== null)
+  // A candidate without a rent cannot be judged, so it is never called the best option.
+  const best = ranked.find((e) => e.score !== null && e.verdict !== "cannot_judge") ?? ranked.find((e) => e.score !== null)
   if (!best) {
     return rejected.length > 0 ? "No space is recommended: every candidate was rejected by a hard flag or could not be scored." : "No candidate could be scored in this run."
   }
   const name = best.location && best.areaM2 !== null ? `${best.location.split(",")[0]}, ${Math.round(best.areaM2)} m2` : best.name
+  if (best.verdict === "cannot_judge") return `No space can be judged yet: ${name} has the highest score, but its rent is not stated.`
   if (best.verdict === "not_recommended") return `No space is recommended. Highest score: ${name} - Not recommended, score ${best.score}.`
   return `Best option: ${name} - ${VERDICT_LABEL[best.verdict]}, score ${best.score}.`
 }
@@ -162,7 +184,7 @@ export function strengthsAndRisks(c: CandidateDTO): { strengths: PointItem[]; ri
     ...c.unverified.map((u) => ({ text: `The ${u.field} could not be verified from the text`, hard: false, source: "from the listing" })),
     ...(c.ranking?.reasons.filter((r) => r.effect === "minus").map((r) => ({ text: r.text, hard: false, source: plainSource(r.source) })) ?? []),
   ]
-  const strengths = c.ranking?.reasons.filter((r) => r.effect === "plus").map((r) => ({ text: r.text.replace(/^Lease: /, ""), hard: false, source: plainSource(r.source) })) ?? []
+  const strengths = c.ranking?.reasons.filter((r) => r.effect === "plus").map((r) => ({ text: sentence(r.text) ?? r.text, hard: false, source: plainSource(r.source) })) ?? []
   return { strengths, risks }
 }
 
@@ -176,10 +198,18 @@ export const LANDLORD_QUESTIONS = [
   { term: "permitted use", question: "Does the lease allow your business activity in this space?" },
 ] as const
 
-export function leaseSection(c: CandidateDTO): { hasLease: boolean; terms: { text: string; source: string }[]; questions: string[] } {
+/** Questions when the terms come only from the listing form: what the form does not cover, and the draft itself. */
+export const FORM_TERMS_QUESTIONS = [
+  "Can you share the lease draft? Check that it says the same as the listing form.",
+  "Is there a personal guarantee or a penalty for leaving early?",
+] as const
+
+export function leaseSection(c: CandidateDTO): { hasLease: boolean; fromForm: boolean; terms: { text: string; source: string }[]; questions: string[] } {
   const terms = c.findings.filter((f) => f.aspect === "lease" && f.severity === "info").map((f) => ({ text: f.claim, source: plainSource(f.source) }))
-  if (c.hasLease && terms.length > 0) return { hasLease: true, terms, questions: [] }
-  return { hasLease: c.hasLease, terms, questions: LANDLORD_QUESTIONS.map((q) => q.question) }
+  if (c.hasLease && terms.length > 0) return { hasLease: true, fromForm: false, terms, questions: [] }
+  const fromForm = !c.hasLease && terms.length > 0 && c.findings.some((f) => f.aspect === "lease" && f.severity === "info" && f.source.form)
+  if (fromForm) return { hasLease: false, fromForm: true, terms, questions: [...FORM_TERMS_QUESTIONS] }
+  return { hasLease: c.hasLease, fromForm: false, terms, questions: LANDLORD_QUESTIONS.map((q) => q.question) }
 }
 
 const COMPONENT_LABEL: Record<string, string> = { cost: "Monthly cost against your budget", area: "Area against your range", lease: "Lease terms", checks: "Points to check before signing" }
@@ -199,18 +229,84 @@ export function unknowns(c: CandidateDTO): { items: { text: string; points: numb
   return { items, totalPoints: ranking ? ranking.scoreHigh - ranking.score : 0 }
 }
 
-/** Every source behind this candidate, once each, in plain words plus the exact reference. */
-export function allSources(c: CandidateDTO): { plain: string; detail: string }[] {
-  const seen = new Map<string, { plain: string; detail: string }>()
+/** Internal field names (form, extraction, lease clauses, questionnaire) in plain words. */
+export const FIELD_LABEL: Record<string, string> = {
+  title: "Title",
+  kind: "Rent or sale",
+  city: "City",
+  address: "Address",
+  rentMonthly: "Monthly rent",
+  area: "Area",
+  areaM2: "Area",
+  deposit: "Deposit",
+  serviceChargeMonthly: "Monthly costs",
+  floor: "Floor",
+  heating: "Heating",
+  parking: "Parking",
+  url: "Listing address (URL)",
+  minimumTermMonths: "Minimum lease term",
+  earlyTermination: "Ending the lease early",
+  "earlyTermination.noticeMonths": "Notice period",
+  indexation: "Rent increases",
+  "indexation.ratePercent": "Yearly rent increase",
+  permittedUses: "Permitted use",
+  tenantPaysStructuralRepairs: "Who pays structural repairs",
+  term: "Lease term",
+  tenantMayTerminateEarly: "Ending the lease early",
+  noticePeriod: "Notice period",
+  earlyExitPenalty: "Early exit penalty",
+  indexationKind: "Rent increases",
+  indexationRatePercent: "Yearly rent increase",
+  personalGuarantee: "Personal guarantee",
+  permittedUse: "Permitted use",
+  businessType: "Type of business",
+  monthlyBudget: "Monthly budget",
+  expectedMonthlyRevenue: "Expected monthly revenue",
+  grossMarginRate: "Gross margin",
+  areaMinM2: "Minimum area",
+  areaMaxM2: "Maximum area",
+  leaseMonths: "Lease length",
+  fitOutBudget: "Fit-out budget",
+  equipmentBudget: "Equipment budget",
+}
+
+export const fieldLabel = (name: string): string => FIELD_LABEL[name] ?? name.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, (c) => c.toUpperCase())
+
+export type SourceGroup = { title: string; items: string[] }
+
+const GROUP_ORDER = ["Listing form", "Listing text", "Lease draft", "Your questionnaire", "Calculation", "SuiteSpot assumption", "OpenStreetMap", "Estimate"] as const
+
+function groupOf(s: SourceDTO): (typeof GROUP_ORDER)[number] {
+  if (s.kind === "listing") return s.form ? "Listing form" : "Listing text"
+  if (s.kind === "lease") return "Lease draft"
+  if (s.kind === "profile") return "Your questionnaire"
+  if (s.kind === "assumption") return "SuiteSpot assumption"
+  if (s.kind === "osm") return "OpenStreetMap"
+  if (s.kind === "estimate") return "Estimate"
+  return "Calculation"
+}
+
+function sourceLine(s: SourceDTO): string {
+  const name = s.field ?? s.clause
+  if (s.kind === "calc" || s.kind === "estimate" || s.kind === "osm") return s.ref.charAt(0).toUpperCase() + s.ref.slice(1)
+  const label = name ? fieldLabel(name) : s.ref
+  if (s.missing) return `${label}: not stated`
+  return s.quote ? `${label}: "${s.quote}"` : label
+}
+
+/** Every source behind this candidate, once each, grouped by where it comes from, in plain words. */
+export function allSources(c: CandidateDTO): SourceGroup[] {
+  const groups = new Map<string, Set<string>>()
   const add = (s: SourceDTO | undefined) => {
     if (!s) return
-    const detail = s.kind === "profile" ? `Questionnaire: ${s.field ?? s.ref}` : s.kind === "calc" ? `Calculation: ${s.ref}` : `${s.ref}${s.field ? `, ${s.field}` : ""}${s.clause ? `, ${s.clause}` : ""}${s.quote ? `: "${s.quote}"` : ""}`
-    if (!seen.has(detail)) seen.set(detail, { plain: plainSource(s), detail })
+    const group = groupOf(s)
+    if (!groups.has(group)) groups.set(group, new Set())
+    groups.get(group)!.add(sourceLine(s))
     for (const input of s.inputs ?? []) add(input)
   }
   for (const field of Object.values(c.fields)) add(field.source)
   for (const f of c.findings) add(f.source)
   for (const r of c.ranking?.reasons ?? []) add(r.source)
   if (c.listingUrl) add(c.listingUrl.source)
-  return [...seen.values()]
+  return GROUP_ORDER.filter((g) => groups.has(g)).map((title) => ({ title, items: [...groups.get(title)!] }))
 }

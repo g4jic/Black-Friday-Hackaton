@@ -120,12 +120,28 @@ function Page({ route, config }: { route: Route; config: Config | null }) {
   }
 }
 
+/** Honest labels on every result screen: synthetic data, and where the agents' answers came from. */
+export const ANSWER_LABEL = {
+  scripted: { text: "Scripted demo answers, no AI model", title: "No model was called: the agents replay scripted answers. Code still checks every value against its source." },
+  recorded: { text: "Recorded run", title: "A real run with an AI model, recorded and replayed without a key. Code still checks every value against its source." },
+} as const
+
 function DemoDataPill({ researchId }: { researchId: string }) {
-  const { synthetic } = useResearch(researchId)
-  if (!synthetic) return null
+  const { synthetic, answers } = useResearch(researchId)
+  const label = answers === "scripted" || answers === "recorded" ? ANSWER_LABEL[answers] : null
+  if (!synthetic && !label) return null
   return (
-    <Pill variant="brand" icon={false} title="This run uses synthetic demo listings, not real ones">
-      Demo data
-    </Pill>
+    <span className="inline-flex flex-wrap items-center gap-1.5">
+      {synthetic && (
+        <Pill variant="brand" icon={false} title="This run uses synthetic demo listings, not real ones">
+          Demo data
+        </Pill>
+      )}
+      {label && (
+        <Pill icon={false} title={label.title}>
+          {label.text}
+        </Pill>
+      )}
+    </span>
   )
 }

@@ -172,6 +172,7 @@ function LeaseCard({ candidate }: { candidate: CandidateDTO }) {
   const lease = leaseSection(candidate)
   return (
     <Section title="Lease terms">
+      {lease.fromForm && <p className="mb-3 max-w-[70ch] text-[13px] leading-5 text-ink-2">No lease draft yet. These are the terms the landlord typed in the listing form; the same lease rules were checked on them.</p>}
       {lease.terms.length > 0 ? (
         <ul className="flex flex-col gap-2 text-sm leading-5 text-ink">
           {lease.terms.map((term) => (
@@ -181,7 +182,20 @@ function LeaseCard({ candidate }: { candidate: CandidateDTO }) {
             </li>
           ))}
         </ul>
-      ) : (
+      ) : null}
+      {lease.fromForm && (
+        <>
+          <p className="mt-4 mb-2 text-[13px] leading-5 text-ink-2">Ask the landlord before signing:</p>
+          <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-sm leading-5 text-ink">
+            {lease.questions.map((question) => (
+              <li key={question} className="max-w-[70ch]">
+                {question}
+              </li>
+            ))}
+          </ol>
+        </>
+      )}
+      {lease.terms.length === 0 && (
         <>
           <p className="text-sm font-medium text-ink">No lease draft yet.</p>
           <p className="mt-1 mb-3 max-w-[70ch] text-[13px] leading-5 text-ink-2">Ask the landlord these questions before signing:</p>
@@ -224,18 +238,37 @@ function UnknownsCard({ candidate }: { candidate: CandidateDTO }) {
   )
 }
 
+/** Every source, collapsed by default and grouped by where it comes from (form, lease draft, questionnaire, calculation). */
 function SourcesCard({ candidate }: { candidate: CandidateDTO }) {
-  const sources = allSources(candidate)
+  const groups = allSources(candidate)
+  const count = groups.reduce((n, g) => n + g.items.length, 0)
   return (
-    <Section title={`Sources (${sources.length})`}>
-      <ul className="flex flex-col gap-2">
-        {sources.map((source) => (
-          <li key={source.detail} className="grid gap-x-4 gap-y-0.5 text-[13px] leading-5 sm:grid-cols-[160px_minmax(0,1fr)]">
-            <span className="font-medium text-ink">{source.plain}</span>
-            <span className="max-w-[70ch] break-words text-ink-2">{source.detail}</span>
-          </li>
-        ))}
-      </ul>
-    </Section>
+    <section className="glass rounded-[28px] p-6">
+      <details className="group">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-base leading-6 font-semibold text-ink [&::-webkit-details-marker]:hidden">
+          <span>
+            Sources <span className="tnum font-normal text-ink-2">({count})</span>
+          </span>
+          <span className="text-[13px] font-medium text-ink-2 group-open:hidden">Show</span>
+          <span className="hidden text-[13px] font-medium text-ink-2 group-open:inline">Hide</span>
+        </summary>
+        <div className="mt-4 grid gap-5 md:grid-cols-2">
+          {groups.map((group) => (
+            <div key={group.title}>
+              <h3 className="mb-1.5 text-xs font-semibold tracking-wide text-ink uppercase">
+                {group.title} <span className="tnum font-normal text-ink-2">({group.items.length})</span>
+              </h3>
+              <ul className="flex flex-col gap-1">
+                {group.items.map((item) => (
+                  <li key={item} className="max-w-[70ch] text-[13px] leading-5 break-words text-ink-2">
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </details>
+    </section>
   )
 }

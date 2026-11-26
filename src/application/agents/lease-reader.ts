@@ -1,5 +1,5 @@
 import { Agent, SemanticEvent, SituationSpecification, createAgent, type SituationContext, type StructuredOutputFormat } from "@mozaik-ai/core"
-import { DomainError, LEASE_FIELDS, buildLease, evaluateLease, isMissingData, isRentMultiple, type LeaseClauses, type LeaseText } from "../../domain/index.js"
+import { DomainError, LEASE_FIELDS, buildLease, evaluateLease, leaseClauseClaims, type LeaseClauses, type LeaseText } from "../../domain/index.js"
 import { CandidateCancellation, STOPPED_PREFIX, cancellationReporter, rejectCandidate } from "../cancellation/candidate-cancellation.js"
 import { INFERENCE_FAILED_PREFIX } from "../resilience/resilient-runner.js"
 import { safeHandler } from "../resilience/safe-handler.js"
@@ -38,22 +38,6 @@ class WhenOwnAnswer extends SituationSpecification {
   }
 }
 
-const describe = (v: unknown) =>
-  typeof v === "boolean" ? (v ? "yes" : "no") : isRentMultiple(v) ? `${v.monthsOfRent} month(s) of rent (amount computed by code)` : String(v)
-
-const LABELS: Record<(typeof LEASE_FIELDS)[number]["name"], string> = {
-  term: "Lease term",
-  tenantMayTerminateEarly: "Tenant may end the lease early",
-  noticePeriod: "Notice for early exit",
-  earlyExitPenalty: "Early exit penalty",
-  indexationKind: "Rent indexation",
-  indexationRatePercent: "Yearly rent increase (%)",
-  deposit: "Deposit",
-  personalGuarantee: "Personal guarantee required",
-  tenantPaysStructuralRepairs: "Tenant pays structural repairs",
-  permittedUse: "Permitted use (check before signing, not a legal opinion)",
-}
-
 export type LeaseReaderOptions = { model: string }
 
 /**
@@ -80,20 +64,8 @@ export function createLeaseReader(rt: AppRuntime, options: LeaseReaderOptions): 
   }
 
   const recordClauses = (candidateId: string, clauses: LeaseClauses) => {
-    for (const spec of LEASE_FIELDS) {
-      const field = clauses[spec.name]
-      if (isMissingData(field)) continue
-      const value = spec.name === "term" || spec.name === "noticePeriod" ? `${field.value} months` : describe(field.value)
-      rt.state.addFinding({
-        id: `${candidateId}:lease:${spec.name}`,
-        candidateId,
-        aspect: "lease",
-        severity: "info",
-        claim: `${LABELS[spec.name]}: ${value}`,
-        value: field,
-        source: field.source,
-        author: LEASE_READER_NAME,
-      })
+    for (const { name, claim, field } of leaseClauseClaims(clauses)) {
+      rt.state.addFinding({ id: `${candidateId}:lease:${name}`, candidateId, aspect: "lease", severity: "info", claim, value: field, source: field.source, author: LEASE_READER_NAME })
     }
   }
 

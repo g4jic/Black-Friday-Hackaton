@@ -24,14 +24,15 @@ export function neighbourhood(c: CandidateDTO): string | null {
   return parts.find((p) => p.toLowerCase() !== city && !/^\d{5}$/.test(p)) ?? parts[0] ?? null
 }
 
-/** "Liman 2 · 72 m2". Falls back to the area alone, then to "Listing N" (N = position in the run, 1-based). */
+/** "Liman 2 · 72 m2"; "Liman 2 · area unknown" when the area is not stated; then the area alone, then "Listing N". */
 export function candidateShortName(c: CandidateDTO | undefined, listingNumber: number): string {
   if (!c) return `Listing ${listingNumber}`
   const place = neighbourhood(c)
   const area = areaM2(c)
   const areaText = area !== null ? `${Math.round(area)} m2` : null
   if (place && areaText) return `${place} · ${areaText}`
-  return place ?? areaText ?? `Listing ${listingNumber}`
+  if (place) return `${place} · area unknown`
+  return areaText ?? `Listing ${listingNumber}`
 }
 
 /** "Liman 2, Novi Sad" for the location line. */

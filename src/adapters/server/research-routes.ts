@@ -214,7 +214,7 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
       })
       sessions.set(id, session)
       for (const old of [...sessions.keys()].slice(0, Math.max(0, sessions.size - KEEP_SESSIONS))) sessions.delete(old)
-      return reply.code(201).send({ id, mode, listings: listings.length + catalogue.length, synthetic: source !== "pasted" && catalogue.every((c) => c.listing.synthetic) })
+      return reply.code(201).send({ id, mode, answers: session.answers, listings: listings.length + catalogue.length, synthetic: source !== "pasted" && catalogue.every((c) => c.listing.synthetic) })
     } catch (error) {
       const status = error instanceof HttpError ? error.status : error instanceof DomainError ? 400 : 500
       const message = error instanceof HttpError || error instanceof DomainError ? error.message : "Could not start the research"
@@ -242,7 +242,7 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
   app.get("/api/research/:id", async (req, reply) => {
     const session = sessions.get((req.params as { id: string }).id)
     if (!session) return reply.code(404).send({ error: "Unknown research" })
-    return { id: session.id, mode: session.mode, status: session.status, events: session.events.length, metrics: session.metrics }
+    return { id: session.id, mode: session.mode, answers: session.answers, status: session.status, events: session.events.length, metrics: session.metrics }
   })
 
   /**

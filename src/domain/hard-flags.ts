@@ -1,6 +1,7 @@
 import type { AreaM2 } from "./area.js"
 import type { HardFlag } from "./candidate.js"
 import type { Money } from "./money.js"
+import type { BusinessType } from "./profile.js"
 import type { Requirement } from "./requirement.js"
 import { calc, type SourceRef, type Sourced } from "./source.js"
 
@@ -11,6 +12,20 @@ import { calc, type SourceRef, type Sourced } from "./source.js"
  */
 
 export const BUDGET_TOLERANCE = 0.1
+
+export const BUSINESS_TYPE_TEXT: Record<BusinessType, string> = { cafe_food: "cafe or food", retail: "retail shop", office_studio: "office or studio", workshop: "small workshop" }
+
+/** The listing's permitted use must include the business type from the questionnaire. Applies to every evaluation. */
+export function permittedUseExcludes(permitted: Sourced<readonly BusinessType[]>, businessType: Sourced<BusinessType>, raisedBy: string): HardFlag | null {
+  if (permitted.value.includes(businessType.value)) return null
+  return {
+    aspect: "premises",
+    rule: "permitted_use_excludes_business",
+    reason: `Permitted use does not include your business type (${BUSINESS_TYPE_TEXT[businessType.value]}): the listing allows ${permitted.value.map((u) => BUSINESS_TYPE_TEXT[u]).join(", ")}`,
+    raisedBy,
+    source: calc(false, "business type compared with the permitted use", [permitted, businessType]).source,
+  }
+}
 
 export function budgetExceeded(monthlyTotal: Sourced<Money>, budget: Sourced<Money>, raisedBy: string): HardFlag | null {
   const limit = budget.value.multiply(1 + BUDGET_TOLERANCE)

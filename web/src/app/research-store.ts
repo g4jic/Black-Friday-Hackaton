@@ -1,6 +1,6 @@
 import { useEffect, useSyncExternalStore } from "react"
 import { applyEvent, initialResearch, type ResearchState } from "../research-state"
-import type { WireEvent } from "../types"
+import type { AnswerSource, WireEvent } from "../types"
 import { historyStore, type HistoryRecord } from "./history-store"
 import { currentUser } from "./identity"
 
@@ -17,6 +17,8 @@ export type RunSnapshot = {
   readonly state: ResearchState
   readonly mode: "demo" | "live"
   readonly synthetic: boolean
+  /** Where the agents' answers come from; null until the server says (first event). */
+  readonly answers: AnswerSource | null
   /** Browser time (ms) that matches event time 0, for the live "now" line. null until the first event. */
   readonly clientStartMs: number | null
 }
@@ -45,6 +47,7 @@ function toHistoryRecord(snapshot: RunSnapshot): HistoryRecord {
     finishedAt: new Date().toISOString(),
     mode: snapshot.mode,
     synthetic: snapshot.synthetic,
+    ...(snapshot.answers ? { answers: snapshot.answers } : {}),
     cancelled: Boolean(state.cancelled),
     summary: {
       candidates: candidates.length,
@@ -67,7 +70,8 @@ function openStream(researchId: string): void {
     update(researchId, (s) => {
       const state = applyEvent(s.state, event)
       const synthetic = s.synthetic || Object.values(state.candidates).some((c) => c.synthetic)
-      return { ...s, state, synthetic, status: state.done ? "done" : "running", clientStartMs: s.clientStartMs ?? Date.now() - event.at }
+      const started = event.type === "research.started" ? (event.data as { mode?: "demo" | "live"; answers?: AnswerSource } | undefined) : undefined
+      return { ...s, state, synthetic, mode: started?.mode ?? s.mode, answers: started?.answers ?? s.answers, status: state.done ? "done" : "running", clientStartMs: s.clientStartMs ?? Date.now() - event.at }
     })
   }
   eventSource.addEventListener("bus", onEvent as EventListener)
@@ -94,14 +98,14 @@ function ensureEntry(researchId: string): void {
   if (saved) {
     entries.set(researchId, {
       eventSource: null,
-      snapshot: { researchId, status: "done", state: saved.state, mode: saved.mode, synthetic: saved.synthetic, clientStartMs: null },
+      snapshot: { researchId, status: "done", state: saved.state, mode: saved.mode, synthetic: saved.synthetic, answers: saved.answers ?? null, clientStartMs: null },
     })
     return
   }
   // Not in this tab's history: the server replays the whole run from its first event (if it still has it).
   entries.set(researchId, {
     eventSource: null,
-    snapshot: { researchId, status: "connecting", state: initialResearch(researchId), mode: "demo", synthetic: false, clientStartMs: null },
+    snapshot: { researchId, status: "connecting", state: initialResearch(researchId), mode: "demo", synthetic: false, answers: null, clientStartMs: null },
   })
   openStream(researchId)
 }
@@ -119,11 +123,11 @@ export async function startResearch(request: StartRequest, accessCode?: string):
     headers: { "Content-Type": "application/json", ...(accessCode ? { "X-Access-Code": accessCode } : {}) },
     body: JSON.stringify(request),
   })
-  const answer = (await response.json().catch(() => ({}))) as { id?: string; error?: string; mode?: "demo" | "live"; synthetic?: boolean }
+  const answer = (await response.json().catch(() => ({}))) as { id?: string; error?: string; mode?: "demo" | "live"; answers?: AnswerSource; synthetic?: boolean }
   if (!response.ok || !answer.id) throw new Error(answer.error ?? `The server answered ${response.status}`)
   entries.set(answer.id, {
     eventSource: null,
-    snapshot: { researchId: answer.id, status: "connecting", state: initialResearch(answer.id), mode: answer.mode ?? "demo", synthetic: Boolean(answer.synthetic), clientStartMs: null },
+    snapshot: { researchId: answer.id, status: "connecting", state: initialResearch(answer.id), mode: answer.mode ?? "demo", synthetic: Boolean(answer.synthetic), answers: answer.answers ?? null, clientStartMs: null },
   })
   openStream(answer.id)
   notify()
