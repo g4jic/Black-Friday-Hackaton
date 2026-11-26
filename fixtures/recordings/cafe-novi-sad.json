@@ -216,7 +216,7 @@
     "latencyMs": 2062,
     "items": [
      {
-      "text": "{\"explanation\": \"Monthly cost is 825.00 EUR (rent 760.00 + service charge 65.00). Initial costs total 35760.00 EUR (deposit, fit-out, equipment). Over the 36-month term, total cost is 65528.96 EUR. Early exit after 12 months costs 12475.00 EUR. At 10.13 EUR/m2 rent, the lease represents 9.2% of expected revenue—reasonable exposure. Break-even revenue is 1269.23 EUR monthly; payback period is 7 months. Missing data: VAT applicability, utilities cost, agency fee, deposit return policy, early exit penalties.\"}"
+      "text": "{\"explanation\": \"Monthly cost is 825.00 EUR (rent 760.00 + service charge 65.00). Initial costs total 35760.00 EUR (deposit, fit-out, equipment). Over the 36-month term, total cost is 65528.96 EUR. Early exit after 12 months costs 12475.00 EUR. At 10.13 EUR/m2 rent, the lease represents 9.2% of expected revenue - reasonable exposure. Break-even revenue is 1269.23 EUR monthly; payback period is 7 months. Missing data: VAT applicability, utilities cost, agency fee, deposit return policy, early exit penalties.\"}"
      }
     ],
     "tokens": {

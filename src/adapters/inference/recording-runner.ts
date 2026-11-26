@@ -30,10 +30,13 @@ export function recordingKey(input: InferenceInput): string {
   return `${agent}:${hash}`
 }
 
+/** House style: no long dashes anywhere, also in recorded model text (a plain hyphen with spaces instead). */
+const plainDashes = (text: string) => text.replace(/\s*[–—]\s*/g, " - ")
+
 const toRecorded = (output: InferenceOutput): RecordedItem[] =>
   output.items.flatMap((item): RecordedItem[] => {
     if (item instanceof FunctionCallItem) return [{ call: { name: item.name, args: item.args } }]
-    if (item instanceof ModelMessageItem) return [{ text: item.content.text }]
+    if (item instanceof ModelMessageItem) return [{ text: plainDashes(item.content.text) }]
     return []
   })
 
