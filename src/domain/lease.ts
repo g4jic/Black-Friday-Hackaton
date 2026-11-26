@@ -129,14 +129,28 @@ export function evaluateLease(lease: LeaseClauses, raisedBy: string): { hardFlag
   }
   // A clause the reader reported but code could not verify is never used as a fact: it is a question to check.
   for (const u of lease.unverified) {
+    const what = clauseInWords(u.field)
     concerns.push({
       rule: `unverified_${u.field}`,
-      claim: `The lease clause "${u.field}" could not be verified from the text (${u.reason})`,
-      checkBeforeSigning: `what the lease says about ${u.field}`,
+      claim: `SuiteSpot could not confirm what the lease says about ${what}: ${plainReason(u.reason)}`,
+      checkBeforeSigning: `what the lease says about ${what}`,
       source: { kind: "lease", ref: lease.leaseId, clause: u.field },
     })
   }
   return { hardFlags, concerns }
+}
+
+/** A lease field name (in any letter case) in plain words, for messages; never the internal name on screen. */
+function clauseInWords(field: string): string {
+  const spec = LEASE_FIELDS.find((f) => f.name.toLowerCase() === field.toLowerCase())
+  return spec ? spec.what.split(":")[0]!.split(" (")[0]! : "this clause"
+}
+
+/** Why a reader answer was not used, in plain words (the technical reason stays in the trace). */
+function plainReason(reason: string): string {
+  if (/does not appear/i.test(reason)) return "the words the reader quoted are not in the lease text"
+  if (/missing|no quote/i.test(reason)) return "the reader gave no quote from the lease"
+  return "the answer could not be checked against the lease text"
 }
 
 /** Each rent increase kind in plain words (never the internal enum value on screen). */
