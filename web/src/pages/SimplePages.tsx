@@ -3,7 +3,7 @@ import { Link, paths } from "../app/router"
 import { EmptyState } from "../app/Shell"
 import { RunRow, useHistory } from "./HistoryPages"
 
-/** Home: start a new research (two modes) or open a past one. */
+/** Home: find spaces, evaluate an outside listing, or open a past run. */
 export function DashboardPage() {
   const recent = useHistory().slice(0, 3)
   return (
@@ -14,13 +14,8 @@ export function DashboardPage() {
           Agents read every listing and lease at the same time, code does the math, and every number points to its source.
         </p>
         <div className="mt-6 grid gap-3 md:grid-cols-2">
-          <ModeCard
-            to={`${paths.newResearch()}?mode=evaluate`}
-            icon={FileSearch}
-            title="Evaluate a space"
-            text="Paste 1 to 8 listings you are considering, with an optional lease draft for each."
-          />
-          <ModeCard to={`${paths.newResearch()}?mode=find`} icon={Search} title="Find spaces" text="SuiteSpot brings the candidates. Runs on the synthetic demo listings for now." />
+          <ModeCard to={paths.findSpaces()} icon={Search} title="Find spaces" text="Tell SuiteSpot about your business; it finds the spaces on SuiteSpot that fit and evaluates them." />
+          <ModeCard to={paths.evaluateOutside()} icon={FileSearch} title="Evaluate an outside listing" text="Found a space elsewhere? Type in its terms and check the lease before you sign." />
         </div>
       </section>
       <section className="glass rounded-[28px] p-6">

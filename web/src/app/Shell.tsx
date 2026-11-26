@@ -1,29 +1,22 @@
-import { Building2, FileChartColumn, History, House, Info, LogIn, LogOut, Plus, Settings as SettingsIcon, SlidersHorizontal, UserPlus, type LucideIcon } from "lucide-react"
+import { Bookmark, Building2, FileSearch, History, House, Info, LayoutList, LogIn, LogOut, Plus, Search, Settings as SettingsIcon, SlidersHorizontal, UserPlus, type LucideIcon } from "lucide-react"
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { cx } from "../ui"
 import { logOut, useAuth } from "./auth"
 import { currentUser } from "./identity"
-import { Link, navigate, paths, type Route } from "./router"
+import { LogoMark } from "./Logo"
+import { Link, navigate, paths, useLocation, type Route } from "./router"
 
-type NavItem = { label: string; to: string; icon: LucideIcon; isActive: (route: Route) => boolean }
+/** label: under the icon (the rail is narrow); name: the full name for the tooltip and screen readers. */
+type NavItem = { label: string; name: string; to: string; icon: LucideIcon; isActive: (route: Route, mode: string | null) => boolean }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Home", to: paths.dashboard(), icon: House, isActive: (r) => r.name === "dashboard" },
-  { label: "New", to: paths.newResearch(), icon: Plus, isActive: (r) => r.name === "newResearch" },
-  { label: "Listings", to: paths.listings(), icon: Building2, isActive: (r) => r.name === "listings" || r.name === "listing" },
-  { label: "History", to: paths.history(), icon: History, isActive: (r) => r.name === "history" },
-  { label: "Reports", to: paths.reports(), icon: FileChartColumn, isActive: (r) => r.name === "reports" },
-  { label: "Assumptions", to: paths.assumptions(), icon: SlidersHorizontal, isActive: (r) => r.name === "assumptions" },
+  { label: "Home", name: "Home", to: paths.dashboard(), icon: House, isActive: (r) => r.name === "dashboard" },
+  { label: "Find", name: "Find spaces", to: paths.findSpaces(), icon: Search, isActive: (r, mode) => r.name === "newResearch" && mode === "find" },
+  { label: "Evaluate", name: "Evaluate an outside listing", to: paths.evaluateOutside(), icon: FileSearch, isActive: (r, mode) => r.name === "newResearch" && mode !== "find" },
+  { label: "Listings", name: "Listings", to: paths.listings(), icon: Building2, isActive: (r) => r.name === "listings" || r.name === "listing" },
+  { label: "History", name: "History", to: paths.history(), icon: History, isActive: (r) => r.name === "history" || r.name === "run" || r.name === "results" || r.name === "candidate" },
+  { label: "Assumptions", name: "Assumptions: the rules the code uses", to: paths.assumptions(), icon: SlidersHorizontal, isActive: (r) => r.name === "assumptions" },
 ]
-
-const NAV_TOOLTIPS: Record<string, string> = {
-  Home: "Home",
-  New: "New research",
-  Listings: "Commercial spaces published on SuiteSpot",
-  History: "History of research runs",
-  Reports: "Audited reports",
-  Assumptions: "Assumptions: the rules the code uses",
-}
 
 export const NOT_ADVICE = "Not financial or legal advice. SuiteSpot shows numbers with their sources; the decision is yours."
 
@@ -60,23 +53,25 @@ export function Shell({ route, title, titleExtra, children }: { route: Route; ti
 }
 
 function Sidebar({ route }: { route: Route }) {
+  const mode = useLocation().search.get("mode")
   return (
     <aside
       className="fixed z-30 flex items-center glass-strong max-sm:inset-x-3 max-sm:bottom-3 max-sm:h-[68px] max-sm:justify-around max-sm:rounded-[28px] max-sm:px-1 sm:top-4 sm:bottom-4 sm:left-4 sm:w-[88px] sm:flex-col sm:rounded-[32px] sm:py-5"
       aria-label="Main"
     >
-      <Link to={paths.dashboard()} className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-brand text-xl font-bold text-ink max-sm:hidden" aria-label="SuiteSpot home" title="SuiteSpot">
-        S
+      <Link to={paths.dashboard()} className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-brand text-ink max-sm:hidden" aria-label="SuiteSpot home" title="SuiteSpot">
+        <LogoMark size={32} />
       </Link>
       <nav className="flex flex-col items-center gap-2.5 max-sm:contents">
         {NAV_ITEMS.map((item) => {
-          const active = item.isActive(route)
+          const active = item.isActive(route, mode)
           const Icon = item.icon
           return (
             <Link
               key={item.label}
               to={item.to}
-              title={NAV_TOOLTIPS[item.label]}
+              title={item.name}
+              aria-label={item.name}
               aria-current={active ? "page" : undefined}
               className="group flex w-[58px] flex-col items-center gap-1 rounded-[18px] py-1.5 sm:w-[72px]"
             >
@@ -100,7 +95,7 @@ function Sidebar({ route }: { route: Route }) {
   )
 }
 
-/** The avatar: Guest (a tenant) or a logged-in landlord. Settings, My listings, and log in, sign up or log out. */
+/** The avatar: Guest or a signed-in user (one kind of account: search and list). My spaces, My listings, sign in or out. */
 function AvatarMenu({ settingsActive }: { settingsActive: boolean }) {
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -145,7 +140,7 @@ function AvatarMenu({ settingsActive }: { settingsActive: boolean }) {
           <p className="px-3 pt-2 pb-2 text-xs text-ink-2">
             {auth.landlord ? (
               <>
-                Logged in as <span className="font-semibold text-ink">{auth.landlord.displayName}</span> ({auth.landlord.email}).
+                Signed in as <span className="font-semibold text-ink">{auth.landlord.displayName}</span> ({auth.landlord.email}).
               </>
             ) : (
               <>
@@ -153,49 +148,31 @@ function AvatarMenu({ settingsActive }: { settingsActive: boolean }) {
               </>
             )}
           </p>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setOpen(false)
-              navigate(paths.settings())
-            }}
-            className="flex w-full items-center gap-2 rounded-[14px] px-3 py-2 text-left text-sm font-medium text-ink hover:bg-white"
-          >
-            <SettingsIcon size={16} aria-hidden /> Settings
+          <button type="button" role="menuitem" onClick={() => go(paths.mySpaces())} className={ITEM}>
+            <Bookmark size={16} aria-hidden /> My spaces
           </button>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setOpen(false)
-              navigate(paths.myListings())
-            }}
-            className="flex w-full items-center gap-2 rounded-[14px] px-3 py-2 text-left text-sm font-medium text-ink hover:bg-white"
-          >
-            <Building2 size={16} aria-hidden /> My listings
+          <button type="button" role="menuitem" onClick={() => go(paths.myListings())} className={ITEM}>
+            <LayoutList size={16} aria-hidden /> My listings
+          </button>
+          <button type="button" role="menuitem" onClick={() => go(paths.newListing())} className={ITEM}>
+            <Plus size={16} aria-hidden /> List a space
+          </button>
+          <button type="button" role="menuitem" onClick={() => go(paths.settings())} className={ITEM}>
+            <SettingsIcon size={16} aria-hidden /> Settings
           </button>
           {auth.enabled && !auth.landlord && (
             <>
               <button type="button" role="menuitem" onClick={() => go(paths.login())} className={ITEM}>
-                <LogIn size={16} aria-hidden /> Log in
+                <LogIn size={16} aria-hidden /> Sign in
               </button>
               <button type="button" role="menuitem" onClick={() => go(paths.signup())} className={ITEM}>
-                <UserPlus size={16} aria-hidden /> Sign up as a landlord
+                <UserPlus size={16} aria-hidden /> Sign up
               </button>
             </>
           )}
           {auth.landlord && (
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                setOpen(false)
-                void logOut().then(() => navigate(paths.listings()))
-              }}
-              className={ITEM}
-            >
-              <LogOut size={16} aria-hidden /> Log out
+            <button type="button" role="menuitem" onClick={() => void logOut().then(() => go(paths.dashboard()))} className={ITEM}>
+              <LogOut size={16} aria-hidden /> Sign out
             </button>
           )}
         </div>

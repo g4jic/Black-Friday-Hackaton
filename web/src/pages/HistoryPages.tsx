@@ -1,4 +1,4 @@
-import { ChevronRight, FileChartColumn, OctagonAlert } from "lucide-react"
+import { ChevronRight, OctagonAlert } from "lucide-react"
 import { historyStore, type HistoryRecord } from "../app/history-store"
 import { currentUser } from "../app/identity"
 import { Link, paths } from "../app/router"
@@ -74,34 +74,6 @@ export function HistoryPage() {
       <ul className="flex flex-col gap-2.5">
         {records.map((record) => (
           <RunRow key={record.id} record={record} />
-        ))}
-      </ul>
-    </section>
-  )
-}
-
-export function ReportsPage() {
-  const records = useHistory().filter((record) => record.state.report)
-  if (records.length === 0) {
-    return (
-      <EmptyState
-        text="No audited reports yet. A report is written and checked by the Auditor at the end of every research run."
-        action={
-          <Link to={paths.newResearch()} className="inline-flex h-10 items-center rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e]">
-            Start a research
-          </Link>
-        }
-      />
-    )
-  }
-  return (
-    <section className="glass rounded-[28px] p-6">
-      <p className="mb-4 inline-flex items-center gap-2 text-[13px] text-ink-2">
-        <FileChartColumn size={16} className="text-ink" aria-hidden /> Every sentence in a report cites the facts it is based on; the Auditor checks each one in code.
-      </p>
-      <ul className="flex flex-col gap-2.5">
-        {records.map((record) => (
-          <RunRow key={record.id} record={record} tab="report" />
         ))}
       </ul>
     </section>

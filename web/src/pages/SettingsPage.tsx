@@ -31,7 +31,7 @@ export function SettingsPage() {
   return (
     <form onSubmit={submit} className="grid gap-4 lg:grid-cols-2">
       <Card title="Default business profile">
-        <p className="mb-4">Used to prefill the questionnaire for live runs. Demo runs always use the fixed demo profile.</p>
+        <p className="mb-4">Used to prefill the questionnaire. Without an AI model key on the server, runs use the fixed demo profile.</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="sm:col-span-2">
             <span className={LABEL}>Business type</span>
@@ -71,10 +71,10 @@ export function SettingsPage() {
           </label>
         </div>
       </Card>
-      <Card title="Live mode access">
+      <Card title="Access code">
         <p className="mb-4">
-          Live runs use a real model and cost money, so the server asks for an access code. Leave it empty to use the keyless demo. The code is kept only
-          in this browser.
+          Runs with the real model cost money, so a hosted server may ask for an access code. You only need it if the server asks for one. The code
+          is kept only in this browser.
         </p>
         <label>
           <span className={LABEL}>Access code</span>

@@ -3,13 +3,14 @@ import { AssumptionsScreen } from "./Assumptions"
 import { startResearch, useResearch } from "./app/research-store"
 import { navigate, paths, useLocation, useRoute, type Route } from "./app/router"
 import { Shell } from "./app/Shell"
-import { HistoryPage, ReportsPage } from "./pages/HistoryPages"
+import { HistoryPage } from "./pages/HistoryPages"
 import { NewResearchPage } from "./pages/NewResearchPage"
 import { ResearchPage } from "./pages/ResearchPage"
 import { SettingsPage } from "./pages/SettingsPage"
 import { RunView } from "./run/RunView"
 import { ListingFormPage } from "./listings/ListingFormPage"
 import { BrowseListingsPage, ListingDetailPage, MyListingsPage } from "./listings/ListingPages"
+import { MySpacesPage } from "./pages/MySpacesPage"
 import { CandidatePage } from "./results/CandidatePage"
 import { DashboardPage, NotFoundPage } from "./pages/SimplePages"
 import { LoginPage, RequireLandlord, SignupPage } from "./pages/AuthPages"
@@ -17,13 +18,12 @@ import type { Config } from "./types"
 import { Pill } from "./ui"
 
 const TITLES: Record<Route["name"], string> = {
-  dashboard: "Home",
+  dashboard: "Find your SuiteSpot",
   newResearch: "New research",
   run: "Research run",
   results: "Results",
   candidate: "Candidate",
   history: "History",
-  reports: "Reports",
   assumptions: "Assumptions",
   settings: "Settings",
   listings: "Listings",
@@ -31,7 +31,8 @@ const TITLES: Record<Route["name"], string> = {
   newListing: "New listing",
   editListing: "Edit listing",
   myListings: "My listings",
-  login: "Log in",
+  mySpaces: "My spaces",
+  login: "Sign in",
   signup: "Sign up",
   notFound: "Page not found",
 }
@@ -83,8 +84,6 @@ function Page({ route, config }: { route: Route; config: Config | null }) {
       return <CandidatePage key={route.candidateId} researchId={route.researchId} candidateId={route.candidateId} />
     case "history":
       return <HistoryPage />
-    case "reports":
-      return <ReportsPage />
     case "assumptions":
       return <AssumptionsScreen />
     case "settings":
@@ -109,6 +108,12 @@ function Page({ route, config }: { route: Route; config: Config | null }) {
       return (
         <RequireLandlord>
           <MyListingsPage />
+        </RequireLandlord>
+      )
+    case "mySpaces":
+      return (
+        <RequireLandlord>
+          <MySpacesPage />
         </RequireLandlord>
       )
     case "login":
