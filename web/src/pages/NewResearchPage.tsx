@@ -355,13 +355,14 @@ function OutsideListingForm({
   liveAvailable: boolean
   starting: boolean
   accessCodeMissing: boolean
-  onStart: (outside: { listing: unknown; leaseDraft?: string; url?: string }) => void
+  onStart: (outside: { listing: unknown; leaseDraft?: string; url?: string; text?: string }) => void
   error: string | null
   problems: { field: string; message: string }[]
 }) {
   const [listing, setListing] = useState<ListingForm>(EMPTY_LISTING_FORM)
   const [leaseDraft, setLeaseDraft] = useState("")
   const [url, setUrl] = useState("")
+  const [text, setText] = useState("")
   const problemFor = (...fields: string[]) => problems.find((p) => fields.includes(p.field))?.message
   return (
     <div className="flex flex-col gap-4">
@@ -370,6 +371,12 @@ function OutsideListingForm({
         <ListingTermsFields form={listing} set={(patch) => setListing({ ...listing, ...patch })} problemFor={problemFor} />
         <Card title="Optional">
           <div className="grid gap-3">
+            <label className="block">
+              <span className={LABEL}>
+                Listing text <span className="font-normal text-ink-3">(pasted)</span>
+              </span>
+              <textarea rows={5} value={text} onChange={(e) => setText(e.target.value)} placeholder="Paste the listing text. The Scout reads it and code compares it with the terms above; every difference becomes a point to check." className={cx(INPUT, "h-auto py-3")} />
+            </label>
             <label className="block">
               <span className={LABEL}>
                 Lease draft <span className="font-normal text-ink-3">(text)</span>
@@ -386,7 +393,7 @@ function OutsideListingForm({
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
-          onClick={() => onStart({ listing: toInput(listing), ...(leaseDraft.trim() ? { leaseDraft } : {}), ...(url.trim() ? { url: url.trim() } : {}) })}
+          onClick={() => onStart({ listing: toInput(listing), ...(leaseDraft.trim() ? { leaseDraft } : {}), ...(url.trim() ? { url: url.trim() } : {}), ...(text.trim() ? { text } : {}) })}
           disabled={!liveAvailable || starting || accessCodeMissing}
           className="inline-flex h-10 items-center gap-2 rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e] disabled:opacity-40"
         >

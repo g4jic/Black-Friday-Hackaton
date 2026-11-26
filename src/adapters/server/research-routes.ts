@@ -72,7 +72,7 @@ export type ResearchRoutesOptions = {
   readonly liveRunner?: () => InferenceRunner
 }
 
-type OutsideBody = { listing?: unknown; leaseDraft?: unknown; url?: unknown }
+type OutsideBody = { listing?: unknown; leaseDraft?: unknown; url?: unknown; text?: unknown }
 type Body = { mode?: ResearchMode; source?: "demo" | "pasted" | "search" | "listing" | "outside"; listingId?: unknown; outside?: OutsideBody; listings?: { text?: unknown; lease?: unknown; url?: unknown }[]; profile?: Partial<BusinessProfileInput> }
 
 /** Name of the environment variable with the live mode access code (also in .env.example, PROGRESS.md, CLAUDE.md). */
@@ -184,6 +184,7 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
       // Demo runs always use the fixed demo profile (the scripted answers were made for it).
       const profile = mode === "live" ? liveProfile(body.profile, demo.profile) : demo.profile
       let listings: ListingTextInput[] = []
+      let referenceText: { input: ListingTextInput; candidateId: string } | undefined
       let leases: LeaseText[] = []
       let catalogue: CatalogueCandidate[] = []
       const pastedDemo = options.demoCatalogue
@@ -209,6 +210,8 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
       } else if (source === "outside") {
         if (mode !== "live") throw new HttpError(400, "Evaluating an outside listing needs an AI model key on the server. Without one, try a demo listing from Listings.")
         ;({ catalogue, leases } = outsideCandidate(body.outside))
+        const pasted = typeof body.outside?.text === "string" ? body.outside.text.trim() : ""
+        if (pasted) referenceText = { input: { text: pasted }, candidateId: OUTSIDE_LISTING_ID }
       } else {
         if (mode !== "live") throw new HttpError(400, "Pasted listings need live mode: demo mode replays scripted answers for the demo listings only.")
         const raw = Array.isArray(body.listings) ? body.listings : []
@@ -227,6 +230,7 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
             ? (options.liveRunner ?? createLiveRunner)()
             : new MockRunner({ script: demoRoomScript(pastedDemo && listings.length ? { scout: pastedDemo.scoutAnswers(), lease: pastedDemo.leaseAnswers() } : { scout: {}, lease: demoSeed().leaseAnswers }, options.demoPace ?? DEMO_PACE) }),
         listings,
+        ...(referenceText ? { referenceText } : {}),
         catalogue,
         leases,
         profile,

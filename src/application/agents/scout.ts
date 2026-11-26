@@ -11,6 +11,7 @@ import {
   DomainError,
   LISTING_FIELDS,
   buildListing,
+  compareTypedWithText,
   isMissingData,
   type Listing,
   type ListingText,
@@ -44,6 +45,19 @@ export function scoutMessage(listing: ListingText, feedback?: string): string {
 /** Names of the fields the text did not state, for the UI and the evaluators. */
 export function missingFields(listing: Listing): string[] {
   return LISTING_FIELDS.filter((f) => isMissingData(listing[f.name])).map((f) => f.name)
+}
+
+/** Who compares the pasted listing text with the typed terms (plain code, not an agent). */
+export const TEXT_CHECK_NAME = "Listing text check"
+
+/**
+ * "Evaluate an outside listing" with a pasted text: the text is stored as the reference of the typed candidate and
+ * announced like any pasted listing. The Scout notices it and reads it in its own loop, in parallel with the Lease
+ * reader and the Finance analyst working on the same candidate.
+ */
+export function submitReferenceText(rt: AppRuntime, input: ListingTextInput, candidateId: string, producerId: string): void {
+  const text = rt.state.submitReferenceText(input, candidateId)
+  rt.sendEvent(SemanticEvent.create("listings.submitted", producerId, { listingIds: [text.id], removedContacts: text.removed }), producerId)
 }
 
 /**
@@ -102,17 +116,31 @@ export function createScout(rt: AppRuntime, options: ScoutOptions): Agent {
     rt.sendEvent(SemanticEvent.create("listing.extraction_failed", scoutId, { listingId, attempts, reason }), scoutId)
   }
 
+  /** A reference text: code compares what the Scout read with the typed terms; differences are points to check. */
+  const compareReference = (scoutId: string, textId: string, candidateId: string, read: Listing) => {
+    const typed = rt.state.candidate(candidateId).listing
+    const mismatches = compareTypedWithText(typed, read)
+    for (const m of mismatches) {
+      rt.state.addFinding({ id: `${candidateId}:text:mismatch:${m.field}`, candidateId, aspect: m.field === "area" || m.field === "city" ? "premises" : "finance", severity: "soft", claim: m.claim, source: m.source, author: TEXT_CHECK_NAME, checkBeforeSigning: m.checkBeforeSigning })
+    }
+    rt.sendEvent(SemanticEvent.create("listing.compared", scoutId, { candidateId, textId, mismatches: mismatches.map((m) => m.field), unverified: read.unverified.map((u) => u.field) }), scoutId)
+    rt.state.settleReference(textId)
+  }
+
   const onAnswer = (scout: Agent, listingId: string, attempt: number, answer: string) => {
     const scoutId = scout.getId()
+    const referenceOf = rt.state.referenceFor(listingId)
     // The provider failed (ResilientRunner already retried): the model never read the listing, so feedback cannot
     // help. Fail at once with the real reason instead of a misleading "not valid JSON" and a wasted second call.
     if (answer.startsWith(INFERENCE_FAILED_PREFIX)) {
+      if (referenceOf) return failReference(scoutId, listingId, referenceOf, `Provider error: ${answer.slice(INFERENCE_FAILED_PREFIX.length).trim()}`)
       fail(scoutId, listingId, attempt, `Provider error: ${answer.slice(INFERENCE_FAILED_PREFIX.length).trim()}`)
       return
     }
     try {
       // Last attempt: keep what code can verify, mark the rest unverified (MissingData + check before signing).
       const listing = buildListing(rt.state.listingText(listingId), answer, { partial: attempt >= SCOUT_MAX_ATTEMPTS })
+      if (referenceOf) return compareReference(scoutId, listingId, referenceOf, listing)
       const candidate = rt.state.addCandidate(new Candidate(listingId, listing))
       rt.sendEvent(
         SemanticEvent.create("candidate.found", scoutId, { candidateId: candidate.id, listingRef: listing.ref, synthetic: listing.synthetic, missing: missingFields(listing), unverified: listing.unverified }),
@@ -125,8 +153,15 @@ export function createScout(rt: AppRuntime, options: ScoutOptions): Agent {
         startExtraction(scout, listingId, attempt + 1, reason)
         return
       }
+      if (referenceOf) return failReference(scoutId, listingId, referenceOf, reason)
       fail(scoutId, listingId, attempt, reason)
     }
+  }
+
+  /** The pasted text could not be read: the typed terms still count, and the user is told the text was not compared. */
+  const failReference = (scoutId: string, textId: string, candidateId: string, reason: string) => {
+    rt.sendEvent(SemanticEvent.create("listing.compared", scoutId, { candidateId, textId, mismatches: [], failed: reason }), scoutId)
+    rt.state.settleReference(textId)
   }
 
   return createAgent({

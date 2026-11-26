@@ -134,9 +134,35 @@ export class SuiteSpotState extends RuntimeState {
     return this.addCandidate(new Candidate(listing.ref, listing))
   }
 
-  /** How many listings this run evaluates: pasted texts the Scout reads plus SuiteSpot listings. */
+  /** Pasted texts that only describe a typed candidate: text id -> candidate id, and whether the check is done. */
+  private readonly referenceTexts = new Map<string, { candidateId: string; settled: boolean }>()
+
+  /** Stores a pasted listing text as the reference of a typed candidate (contacts removed, like any pasted text). */
+  submitReferenceText(input: ListingTextInput, candidateId: string): ListingText {
+    const [text] = createListingBatch([input])
+    if (this.listingTexts.has(text!.id)) throw new DomainError("invalid_listing_batch", `Listing "${text!.id}" was already submitted`)
+    this.listingTexts.set(text!.id, text!)
+    this.referenceTexts.set(text!.id, { candidateId, settled: false })
+    return text!
+  }
+
+  /** The candidate a reference text describes, or null for an ordinary pasted listing. */
+  referenceFor(textId: string): string | null {
+    return this.referenceTexts.get(textId)?.candidateId ?? null
+  }
+
+  settleReference(textId: string): void {
+    const r = this.referenceTexts.get(textId)
+    if (r) r.settled = true
+  }
+
+  referencesSettled(): boolean {
+    return [...this.referenceTexts.values()].every((r) => r.settled)
+  }
+
+  /** How many listings this run evaluates: pasted texts the Scout reads plus SuiteSpot listings (not reference texts). */
   expectedListings(): number {
-    return this.listingTexts.size + this.catalogueListings.size
+    return this.listingTexts.size - this.referenceTexts.size + this.catalogueListings.size
   }
 
   listingText(id: string): ListingText {

@@ -6,7 +6,7 @@ import { createLeaseReader } from "../agents/lease-reader.js"
 import { createRanker } from "../agents/ranker.js"
 import { createAuditor } from "../agents/auditor.js"
 import { createReportWriter } from "../agents/report-writer.js"
-import { createScout, submitListings } from "../agents/scout.js"
+import { createScout, submitListings, submitReferenceText } from "../agents/scout.js"
 import { safeHandler } from "../resilience/safe-handler.js"
 import { createAppRuntime, type AppRuntime } from "../runtime.js"
 import { candidateDTO, reportDTO, sourceDTO, type WireEvent } from "./wire.js"
@@ -24,6 +24,8 @@ export type ResearchInput = {
   readonly answers?: AnswerSource
   /** Pasted listing texts (the Scout reads them). May be empty when the run uses SuiteSpot listings. */
   readonly listings: readonly ListingTextInput[]
+  /** A pasted text that describes one typed candidate ("Evaluate an outside listing"): read and compared, not ranked. */
+  readonly referenceText?: { readonly input: ListingTextInput; readonly candidateId: string }
   /** SuiteSpot listings, built by code from the structured form (no Scout). */
   readonly catalogue?: readonly CatalogueCandidate[]
   readonly leases: readonly LeaseText[]
@@ -81,6 +83,7 @@ const PASS_THROUGH: Record<string, readonly string[]> = {
   "lease.failed": ["candidateId", "reason"],
   "listing.extraction_rejected": ["listingId", "attempt", "reason"],
   "listing.extraction_failed": ["listingId", "attempts", "reason"],
+  "listing.compared": ["candidateId", "textId", "mismatches", "unverified", "failed"],
   "finance.explained": ["candidateId", "explanation"],
   "finance.explanation_rejected": ["candidateId", "attempt", "reason"],
   "finance.failed": ["candidateId", "reason"],
@@ -140,6 +143,7 @@ export class ResearchSession {
     this.timer = setInterval(() => this.checkDone(), 50)
     if (input.listings.length > 0) submitListings(this.rt, input.listings, user.getId())
     if (input.catalogue?.length) submitCatalogueListings(this.rt, input.catalogue, user.getId())
+    if (input.referenceText) submitReferenceText(this.rt, input.referenceText.input, input.referenceText.candidateId, user.getId())
   }
 
   get id(): string {

@@ -27,6 +27,7 @@ export function createRanker(rt: AppRuntime): Participant {
     !rt.state.runStop && // a cancelled run is never ranked
     rt.state.expectedListings() > 0 &&
     rt.state.candidates.size + rt.state.failedListings.length >= rt.state.expectedListings() &&
+    rt.state.referencesSettled() &&
     rt.loops().every((l) => l.status === "done")
 
   const rank = () => {

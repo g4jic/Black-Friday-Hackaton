@@ -114,7 +114,7 @@ export type StartRequest =
   | { source: "demo" }
   | { mode: "live"; source: "pasted"; listings: { text: string; url?: string; lease?: string }[]; profile?: unknown }
   | { mode: "live"; source: "search"; profile?: unknown }
-  | { mode: "live"; source: "outside"; outside: { listing: unknown; leaseDraft?: string; url?: string }; profile?: unknown }
+  | { mode: "live"; source: "outside"; outside: { listing: unknown; leaseDraft?: string; url?: string; text?: string }; profile?: unknown }
   | { mode?: "live"; source: "listing"; listingId: string; profile?: unknown }
 
 /** A refused start: the server's message, plus the field problems when the typed listing is incomplete. */

@@ -172,7 +172,7 @@ export function scoreCandidate(input: RankingInput): CandidateScore {
   if (nChecks > 0) {
     const sources = [...counted.map((f) => f.source), ...unverified.map((u) => ({ kind: "listing" as const, ref: listing.ref, field: u.field, missing: true }))]
     reasons.push({
-      text: `${nChecks} point${nChecks > 1 ? "s" : ""} to check before signing${counted[0] ? ` (${counted[0].claim.toLowerCase()})` : ""}`,
+      text: `${nChecks} point${nChecks > 1 ? "s" : ""} to check before signing${counted[0] ? ` (${counted[0].claim.charAt(0).toLowerCase()}${counted[0].claim.slice(1)})` : ""}`,
       effect: "minus",
       source: calc(nChecks, "count of points to check before signing", sources.map((s) => ({ value: 0, source: s }))).source,
       impact: (checks - 1) * A.weights.checks - 0.01,
