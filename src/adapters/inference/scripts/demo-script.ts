@@ -29,9 +29,10 @@ export function financeDemoScript(stepLatencyMs = 0): MockScript {
       return { toolCall: { name: "calculate", args: { calculations: ["total_cost_over_term", "exit_cost_after_12_months", "cost_share_of_revenue", "break_even_revenue", "payback_months"] } } }
     }
     const value = (name: string) => new RegExp(`^${name} = ([^\\[;]+)`, "m").exec(outputs.join("\n"))?.[1]?.trim() ?? "missing data"
+    const exit = value("exit_cost_after_12_months")
     const explanation = [
       `The space costs ${value("monthly_cost")} per month and ${value("total_cost_over_term")} in total.`,
-      `Leaving after 12 months would cost ${value("exit_cost_after_12_months")}.`,
+      exit.startsWith("needs lease terms") ? "The cost of leaving after 12 months needs the lease terms (the notice period is unknown)." : `Leaving after 12 months would cost ${exit}.`,
       `That is ${value("cost_share_of_revenue")} of the expected revenue. Break-even revenue: ${value("break_even_revenue")}.`,
     ].join(" ")
     return { text: JSON.stringify({ explanation }) }

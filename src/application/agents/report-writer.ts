@@ -61,6 +61,7 @@ export function buildFacts(state: SuiteSpotState): Fact[] {
     if (share?.value && !isMissingData(share.value)) add("figure", id, `${id}: the space costs ${Math.round((share.value as Sourced<number>).value * 1000) / 10}% of the expected monthly revenue.`, share.source)
     const exit = finding("exit_cost_after_12_months")
     if (exit?.value && !isMissingData(exit.value)) add("figure", id, `${id}: leaving after 12 months costs ${fmtMoney((exit.value as Sourced<Money>).value)}${exit.claim.includes("(") ? ` ${exit.claim.slice(exit.claim.indexOf("("))}` : ""}.`, exit.source)
+    else if (exit) add("unknown", id, `${id}: the cost of leaving after 12 months needs the lease terms (the notice period is unknown).`, exit.source)
     for (const f of state.findings.filter((x) => x.candidateId === id && x.severity === "soft")) {
       add("check", id, `${id}: ${f.claim}${f.checkBeforeSigning ? `; check ${f.checkBeforeSigning}` : ""}.`, f.source)
     }

@@ -1,7 +1,7 @@
 import type { AreaM2 } from "./area.js"
 import { DomainError } from "./errors.js"
 import { Money, type Currency } from "./money.js"
-import type { MissingData } from "./missing.js"
+import { isMissingData, type MissingData } from "./missing.js"
 import { calc, sourced, type Sourced } from "./source.js"
 
 /**
@@ -97,10 +97,19 @@ export function totalCostOverTerm(t: LeaseTerms): CostBreakdown {
 }
 
 /**
+ * The exit cost cannot be stated without the lease's notice period: only the known part (unrecovered fit-out and
+ * any stated penalty) is returned, so it is never shown as if it were the whole exit cost.
+ */
+export type ExitCostNeedsLeaseTerms = MissingData & { readonly knownPart: CostBreakdown }
+
+export const isExitCostIncomplete = (x: CostBreakdown | ExitCostNeedsLeaseTerms): x is ExitCostNeedsLeaseTerms => isMissingData(x)
+
+/**
  * What it costs to walk away after `monthsUsed` months: rent for the notice period, any penalty, and the part of
  * the fit-out not yet used up (straight line over the term). Equipment is assumed to move with the business.
+ * Without a notice period (no lease terms) the total is MissingData ("needs lease terms") with the known part.
  */
-export function exitCostAfter(t: LeaseTerms, monthsUsed = 12): CostBreakdown {
+export function exitCostAfter(t: LeaseTerms, monthsUsed = 12): CostBreakdown | ExitCostNeedsLeaseTerms {
   const months = t.termMonths.value
   const lines: CostLine[] = []
   const unknowns: string[] = ["Whether the deposit is returned on early exit"]
@@ -115,6 +124,10 @@ export function exitCostAfter(t: LeaseTerms, monthsUsed = 12): CostBreakdown {
     label: "Unrecovered fit-out",
     amount: calc(t.fitOut.value.multiply(remaining), `fit-out x (term - ${monthsUsed}) / term`, [t.fitOut, t.termMonths]),
   })
+  if (!t.noticeMonths) {
+    const knownPart = sum(`known part of the exit cost after ${monthsUsed} months`, lines, t.currency, unknowns)
+    return Object.freeze({ status: "missing_data" as const, missing: Object.freeze(["Notice period for early exit (needs lease terms)"]), knownPart })
+  }
   return sum(`exit cost after ${monthsUsed} months`, lines, t.currency, unknowns)
 }
 

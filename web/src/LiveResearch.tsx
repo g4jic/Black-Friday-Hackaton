@@ -68,6 +68,22 @@ export function RentShare({ c }: { c: CandidateDTO }) {
 export function ExitCost({ c }: { c: CandidateDTO }) {
   const f = finding(c, "exit_cost_after_12_months")
   if (!f) return <span className="text-ink-3">-</span>
+  if (f.value?.kind === "missing") {
+    // No notice period: the total is unknown; the known part is shown as a part, never as the total.
+    const known = finding(c, "exit_cost_known_part")
+    return (
+      <span className="inline-flex flex-col items-end gap-0.5">
+        <Pill variant="soft" title="The notice period and early exit penalty come from the lease terms, which are not known for this space">
+          Needs lease terms
+        </Pill>
+        {known?.value?.kind === "money" && (
+          <span className="text-xs text-ink-3">
+            includes <Sourced field={asField(known)} /> unrecovered fit-out
+          </span>
+        )}
+      </span>
+    )
+  }
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5">
       <Sourced field={asField(f)} />
@@ -77,44 +93,59 @@ export function ExitCost({ c }: { c: CandidateDTO }) {
 }
 
 export function Flags({ c, max = 2 }: { c: CandidateDTO; max?: number }) {
-  const pills: JSX.Element[] = []
-  if (c.rejection) pills.push(<Pill key="hard" variant="hard" title={c.rejection.reason}>Hard flag: {c.rejection.rule.replaceAll("_", " ")}</Pill>)
-  for (const f of c.findings.filter((x) => x.severity === "soft")) {
-    pills.push(
-      <Pill key={f.id} variant="soft" title={`Check before signing: ${f.checkBeforeSigning ?? f.claim}`}>
-        {f.claim}
-      </Pill>,
-    )
+  const pills: { key: string; label: string; element: JSX.Element }[] = []
+  const add = (key: string, label: string, element: JSX.Element) => pills.push({ key, label, element })
+  if (c.rejection) {
+    const label = `Hard flag: ${c.rejection.rule.replaceAll("_", " ")}`
+    add("hard", label, <Pill key="hard" variant="hard" wrap title={c.rejection.reason}>{label}</Pill>)
   }
-  for (const u of c.unverified) pills.push(<Pill key={`u-${u.field}`} variant="soft" title={u.reason}>{u.field} unverified</Pill>)
+  for (const f of c.findings.filter((x) => x.severity === "soft")) {
+    add(f.id, f.claim, <Pill key={f.id} variant="soft" wrap title={`Check before signing: ${f.checkBeforeSigning ?? f.claim}`}>{f.claim}</Pill>)
+  }
+  for (const u of c.unverified) add(`u-${u.field}`, `${u.field} unverified`, <Pill key={`u-${u.field}`} variant="soft" wrap title={u.reason}>{u.field} unverified</Pill>)
   const total = finding(c, "total_cost_over_term")
   const note = total ? leaseNote(total.claim) : null
-  if (note?.startsWith("lease")) pills.push(<Pill key="lease" variant="soft" title={total!.claim}>lease not verified</Pill>)
+  if (note?.startsWith("lease")) add("lease", "lease not verified", <Pill key="lease" variant="soft" wrap title={total!.claim}>lease not verified</Pill>)
   if (note === "no lease draft") {
-    pills.push(
-      <Pill key="no-lease" variant="soft" title="Check before signing: no lease draft was given, so the term, notice and deposit are unknown; term-level figures use the questionnaire's 36 months">
+    add(
+      "no-lease",
+      "no lease draft: terms unknown",
+      <Pill key="no-lease" variant="soft" wrap title="Check before signing: no lease draft was given, so the term, notice and deposit are unknown; term-level figures use the questionnaire's term">
         no lease draft: terms unknown
       </Pill>,
     )
   }
-  if (c.fields.rentMonthly?.value.kind === "missing") pills.push(<Pill key="no-rent" icon={false}>no rent stated</Pill>)
-  if (c.fields.area?.value.kind === "missing") pills.push(<Pill key="no-area" icon={false}>no area stated</Pill>)
+  if (c.fields.rentMonthly?.value.kind === "missing") add("no-rent", "no rent stated", <Pill key="no-rent" icon={false} wrap>no rent stated</Pill>)
+  if (c.fields.area?.value.kind === "missing") add("no-area", "no area stated", <Pill key="no-area" icon={false} wrap>no area stated</Pill>)
   if (pills.length === 0) return <span className="text-ink-3">-</span>
+  const hidden = pills.slice(max)
   return (
-    <div className="flex max-w-[280px] flex-wrap gap-1.5">
-      {pills.slice(0, max)}
-      {pills.length > max && <Pill icon={false} title={`${pills.length - max} more`}>+{pills.length - max}</Pill>}
+    <div className="flex flex-wrap gap-1.5">
+      {pills.slice(0, max).map((p) => p.element)}
+      {hidden.length > 0 && (
+        <Pill icon={false} title={hidden.map((p) => p.label).join("\n")}>
+          +{hidden.length}
+        </Pill>
+      )}
     </div>
   )
 }
 
+/** Every agent that worked on the candidate: busy while a loop runs, idle when done, red dot when it was cut. */
 export function Agents({ s, c }: { s: ResearchState; c: CandidateDTO }) {
-  const running = runningLoops(s, c.id)
-  if (running.length === 0) return <span className="text-ink-3">-</span>
+  const loopsForCandidate = Object.values(s.loops).filter((l) => l.candidateId === c.id)
+  if (loopsForCandidate.length === 0) return <span className="text-ink-3">-</span>
+  const stateByAgent = new Map<string, "busy" | "idle" | "cancelled">()
+  for (const l of loopsForCandidate) {
+    const loopState = l.end === undefined ? "busy" : l.cancelledAt !== undefined ? "cancelled" : "idle"
+    const previous = stateByAgent.get(l.agent)
+    // busy wins over cancelled, cancelled over idle (a retried loop may be busy again)
+    if (!previous || loopState === "busy" || (loopState === "cancelled" && previous === "idle")) stateByAgent.set(l.agent, loopState)
+  }
   return (
     <div className="flex -space-x-2">
-      {running.map((l) => (
-        <AgentChip key={l.key} name={l.agent} state="busy" />
+      {[...stateByAgent].map(([agent, agentState]) => (
+        <AgentChip key={agent} name={agent} state={agentState} size={28} />
       ))}
     </div>
   )
@@ -132,7 +163,7 @@ function Score({ c, group }: { c: CandidateDTO; group: Group }) {
   const title = r.components.map((x) => `${x.name} (weight ${x.weight}): ${x.value === null ? `unknown, 0 to ${x.weight} points` : x.value}`).join("\n")
   const range = r.scoreHigh > r.score
   return (
-    <span className="inline-flex items-center gap-1.5 whitespace-nowrap" title={`Score parts:\n${title}${range ? "\nThe rank uses the low end (unknown parts count as worst case)." : ""}`}>
+    <span className="inline-flex flex-wrap items-center gap-1.5" title={`Score parts:\n${title}${range ? "\nThe rank uses the low end (unknown parts count as worst case)." : ""}`}>
       <span className="tnum inline-flex h-6 items-center rounded-full bg-ink px-2 text-xs font-semibold text-white">#{r.rank}</span>
       <span className="tnum text-sm font-semibold">{range ? `${r.score}-${r.scoreHigh}` : r.score}</span>
       <Pill variant={CONFIDENCE_PILL[r.confidence]} icon={false} title="Confidence: how much of the input data is known">
@@ -261,16 +292,16 @@ const TD = "px-4 py-3 align-middle text-sm"
 
 function Table({ s, rows, group }: { s: ResearchState; rows: CandidateDTO[]; group: Group }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[980px] table-fixed border-collapse">
+    <div>
+      <table className="w-full table-fixed border-collapse">
         {/* Same column widths in every section, so the numbers line up from one section to the next. */}
         <colgroup>
-          <col className="w-[25%]" />
+          <col className="w-[22%]" />
           <col className="w-[12%]" />
-          <col className="w-[11%]" />
+          <col className="w-[10%]" />
           <col className="w-[15%]" />
-          <col className="w-[18%]" />
-          <col className="w-[7%]" />
+          <col className="w-[20%]" />
+          <col className="w-[9%]" />
           <col className="w-[12%]" />
         </colgroup>
         <thead>

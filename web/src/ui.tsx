@@ -114,12 +114,20 @@ const PILL: Record<PillVariant, string> = {
 /** Hard flags always carry an icon (never colour alone); the text says "Hard flag" where the flag is named. */
 const PILL_ICON: Partial<Record<PillVariant, LucideIcon>> = { hard: OctagonAlert, "solid-hard": OctagonAlert, soft: TriangleAlert, positive: Check }
 
-export function Pill({ variant = "neutral", children, title, icon = true }: { variant?: PillVariant; children: ReactNode; title?: string; icon?: boolean }) {
+/** wrap: long text (flag reasons) breaks onto a second line instead of being cut off. */
+export function Pill({ variant = "neutral", children, title, icon = true, wrap = false }: { variant?: PillVariant; children: ReactNode; title?: string; icon?: boolean; wrap?: boolean }) {
   const Icon = icon ? PILL_ICON[variant] : undefined
   return (
-    <span title={title} className={cx("inline-flex h-6 max-w-full items-center gap-1 rounded-full px-2.5 text-xs font-medium leading-none whitespace-nowrap", PILL[variant])}>
-      {Icon && <Icon size={13} strokeWidth={2} aria-hidden />}
-      <span className="truncate">{children}</span>
+    <span
+      title={title}
+      className={cx(
+        "inline-flex max-w-full items-center gap-1 px-2.5 text-xs font-medium",
+        wrap ? "min-h-6 rounded-[12px] py-1 leading-4" : "h-6 rounded-full leading-none whitespace-nowrap",
+        PILL[variant],
+      )}
+    >
+      {Icon && <Icon size={13} strokeWidth={2} aria-hidden className="shrink-0" />}
+      <span className={wrap ? "" : "truncate"}>{children}</span>
     </span>
   )
 }

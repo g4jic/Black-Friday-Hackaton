@@ -16,6 +16,7 @@ import {
   costShareOfRevenue,
   exitCostAfter,
   initialCosts,
+  isExitCostIncomplete,
   isMissingData,
   leaseTermsFor,
   monthlyCost,
@@ -189,6 +190,15 @@ export function createFinanceAnalyst(rt: AppRuntime, options: FinanceOptions): A
         }
         case "exit_cost_after_12_months": {
           const b = exitCostAfter(terms, 12)
+          if (isExitCostIncomplete(b)) {
+            // No notice period: the known part (unrecovered fit-out) is never shown as the whole exit cost.
+            const known = b.knownPart
+            allowBreakdown(candidateId, known)
+            rec(name, "Exit cost after 12 months: needs lease terms (notice period unknown)", b, known.total.source)
+            record(candidateId, "exit_cost_known_part", `Known part of the exit cost after 12 months ${known.total.value} (${known.lines.map((l) => l.label.toLowerCase()).join(" + ")})`, known.total, known.total.source, null)
+            lines.push(`exit_cost_after_12_months = needs lease terms (notice period unknown); known part ${money(known.total.value)} = ${known.lines.map((l) => `${l.label} ${money(l.amount.value)}`).join(" + ")}`)
+            break
+          }
           allowBreakdown(candidateId, b)
           rec(name, `Exit cost after 12 months ${b.total.value}`, b.total, b.total.source)
           lines.push(`exit_cost_after_12_months = ${money(b.total.value)} ${formula(b.total.source)} = ${b.lines.map((l) => `${l.label} ${money(l.amount.value)}`).join(" + ")}; unknown: ${b.unknowns.join(", ") || "none"}`)

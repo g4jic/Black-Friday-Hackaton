@@ -17,6 +17,7 @@ import {
   fairPriceCheck,
   hardRequirementNotMet,
   initialCosts,
+  isExitCostIncomplete,
   isMissingData,
   monthlyCost,
   paybackMonths,
@@ -216,8 +217,21 @@ describe("LeaseCostCalculator", () => {
   })
   it("exit after 12 months = 3 notice months x 1450 + unrecovered fit-out 6000 x 24/36", () => {
     const exit = exitCostAfter(terms, 12)
+    if (isExitCostIncomplete(exit)) throw new Error("expected a complete exit cost")
     expect(exit.total.value.amount).toBe(8350)
     expect(exit.unknowns).toContain("Early exit penalty")
+  })
+  it("without a notice period the exit cost is 'needs lease terms', never the fit-out alone shown as the total", () => {
+    // Regression: candidates without a lease showed 10,000 EUR (= fit-out 15,000 x 24/36) as their exit cost.
+    const noLease = { ...terms, fitOut: sourced(eur(15000), profileSrc("fitOutBudget")), noticeMonths: null, earlyExitPenalty: null }
+    const exit = exitCostAfter(noLease, 12)
+    expect(isMissingData(exit)).toBe(true)
+    if (!isExitCostIncomplete(exit)) throw new Error("expected an incomplete exit cost")
+    expect(exit.missing[0]).toContain("Notice period")
+    // The known part is still sourced and stated as a part, so the UI can say "includes 10,000 EUR unrecovered fit-out".
+    expect(exit.knownPart.total.value.amount).toBe(10000)
+    expect(exit.knownPart.lines.map((l) => l.label)).toEqual(["Unrecovered fit-out"])
+    expect(exit.knownPart.total.source.kind).toBe("calc")
   })
   it("cost share, break-even revenue and payback", () => {
     const monthly = monthlyCost(terms).total
