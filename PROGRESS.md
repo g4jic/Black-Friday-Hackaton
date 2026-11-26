@@ -3,6 +3,39 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
+## 26 Nov 2026, late evening (Andrej): app flow, run orbit, results redesign
+What changed (commits 1c11f9e to the last one of the day; 122 tests pass, typecheck clean, keyless demo unchanged):
+- **App flow:** own router (no dependency): `/`, `/research/new`, `/research/:id/run`, `/research/:id`,
+  `/research/:id/candidate/:candidateId`, `/history`, `/reports`, `/assumptions`, `/settings`, 404. Always "Guest"
+  (`web/src/app/identity.ts`), no login. Settings in localStorage; guest history and results in sessionStorage (gone
+  when the tab closes) behind the `HistoryStore` interface, so a Supabase store can be added later. On a phone the
+  sidebar is a bottom bar.
+- **Questionnaire:** Evaluate a space (mode A, 1 to 8 pasted listings, optional lease draft and optional Listing URL)
+  and Find spaces (mode B, the synthetic demo). The demo profile is shown filled in and locked ("Demo profile"); mode A
+  on a demo-only server is shown disabled with "Available in live mode".
+- **Server:** `POST /api/research/:id/cancel` (run-level breakpoint, `src/application/cancellation/run-cancellation.ts`);
+  live mode needs `X-Access-Code` when `SUITESPOT_ACCESS_CODE` is set (one name everywhere: code, `.env.example`,
+  CLAUDE.md, here); live runs take the questionnaire profile; `GET /api/demo-questionnaire`.
+- **Verdict by code:** `src/domain/verdict.ts` (Good at 70+ worst case with high confidence and nothing to check; Not
+  recommended below 50, no rent or a hard flag; otherwise Check before signing). Rules on the Assumptions screen.
+- **Run view:** orbit with fixed agent slots, candidates on an inner ring with short names ("Liman 2 · 72 m2"),
+  hard flag = red pulse and the chip leaves the orbit into "Left the orbit", breathing centre, counters, Cancel.
+  Everything from SSE events (`web/src/run/run-view-model.ts`). Reduced motion: a static list.
+- **Results:** List / Report / Timeline ("Under the hood" metrics). One list by score with a one-sentence answer, a
+  collapsed rejected block, and a candidate page (costs with plain-language sources, strengths and risks, lease terms
+  or questions for the landlord, unknowns in points, all sources). Model: `web/src/results/results-model.ts`.
+- **Fixes:** exit cost without a lease is "Needs lease terms" plus the known unrecovered fit-out (was a fake
+  10,000 EUR total); the demo profile now has a gross margin (65 percent, the owner's estimate), so break-even and
+  payback have numbers; the Auditor still checks every number (13 checked, 0 corrected).
+- **Listing URL:** only a URL the user typed (http(s) only, validated in `src/domain/listing-text.ts`). Note: the Scout
+  does NOT open listing pages today (no fetch or web_search exists; mode B live is off by the terms-of-use decision).
+  When a site gives permission, the Scout must store the page it really opened in the same `url` field, and a
+  recorded fixture must keep it.
+- Screenshots: `npm run screenshots` writes `design/screenshots/run-mid.png`, `results-list.png`, `candidate.png`,
+  `results-rejected-open.png`, `timeline.png`, `report.png`, `assumptions.png`, `new-research.png` (older
+  `live-*.png` files are from the previous UI).
+Next: README, deploy (Railway), Mozaik Cloud pairing, then a fresh-clone test.
+
 ## HANDOFF: Aleksa -> Andrej (26 Nov 2026, evening)
 Aleksa stops for today; Andrej continues with his own agent. Read this section first, then CLAUDE.md, then the plan.
 

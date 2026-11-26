@@ -3,11 +3,13 @@
  *
  * PowerShell:
  *   npm run screenshots
- *     Demo mode (keyless) against the dev servers (npm run dev): Table and Timeline mid-run and at the end, Cards,
- *     Reports, Assumptions, New research. Writes design/screenshots/*.png.
+ *     Demo mode (keyless) against the dev servers (npm run dev): the run orbit mid-run and at the end, the results
+ *     list, a candidate page, the rejected block, Timeline, Report, Assumptions and New research.
+ *     Writes design/screenshots/*.png.
  *   npm run screenshots -- --live --url http://localhost:3001
  *     One LIVE run of the whole demo (claude-haiku-4-5, costs money) against a server started with
- *     SUITESPOT_MODE=live (see PROGRESS.md "How to run"). Writes design/screenshots/live-*.png and report-live.md.
+ *     SUITESPOT_MODE=live (see PROGRESS.md "How to run"). If the server sets SUITESPOT_ACCESS_CODE, put the same value
+ *     in this shell's environment. Writes design/screenshots/live-run-*.png and report-live.md.
  */
 import { mkdirSync, writeFileSync } from "node:fs"
 import { chromium } from "playwright-core"
@@ -21,42 +23,56 @@ mkdirSync(out, { recursive: true })
 const browser = await chromium.launch({ channel: "msedge" }).catch(() => chromium.launch({ channel: "chrome" }))
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 })
 const save = async (name: string) => {
-  await page.waitForTimeout(250)
+  await page.waitForTimeout(300)
   await page.screenshot({ path: `${out}/${name}.png`, fullPage: true })
   console.log(`${out}/${name}.png`)
 }
-const tab = async (name: "Table" | "Timeline" | "Cards") => page.getByRole("tab", { name }).click()
+const prefix = live ? "live-run-" : ""
 
+// Start the run: the demo through the app's own autorun, a live run of the demo through the API.
 let researchId = ""
-page.on("response", async (res) => {
-  if (res.url().endsWith("/api/research") && res.request().method() === "POST") researchId = ((await res.json()) as { id?: string }).id ?? ""
-})
-await page.goto(`${base}/?autorun=${live ? "live" : "demo"}`)
-await page.getByRole("tab", { name: "Table" }).waitFor()
-
-if (!live) {
-  // Mid-run: the lease has rejected demo-07 while other loops still run (the key moment).
-  await tab("Timeline")
-  await page.getByText("Hard flag: demo-07 rejected").first().waitFor({ timeout: 30_000 })
-  await save("live-timeline-mid")
-  await tab("Table")
-  await save("live-table-mid")
+if (live) {
+  await page.goto(base)
+  researchId = await page.evaluate(async (accessCode) => {
+    const response = await fetch("/api/research", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(accessCode ? { "X-Access-Code": accessCode } : {}) },
+      body: JSON.stringify({ mode: "live", source: "demo" }),
+    })
+    if (!response.ok) throw new Error(`Live run refused: ${response.status} ${await response.text()}`)
+    return ((await response.json()) as { id: string }).id
+  }, process.env.SUITESPOT_ACCESS_CODE ?? "")
+  await page.goto(`${base}/research/${researchId}/run`)
+} else {
+  await page.goto(`${base}/?autorun=demo`)
+  await page.waitForURL(/\/research\/[^/]+\/run$/)
+  researchId = page.url().split("/research/")[1]!.split("/")[0]!
 }
 
-// End: the metrics strip appears with research.done.
-await page.getByText(/done in \d/).waitFor({ timeout: live ? 300_000 : 60_000 })
-const prefix = live ? "live-run-" : "live-"
-await tab("Table")
-await save(`${prefix}table-end`)
-await tab("Timeline")
-await save(`${prefix}timeline-end`)
-if (!live) {
-  await tab("Cards")
-  await save("live-cards-end")
-}
-await page.getByRole("button", { name: "Reports" }).click()
+// Mid-run: the first hard flag has taken a candidate out of the orbit while other loops still run.
+await page.getByText(/^Hard flag: /).first().waitFor({ timeout: live ? 300_000 : 30_000 })
+await save(`${prefix}run-mid`)
+
+// The orbit settles and the page moves on to the results by itself.
+await page.waitForURL(new RegExp(`/research/${researchId}$`), { timeout: live ? 300_000 : 60_000 })
+await page.getByText(/^(Best option|No space is recommended)/).waitFor()
+await save(`${prefix}results-list`)
+
+await page.locator("ol a[href*='/candidate/']").first().click()
+await page.getByRole("heading", { name: "Costs" }).waitFor()
+await save(`${prefix}candidate`)
+
+await page.goto(`${base}/research/${researchId}`)
+await page.getByRole("button", { name: /Rejected by a hard flag/ }).click()
+await save(`${prefix}results-rejected-open`)
+
+await page.goto(`${base}/research/${researchId}?tab=timeline`)
+await page.getByText("Under the hood").waitFor()
+await save(`${prefix}timeline`)
+
+await page.goto(`${base}/research/${researchId}?tab=report`)
 await page.getByText(/Audited: \d+ claims checked/).waitFor({ timeout: 30_000 })
-await save(live ? "live-run-report" : "reports")
+await save(`${prefix}report`)
 
 if (live) {
   // Save the audited report and the run metrics (from the server, computed from runtime events).
@@ -87,11 +103,11 @@ if (live) {
   writeFileSync(`${out}/report-live.md`, lines.join("\n"))
   console.log(`${out}/report-live.md`)
 } else {
-  await page.getByRole("button", { name: "Assumptions" }).click()
+  await page.goto(`${base}/assumptions`)
   await page.getByText("How the Ranker scores").waitFor()
   await save("assumptions")
-  await page.goto(base)
-  await page.getByRole("button", { name: "Run demo" }).waitFor()
+  await page.goto(`${base}/research/new?mode=find`)
+  await page.getByText("Demo profile").waitFor()
   await save("new-research")
 }
 await browser.close()
