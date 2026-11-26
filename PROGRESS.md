@@ -55,8 +55,15 @@ No long dashes in this file; use a plain hyphen.
 
 ## Next step
 - Andrej: design pass (Uizze) next. Plan step 2 (thin slice in demo mode) is left for Aleksa.
-- For the Scout (later): sources 4zida.rs, oglasi.rs, svenekretnine.com; plain HTTP GET first (free, no tokens,
-  full data), Anthropic web_fetch only as fallback; check the page is the listing we asked for; skip blocked sites.
+- **Aleksa, before building the Scout (rules also in CLAUDE.md, "Listing sources"):**
+  1. Read the terms of use of 4zida.rs, oglasi.rs and svenekretnine.com. If a site forbids automated reading, drop
+     it. Write the result here (site, terms URL, date, verdict).
+  2. Plain HTTP reads use an honest `User-Agent: SuiteSpot/0.1 (hackathon)` with the repo URL, never a browser or
+     search engine identity; at most one request per 2 seconds per site; respect robots.txt; skip blocked pages.
+     Note: `scripts/check-listing-fetch.ts` still sends a browser User-Agent (it was a one-off feasibility test).
+     Switch it to the honest one before running it again. An honest UA may be blocked more often; re-test.
+  3. `web_search` always with `allowed_domains` = the approved sites.
+  - Then: plain HTTP GET first, Anthropic web_fetch only as fallback; check the page is the listing we asked for.
 
 ## Open problems
 - Web search returns INDEX pages; the Scout needs a second hop (index page -> listing URLs -> each listing).
@@ -89,6 +96,7 @@ No long dashes in this file; use a plain hyphen.
 - None yet.
 
 ## Session log
+- 2026-11-26 14:35 (Andrej): added listing source rules (terms of use, honest UA, rate limit, allowed_domains). Next: design.
 - 2026-11-26 14:25 (Andrej): listing fetch test, CLAUDE.md Mozaik notes, optional gross margin; pushed. Stopping here.
 - 2026-11-26 14:05 (Andrej): step 5 Anthropic web search + fetch check done and pushed. Steps 1-5 of plan step 1 complete.
 - 2026-11-26 13:55 (Andrej): step 4 cancellation spike done and pushed.

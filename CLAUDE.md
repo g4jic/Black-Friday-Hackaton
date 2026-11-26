@@ -529,6 +529,15 @@ He is a QA Automation Engineer. Judging from what he shares on LinkedIn:
 - Web: Vite + React + TypeScript + Tailwind frontend; Fastify server running the Mozaik runtime and streaming events
   with Server-Sent Events. One service on Railway. History in Supabase (live) or a local JSON file (demo mode).
 - Area data: OpenStreetMap (Nominatim + Overpass), free, no key; real `User-Agent`, max 1 request per second.
+- **Listing sources (rules for the Scout, agreed 26 Nov 2026):**
+  1. Candidate sites: 4zida.rs, oglasi.rs, svenekretnine.com. **Before building the Scout, read each site's terms of
+     use** and check they do not forbid automated reading. A site that forbids it is dropped. Record the outcome
+     (site, terms URL, date read, verdict) in `PROGRESS.md`. halooglasi.com is out (its robots.txt blocks Anthropic
+     crawlers and allows no AI input); nekretnine.rs is out (blocks all automated access). Never work around a block.
+  2. Plain HTTP reads identify themselves honestly: `User-Agent: SuiteSpot/0.1 (hackathon)` plus a contact URL (the
+     repo). Never pretend to be a browser or a search engine. **At most one request per 2 seconds per site.** Respect
+     robots.txt. A 403 or a block page means skip that page (soft finding "listing page could not be read").
+  3. `web_search` is always called with `allowed_domains` set to the approved sites only.
 
 ## Uizze (UI references and design skills)
 - The Uizze MCP (`https://uizze.com/mcp`) is installed and signed in only in Andrej's Claude Code CLI. Tools:
