@@ -20,6 +20,8 @@ export type SourceRef = {
   readonly clause?: string
   /** Exact excerpt of the source text the value was taken from (required for listing texts). */
   readonly quote?: string
+  /** The source is the text itself, which does NOT state this field (no quote possible). Needs `field`. */
+  readonly missing?: boolean
   readonly inputs?: readonly SourceRef[]
 }
 
@@ -46,6 +48,10 @@ export function validateSource(source: unknown): SourceRef {
   switch (s.kind) {
     case "listing":
       if (LISTING_TEXT_ID.test(s.ref)) {
+        if (s.missing === true) {
+          if (!s.field) throw new DomainError("invalid_source", "A 'not stated' listing source must name the field")
+          break
+        }
         if (typeof s.quote !== "string" || s.quote.trim() === "") {
           throw new DomainError("invalid_source", `Listing text source "${s.ref}" must carry a quote from the text`)
         }

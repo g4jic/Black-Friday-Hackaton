@@ -93,6 +93,31 @@ photos, or be replaced by synthetic data.
 - Railway datacenter IPs may be blocked by listing sites; test live mode from the deployed service.
 
 ## Current state
+- **Ranker done (26 Nov), 98 tests pass, typecheck clean, committed and pushed.**
+  - Change after Aleksa's review: a re-weighted 100 for a candidate without area and lease was misleading. Now
+    unknown parts give a score RANGE (low end = unknown as 0, high end = unknown as full; one number when nothing is
+    unknown) and the rank uses the low end (worst case). Rent missing still means never first. Confidence reasons
+    say what is missing and how many points it carries ("no lease draft: up to 20 points unknown"). Assumptions
+    screen: "Unknown parts count as worst case for ranking."
+  - Demo result now: #1 demo-01 (80, high), #2 demo-06 (74-94, medium), #3 demo-05 (68-88, medium), #4 demo-04
+    (60, high), #5 demo-03 (60-100, low), #6 demo-08 (32-97, low, no rent). demo-02 and demo-07 rejected, not ranked.
+  - Earlier notes (the first version re-weighted missing parts; replaced as above):
+  - Domain `src/domain/ranking.ts`: `RANKING_ASSUMPTIONS` (weights cost 45, area 20, lease terms 20, points to check
+    15; cost full at <= 70% of budget, 0 at 110%; area 0.7 to 1 inside the range, 0 outside; lease = average of the
+    stated terms; each soft flag or unverified field -0.15, notice and indexation not counted twice),
+    `scoreCandidate` (missing parts are left out and re-weighted, never 0; they lower the confidence: high, medium,
+    low), `rankCandidates` (tier 1: rent known and confidence high or medium; tier 2: low confidence; tier 3: no rent,
+    never first; then score, confidence, id: deterministic). 2 or 3 reasons, each with a validated source.
+    `SourceRef.missing` = "the text does not state this field" (a source for missing data, no quote).
+  - Application `src/application/agents/ranker.ts`: plain-code participant, wakes when every listing is read and no
+    loop runs, ranks once, `candidate.markScored`, `state.recordRanking` (throws for a rejected candidate), events
+    `candidate.scored` and `ranking.done`. The research session waits for `ranking.done` before `research.done`.
+  - `GET /api/assumptions` serves the constants; `web/src/Assumptions.tsx` shows them. Table and Cards show rank,
+    score, confidence and the reasons with source labels; rows sorted by rank within each section.
+  - Demo result: #1 demo-06 (93, medium), #2 demo-05 (86, medium), #3 demo-01 (80, high), #4 demo-04 (60, high),
+    #5 demo-03 (100, low: no area, no lease), #6 demo-08 (91, low: no rent). demo-02 and demo-07 are rejected, never
+    ranked. Note: cheap demo-06 and demo-05 rank above demo-01 because premises (renovation, first floor, no shop
+    window) are not scored yet: that needs the Premises inspector.
 - **Step 2.4 (SSE + Live research screen) done: server part (595a007) and web part committed and pushed.
   Next: the Ranker (scores for the Scored group), then Reports.**
   - Web (`web/src/`): `App.tsx` (sidebar, header with breadcrumb, Demo data pill only for synthetic runs, agent

@@ -2,7 +2,19 @@ import { randomUUID } from "node:crypto"
 import type { FastifyInstance } from "fastify"
 import type { InferenceRunner } from "@mozaik-ai/core"
 import { ResearchSession, type ResearchMode } from "../../application/research/research-session.js"
-import { DomainError, MAX_LISTINGS, createLeaseText, createListingBatch, type LeaseText, type ListingTextInput } from "../../domain/index.js"
+import {
+  BUDGET_TOLERANCE,
+  DomainError,
+  MAX_FIXED_INDEXATION_PERCENT,
+  MAX_LISTINGS,
+  MAX_NOTICE_MONTHS,
+  MAX_TERM_WITHOUT_EXIT_MONTHS,
+  RANKING_ASSUMPTIONS,
+  createLeaseText,
+  createListingBatch,
+  type LeaseText,
+  type ListingTextInput,
+} from "../../domain/index.js"
 import { loadDemoLeases, loadDemoListings, loadDemoQuestionnaire, loadLeaseAnswers, loadScoutAnswers } from "../fixtures/demo-listings.js"
 import { createLiveRunner } from "../inference/live-runner.js"
 import { MockRunner } from "../inference/mock-runner.js"
@@ -47,6 +59,29 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
   const secrets = () => [process.env.ANTHROPIC_API_KEY ?? ""].filter((s) => s.length >= 8)
 
   app.get("/api/config", async () => ({ liveAvailable: options.liveAvailable(), maxListings: MAX_LISTINGS, liveModel: LIVE_MODEL }))
+
+  /** The rules the code uses, served from the code itself (the Assumptions screen can never drift from them). */
+  app.get("/api/assumptions", async () => {
+    const { profile } = loadDemoQuestionnaire()
+    const p = profile.input
+    return {
+      ranking: { ...RANKING_ASSUMPTIONS, lease: { ...RANKING_ASSUMPTIONS.lease, noticeMonths: RANKING_ASSUMPTIONS.lease.noticeMonths.map((b) => ({ upTo: Number.isFinite(b.upTo) ? b.upTo : null, score: b.score })) } },
+      hardFlags: {
+        budgetTolerance: BUDGET_TOLERANCE,
+        maxTermWithoutExitMonths: MAX_TERM_WITHOUT_EXIT_MONTHS,
+      },
+      leaseConcerns: { maxNoticeMonths: MAX_NOTICE_MONTHS, maxFixedIndexationPercent: MAX_FIXED_INDEXATION_PERCENT },
+      demoQuestionnaire: {
+        business: p.description,
+        areaM2: [p.areaMinM2, p.areaMaxM2],
+        monthlyBudget: p.monthlyBudget,
+        expectedMonthlyRevenue: p.expectedMonthlyRevenue,
+        leaseMonths: p.leaseMonths,
+        currency: p.currency,
+        grossMarginRate: p.grossMarginRate ?? null,
+      },
+    }
+  })
 
   app.post("/api/research", async (req, reply) => {
     try {

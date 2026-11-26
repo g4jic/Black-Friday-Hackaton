@@ -41,6 +41,11 @@ await page.waitForTimeout(150)
 await page.screenshot({ path: `${out}/live-cards-end.png`, fullPage: true })
 console.log(`${out}/live-cards-end.png`)
 
+await page.getByRole("button", { name: "Assumptions" }).click()
+await page.getByText("How the Ranker scores").waitFor()
+await page.screenshot({ path: `${out}/assumptions.png`, fullPage: true })
+console.log(`${out}/assumptions.png`)
+
 await page.goto(base)
 await page.getByRole("button", { name: "Run demo" }).waitFor()
 await page.screenshot({ path: `${out}/new-research.png`, fullPage: true })

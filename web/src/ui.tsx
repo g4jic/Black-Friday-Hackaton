@@ -1,4 +1,4 @@
-import { Calculator, FileText, Search, OctagonAlert, TriangleAlert, Check, Info, type LucideIcon } from "lucide-react"
+import { Calculator, FileText, ListOrdered, Search, OctagonAlert, TriangleAlert, Check, Info, type LucideIcon } from "lucide-react"
 import type { ReactNode } from "react"
 import type { FieldDTO, SourceDTO, ValueDTO } from "./types"
 
@@ -7,6 +7,7 @@ export const AGENTS: { name: string; short: string; icon: LucideIcon }[] = [
   { name: "Scout", short: "Scout", icon: Search },
   { name: "Finance analyst", short: "Finance", icon: Calculator },
   { name: "Lease reader", short: "Lease", icon: FileText },
+  { name: "Ranker", short: "Ranker", icon: ListOrdered },
 ]
 export const agentIcon = (name: string): LucideIcon => AGENTS.find((a) => a.name === name)?.icon ?? Info
 
@@ -26,7 +27,7 @@ export function describeSource(s: SourceDTO, depth = 0): string {
   const pad = "  ".repeat(depth)
   const head =
     s.kind === "listing" || s.kind === "lease"
-      ? `${pad}${s.kind} ${s.ref}${s.field ? ` / ${s.field}` : ""}${s.clause ? ` / ${s.clause}` : ""}${s.quote ? `: "${s.quote}"` : ""}`
+      ? `${pad}${s.kind} ${s.ref}${s.field ? ` / ${s.field}` : ""}${s.clause ? ` / ${s.clause}` : ""}${s.quote ? `: "${s.quote}"` : ""}${s.missing ? ": not stated in the text" : ""}`
       : s.kind === "profile"
         ? `${pad}questionnaire / ${s.field ?? s.ref}`
         : `${pad}${s.kind}: ${s.ref}`

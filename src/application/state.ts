@@ -11,6 +11,7 @@ import {
   type LeaseText,
   type ListingText,
   type ListingTextInput,
+  type RankedCandidate,
   type Requirement,
 } from "../domain/index.js"
 
@@ -37,6 +38,14 @@ export class SuiteSpotState extends RuntimeState {
   readonly leaseTexts = new Map<string, LeaseText>()
   readonly leaseClauses = new Map<string, LeaseClauses>()
   private readonly leaseWaiters = new Map<string, { promise: Promise<LeaseClauses | null>; resolve: (c: LeaseClauses | null) => void }>()
+
+  /** The Ranker's result per candidate (rejected candidates are never ranked). */
+  readonly rankings = new Map<string, RankedCandidate>()
+
+  recordRanking(r: RankedCandidate): void {
+    if (this.candidate(r.candidateId).isRejected()) throw new DomainError("invalid_transition", "A rejected candidate is never ranked")
+    this.rankings.set(r.candidateId, r)
+  }
 
   /** The questionnaire (a fixed demo file for now; the Interviewer agent comes later). */
   setQuestionnaire(profile: BusinessProfile, requirements: readonly Requirement[]): void {

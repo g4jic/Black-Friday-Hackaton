@@ -11,7 +11,7 @@ export type WireEvent = {
   data?: Record<string, unknown>
 }
 
-export type SourceDTO = { kind: string; ref: string; field?: string; clause?: string; quote?: string; inputs?: SourceDTO[] }
+export type SourceDTO = { kind: string; ref: string; field?: string; clause?: string; quote?: string; missing?: boolean; inputs?: SourceDTO[] }
 
 export type ValueDTO =
   | { kind: "money"; amount: number; currency: string }
@@ -48,6 +48,20 @@ export type CandidateDTO = {
   rejection: FlagDTO | null
   laterFlags: FlagDTO[]
   findings: FindingDTO[]
+  ranking: RankingDTO | null
+}
+
+export type ReasonDTO = { text: string; effect: "plus" | "minus" | "confidence" | "order"; source: SourceDTO }
+
+export type RankingDTO = {
+  rank: number
+  /** low end (worst case, used for the rank) */
+  score: number
+  scoreHigh: number
+  confidence: "high" | "medium" | "low"
+  tier: number
+  reasons: ReasonDTO[]
+  components: { name: string; weight: number; value: number | null }[]
 }
 
 export type Metrics = {

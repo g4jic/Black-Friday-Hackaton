@@ -1,5 +1,6 @@
 import { Activity, ChartLine, FileChartColumn, History, Info, LayoutGrid, List, Plus, Search, SlidersHorizontal, type LucideIcon } from "lucide-react"
 import { useCallback, useEffect, useReducer, useRef, useState } from "react"
+import { AssumptionsScreen } from "./Assumptions"
 import { CandidateSections, MetricsStrip, type View } from "./LiveResearch"
 import { NewResearch } from "./NewResearch"
 import { applyEvent, initialResearch, type ResearchState } from "./research-state"
@@ -144,9 +145,9 @@ export function App() {
               )}
             </>
           )}
-          {screen === "reports" && <Empty text="Reports come with the Ranker, the next step: ranked candidates with every figure and its source." />}
+          {screen === "reports" && <Empty text="Reports come in the next step: the ranked candidates with every figure and its source, ready to share." />}
           {screen === "history" && <Empty text="History of research runs comes in a later step (a local JSON file in demo mode)." />}
-          {screen === "assumptions" && <Empty text="SuiteSpot assumptions (weights and thresholds from config/weights.json) come with the Ranker." />}
+          {screen === "assumptions" && <AssumptionsScreen />}
         </main>
 
         <footer className="mt-6 flex justify-center">

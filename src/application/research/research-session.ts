@@ -2,6 +2,7 @@ import { createHuman, SituationSpecification, type InferenceRunner, type Semanti
 import type { BusinessProfile, LeaseText, ListingTextInput, Requirement } from "../../domain/index.js"
 import { createFinanceAnalyst } from "../agents/finance-analyst.js"
 import { createLeaseReader } from "../agents/lease-reader.js"
+import { createRanker } from "../agents/ranker.js"
 import { createScout, submitListings } from "../agents/scout.js"
 import { safeHandler } from "../resilience/safe-handler.js"
 import { createAppRuntime, type AppRuntime } from "../runtime.js"
@@ -73,6 +74,8 @@ const PASS_THROUGH: Record<string, readonly string[]> = {
   "finance.explanation_rejected": ["candidateId", "attempt", "reason"],
   "finance.failed": ["candidateId", "reason"],
   "agent.halted": ["loopKey", "candidateId", "reason"],
+  "candidate.scored": ["candidateId", "rank", "score", "scoreHigh", "confidence"],
+  "ranking.done": ["order", "excluded"],
 }
 
 /**
@@ -89,6 +92,7 @@ export class ResearchSession {
   private readonly rt: AppRuntime
   private readonly snapshots = new Map<string, string>()
   private readonly tokens = { input: 0, output: 0 }
+  private rankingDone = false
   private busy = 0
   private peak = 0
   private stableSince = 0
@@ -107,7 +111,7 @@ export class ResearchSession {
       handlers: [safeHandler({ specification: new Everything(), processor: { apply: ({ event }) => this.onBus(event, names) } })],
     })
     const user = createHuman({ name: "User", capabilities: [], handlers: [] })
-    const agents = [createScout(this.rt, { model: input.model }), createFinanceAnalyst(this.rt, { model: input.model }), createLeaseReader(this.rt, { model: input.model })]
+    const agents = [createScout(this.rt, { model: input.model }), createFinanceAnalyst(this.rt, { model: input.model }), createLeaseReader(this.rt, { model: input.model }), createRanker(this.rt)]
     for (const p of [tap, user, ...agents]) {
       names.set(p.getId(), p.getManifest().name)
       this.rt.join(p)
@@ -174,6 +178,7 @@ export class ResearchSession {
         return this.snapshot(loop.candidateId)
       }
     }
+    if (event.type === "ranking.done") this.rankingDone = true
     const allowed = PASS_THROUGH[event.type]
     if (!allowed) return
     const data: Record<string, unknown> = Object.fromEntries(allowed.filter((k) => p[k] !== undefined).map((k) => [k, p[k]]))
@@ -198,7 +203,11 @@ export class ResearchSession {
     const state = this.rt.state
     // Finance writes findings inside tool calls: refresh running candidates so the UI sees new figures.
     for (const id of state.candidates.keys()) this.snapshot(id)
-    const settled = state.candidates.size + state.failedListings.length >= this.input.listings.length && this.rt.loops().length > 0 && this.rt.loops().every((l) => l.status === "done")
+    const settled =
+      state.candidates.size + state.failedListings.length >= this.input.listings.length &&
+      this.rt.loops().length > 0 &&
+      this.rt.loops().every((l) => l.status === "done") &&
+      (this.rankingDone || state.candidates.size === 0)
     const timedOut = Date.now() - this.started > (this.input.timeoutMs ?? 120_000)
     if (settled) this.stableSince ||= Date.now()
     else this.stableSince = 0

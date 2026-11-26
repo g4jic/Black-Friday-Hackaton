@@ -24,7 +24,7 @@ export type WireEvent = {
   readonly data?: Record<string, unknown>
 }
 
-export type SourceDTO = { kind: string; ref: string; field?: string; clause?: string; quote?: string; inputs?: SourceDTO[] }
+export type SourceDTO = { kind: string; ref: string; field?: string; clause?: string; quote?: string; missing?: boolean; inputs?: SourceDTO[] }
 
 export type ValueDTO =
   | { kind: "money"; amount: number; currency: string }
@@ -61,6 +61,18 @@ export type CandidateDTO = {
   rejection: FlagDTO | null
   laterFlags: FlagDTO[]
   findings: FindingDTO[]
+  ranking: RankingDTO | null
+}
+
+export type RankingDTO = {
+  rank: number
+  /** Low end (worst case, used for the rank) and high end of the score. */
+  score: number
+  scoreHigh: number
+  confidence: string
+  tier: number
+  reasons: { text: string; effect: string; source: SourceDTO }[]
+  components: { name: string; weight: number; value: number | null }[]
 }
 
 export function sourceDTO(s: SourceRef): SourceDTO {
@@ -70,6 +82,7 @@ export function sourceDTO(s: SourceRef): SourceDTO {
     ...(s.field ? { field: s.field } : {}),
     ...(s.clause ? { clause: s.clause } : {}),
     ...(s.quote ? { quote: s.quote } : {}),
+    ...(s.missing ? { missing: true } : {}),
     ...(s.inputs?.length ? { inputs: s.inputs.map(sourceDTO) } : {}),
   }
 }
@@ -129,5 +142,20 @@ export function candidateDTO(c: Candidate, state: SuiteSpotState): CandidateDTO 
     rejection: c.rejection ? flagDTO(c.rejection) : null,
     laterFlags: c.laterFlags.map(flagDTO),
     findings: state.findings.filter((f) => f.candidateId === c.id).map(findingDTO),
+    ranking: rankingDTO(state, c.id),
+  }
+}
+
+function rankingDTO(state: SuiteSpotState, id: string): RankingDTO | null {
+  const r = state.rankings.get(id)
+  if (!r) return null
+  return {
+    rank: r.rank,
+    score: r.score,
+    scoreHigh: r.scoreHigh,
+    confidence: r.confidence,
+    tier: r.tier,
+    reasons: r.reasons.map((x) => ({ text: x.text, effect: x.effect, source: sourceDTO(x.source) })),
+    components: r.components.map((c) => ({ name: c.name, weight: c.weight, value: c.value })),
   }
 }
