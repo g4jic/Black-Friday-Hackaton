@@ -39,6 +39,12 @@ No long dashes in this file; use a plain hyphen.
   scripted Lease reader answers come from the seed's exact clause sentences (`seed-lease-answers.ts`), still checked
   by `buildLease`. "Evaluate for my business" (`/research/new?listing=<id>`): demo listings run without a key, any
   listing in live mode. Live `source: "search"` uses the user's questionnaire. Form vs draft comparison is step 7.
+- Step 5 DONE: landlord accounts with Supabase Auth (`@supabase/supabase-js` 2.119.0, pinned; email + password).
+  On when SUPABASE_URL and SUPABASE_ANON_KEY are set: the browser gets the public anon key from /api/auth-config,
+  sends "Authorization: Bearer <token>", and the server resolves the landlord with auth.getUser
+  (`src/adapters/auth/supabase-auth.ts`). /login, /signup, log out in the avatar menu; My listings and the listing
+  form ask a guest to log in. Without Supabase: no accounts, the Local demo landlord. Listings are still in the local
+  store until step 6 (Supabase store + migration). `.env.example` lists the three Supabase names (empty).
 - Local ports: another local project may hold 3000 and 5173; stop it before `npm run dev`.
 
 ## 26 Nov 2026, late evening (Andrej): app flow, run orbit, results redesign

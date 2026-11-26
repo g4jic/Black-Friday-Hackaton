@@ -8,6 +8,7 @@ import type { ListingStore } from "../../application/listings/listing-store.js"
 import { seedCatalogue } from "../seed/seed-catalogue.js"
 import { LOCAL_LANDLORD, LOCAL_LISTINGS_FILE, LocalListingStore } from "../storage/local-listing-store.js"
 import { registerListingRoutes, type ActorResolver } from "./listing-routes.js"
+import { supabaseActorResolver, supabaseAuthConfig, type SupabaseAuthConfig } from "../auth/supabase-auth.js"
 import { registerResearchRoutes, type DemoCatalogue } from "./research-routes.js"
 
 const webDist = fileURLToPath(new URL("../../../web/dist", import.meta.url))
@@ -24,6 +25,8 @@ export type ServerOptions = {
   /** For tests: a store without a file. Default: the local store (seed + data/local-listings.json). */
   readonly listingStore?: ListingStore
   readonly resolveActor?: ActorResolver
+  /** For tests: the auth config instead of SUPABASE_URL and SUPABASE_ANON_KEY (null = no accounts). */
+  readonly auth?: SupabaseAuthConfig | null
 }
 
 export async function buildServer(options: ServerOptions = {}): Promise<FastifyInstance> {
@@ -33,7 +36,12 @@ export async function buildServer(options: ServerOptions = {}): Promise<FastifyI
   // The API key stays in this process: no route returns it, and every outgoing event is scrubbed of it.
   // Without Supabase: the local store, and every caller acts as the one Local demo landlord (clearly labelled).
   const listingStore = options.listingStore ?? new LocalListingStore({ seed: seedCatalogue(), file: LOCAL_LISTINGS_FILE })
-  registerListingRoutes(app, { store: listingStore, resolveActor: options.resolveActor ?? (async () => LOCAL_LANDLORD), backend: "local" })
+  // With SUPABASE_URL and SUPABASE_ANON_KEY: landlord accounts (Supabase Auth). The anon key is public by design;
+  // the browser gets it from /api/auth-config so the same env names work for the server and the frontend.
+  const auth = options.auth === undefined ? supabaseAuthConfig() : options.auth
+  app.get("/api/auth-config", async () => (auth ? { enabled: true, url: auth.url, anonKey: auth.anonKey } : { enabled: false }))
+  const resolveActor = options.resolveActor ?? (auth ? supabaseActorResolver(auth) : async () => LOCAL_LANDLORD)
+  registerListingRoutes(app, { store: listingStore, resolveActor, backend: auth ? "supabase" : "local" })
   registerResearchRoutes(app, { liveAvailable: () => runMode() === "live", demoPace: options.demoPace, liveRunner: options.liveRunner, demoCatalogue: options.demoCatalogue, listingStore })
 
   // In production the built web app is served by this same process (one Railway service).

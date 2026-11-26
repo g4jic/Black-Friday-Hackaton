@@ -19,6 +19,8 @@ export type Route =
   | { name: "newListing" }
   | { name: "editListing"; listingId: string }
   | { name: "myListings" }
+  | { name: "login" }
+  | { name: "signup" }
   | { name: "notFound"; path: string }
 
 const STATIC_ROUTES: Record<string, Route> = {
@@ -31,6 +33,8 @@ const STATIC_ROUTES: Record<string, Route> = {
   "/listings": { name: "listings" },
   "/listings/new": { name: "newListing" },
   "/my-listings": { name: "myListings" },
+  "/login": { name: "login" },
+  "/signup": { name: "signup" },
 }
 
 export function parseRoute(pathname: string): Route {
@@ -65,6 +69,8 @@ export const paths = {
   newListing: () => "/listings/new",
   editListing: (listingId: string) => `/listings/${listingId}/edit`,
   myListings: () => "/my-listings",
+  login: () => "/login",
+  signup: () => "/signup",
 }
 
 const listeners = new Set<() => void>()

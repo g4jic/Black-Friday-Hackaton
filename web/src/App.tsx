@@ -12,6 +12,7 @@ import { ListingFormPage } from "./listings/ListingFormPage"
 import { BrowseListingsPage, ListingDetailPage, MyListingsPage } from "./listings/ListingPages"
 import { CandidatePage } from "./results/CandidatePage"
 import { DashboardPage, NotFoundPage } from "./pages/SimplePages"
+import { LoginPage, RequireLandlord, SignupPage } from "./pages/AuthPages"
 import type { Config } from "./types"
 import { Pill } from "./ui"
 
@@ -30,6 +31,8 @@ const TITLES: Record<Route["name"], string> = {
   newListing: "New listing",
   editListing: "Edit listing",
   myListings: "My listings",
+  login: "Log in",
+  signup: "Sign up",
   notFound: "Page not found",
 }
 
@@ -91,11 +94,27 @@ function Page({ route, config }: { route: Route; config: Config | null }) {
     case "listing":
       return <ListingDetailPage key={route.listingId} id={route.listingId} />
     case "newListing":
-      return <ListingFormPage />
+      return (
+        <RequireLandlord>
+          <ListingFormPage />
+        </RequireLandlord>
+      )
     case "editListing":
-      return <ListingFormPage key={route.listingId} id={route.listingId} />
+      return (
+        <RequireLandlord>
+          <ListingFormPage key={route.listingId} id={route.listingId} />
+        </RequireLandlord>
+      )
     case "myListings":
-      return <MyListingsPage />
+      return (
+        <RequireLandlord>
+          <MyListingsPage />
+        </RequireLandlord>
+      )
+    case "login":
+      return <LoginPage />
+    case "signup":
+      return <SignupPage />
     case "notFound":
       return <NotFoundPage path={route.path} />
   }

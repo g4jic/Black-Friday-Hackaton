@@ -1,6 +1,7 @@
-import { Building2, FileChartColumn, History, House, Info, Plus, Settings as SettingsIcon, SlidersHorizontal, type LucideIcon } from "lucide-react"
+import { Building2, FileChartColumn, History, House, Info, LogIn, LogOut, Plus, Settings as SettingsIcon, SlidersHorizontal, UserPlus, type LucideIcon } from "lucide-react"
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { cx } from "../ui"
+import { logOut, useAuth } from "./auth"
 import { currentUser } from "./identity"
 import { Link, navigate, paths, type Route } from "./router"
 
@@ -99,11 +100,18 @@ function Sidebar({ route }: { route: Route }) {
   )
 }
 
-/** The guest's avatar: a small menu with Settings. No login or signup (accounts come later). */
+/** The avatar: Guest (a tenant) or a logged-in landlord. Settings, My listings, and log in, sign up or log out. */
 function AvatarMenu({ settingsActive }: { settingsActive: boolean }) {
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
-  const user = currentUser()
+  const guest = currentUser()
+  const auth = useAuth()
+  const user = auth.landlord ? { name: auth.landlord.displayName } : guest
+  const go = (to: string) => {
+    setOpen(false)
+    navigate(to)
+  }
+  const ITEM = "flex w-full items-center gap-2 rounded-[14px] px-3 py-2 text-left text-sm font-medium text-ink hover:bg-white"
 
   useEffect(() => {
     if (!open) return
@@ -135,7 +143,15 @@ function AvatarMenu({ settingsActive }: { settingsActive: boolean }) {
       {open && (
         <div role="menu" className="pop-in absolute w-[220px] max-sm:right-0 max-sm:bottom-[64px] sm:bottom-0 sm:left-[84px] rounded-[20px] glass-strong p-2 shadow-[var(--shadow-pop)]">
           <p className="px-3 pt-2 pb-2 text-xs text-ink-2">
-            Using SuiteSpot as <span className="font-semibold text-ink">{user.name}</span>. Your runs are kept until this tab is closed.
+            {auth.landlord ? (
+              <>
+                Logged in as <span className="font-semibold text-ink">{auth.landlord.displayName}</span> ({auth.landlord.email}).
+              </>
+            ) : (
+              <>
+                Using SuiteSpot as <span className="font-semibold text-ink">{user.name}</span>. Your runs are kept until this tab is closed.
+              </>
+            )}
           </p>
           <button
             type="button"
@@ -159,6 +175,29 @@ function AvatarMenu({ settingsActive }: { settingsActive: boolean }) {
           >
             <Building2 size={16} aria-hidden /> My listings
           </button>
+          {auth.enabled && !auth.landlord && (
+            <>
+              <button type="button" role="menuitem" onClick={() => go(paths.login())} className={ITEM}>
+                <LogIn size={16} aria-hidden /> Log in
+              </button>
+              <button type="button" role="menuitem" onClick={() => go(paths.signup())} className={ITEM}>
+                <UserPlus size={16} aria-hidden /> Sign up as a landlord
+              </button>
+            </>
+          )}
+          {auth.landlord && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false)
+                void logOut().then(() => navigate(paths.listings()))
+              }}
+              className={ITEM}
+            >
+              <LogOut size={16} aria-hidden /> Log out
+            </button>
+          )}
         </div>
       )}
     </div>
