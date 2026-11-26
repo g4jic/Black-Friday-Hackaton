@@ -157,6 +157,23 @@ describe("Scout (keyless, MockRunner)", () => {
     expect(rt.state.failedListings).toEqual([])
   })
 
+  it("a provider error fails the listing at once with the real reason, without a pointless retry", async () => {
+    let calls = 0
+    const { rt, recorder, user } = setup(async () => {
+      calls++
+      throw new Error('400 {"type":"invalid_request_error","message":"output_config.format.schema: Invalid schema"}')
+    })
+    submitListings(rt, [loadDemoListings()[0]!], user.getId())
+    await waitFor(() => rt.state.failedListings.length === 1, 3000, "failed listing")
+
+    expect(calls).toBe(1)
+    expect(recorder.events.filter((e) => e.type === "listing.extraction_rejected")).toEqual([])
+    expect(recorder.events.filter((e) => e.type === "agent.halted")).toHaveLength(1)
+    expect(rt.state.failedListings[0]).toMatchObject({ listingId: "demo-01", attempts: 1 })
+    expect(rt.state.failedListings[0]!.reason).toMatch(/^Provider error: .*400.*Invalid schema/)
+    expect(unhandled).toEqual([])
+  })
+
   it("a listing that stays invalid goes to the failed queue; the other listings are not affected", async () => {
     const answers = loadScoutAnswers()
     const script: MockScript = async (input): Promise<MockReply> => {

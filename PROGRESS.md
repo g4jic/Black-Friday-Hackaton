@@ -116,10 +116,24 @@ photos, or be replaced by synthetic data.
     failed queue does not affect other listings).
   - New domain events: `listings.submitted`, `listing.extraction_rejected`, `listing.extraction_failed`.
   - Known limits: agents' names in pasted text are not detected by code (the Scout schema has no field for them and
-    the instruction forbids them, but the cleaned text can still contain a name); live structured output with the
-    real Anthropic model is not tested yet. The Scout wakes on `listings.submitted`, not `requirements.ready` (plan
-    section 7 says the latter); extraction does not need the requirements, so it runs in parallel with the
-    Interviewer.
+    the instruction forbids them, but the cleaned text can still contain a name; stated in README "Known
+    limitations"). The Scout wakes on `listings.submitted` (plan section 7 updated): extraction does not need the
+    requirements, so it runs in parallel with the Interviewer.
+  - **Live check with claude-haiku-4-5 (26 Nov, `npm run demo:scout -- --live`, demo-01 + demo-03):** both listings
+    extracted correctly on the first attempt, in parallel, 9.2 s total, 5,696 input + 538 output tokens (about
+    $0.008 at $1/$5 per MTok). Values are copied as written in the text ("novi sad", "grbavici"), which is fine: the
+    quote is the source and display formatting is a UI concern.
+  - **Structured output rules (Anthropic docs, read 26 Nov):** no `oneOf`, `not`, numeric or string length limits,
+    `minItems` only 0 or 1, `additionalProperties: false` on every object, `anyOf` not next to `type`, at most 16
+    union-typed parameters (anyOf or type arrays) and 24 optional parameters per request; and from our own 400:
+    no `enum` next to a type array. The first Scout schema broke two rules (enum + type array, and 26 union
+    parameters). Fixed: each field is `anyOf [{found: true, value, quote}, {found: false}]` (11 unions, 0 optional).
+    `src/application/agents/schema-rules.ts` checks every exported agent schema in `tests/schema-rules.test.ts`
+    (new agents are picked up automatically).
+  - A provider error ("Inference failed: ...") now fails the listing at once with "Provider error: <reason>" instead
+    of a retry with misleading "not valid JSON" feedback.
+  - `npm run demo:scout` (mock, 8 listings) and `npm run demo:scout -- --live [--ids demo-01,demo-03]` print the event
+    timeline, the fields with source quotes and run metrics computed from events.
 - Step 1 (skeleton) done: one root `package.json`, `@mozaik-ai/core` pinned to 6.0.0, Fastify server
   (`src/adapters/server/`, `/api/health`, serves `web/dist` in production), Vite + React + Tailwind 4 web app in `web/`,
   Vitest. Mode is `SUITESPOT_MODE` (default `demo`; `live` also needs `ANTHROPIC_API_KEY`).
@@ -235,6 +249,8 @@ photos, or be replaced by synthetic data.
   OpenStreetMap for area data; Supabase for history; Railway for deploy; Stripe and Solana not used.
 
 ## Session log
+- 2026-11-26 17:00 (Aleksa): Scout schema fixed against Anthropic's structured output rules, schema rule test,
+  provider-error handling, demo script; live haiku-4-5 run on demo-01 and demo-03 passed. 71 tests pass. Pushed.
 - 2026-11-26 16:30 (Aleksa): DESIGN.md edits committed and pushed (dbf8818). Step 2.2 Scout built with 8 synthetic
   listings and keyless tests (65 pass). Committed and pushed after Aleksa's OK. Next: step 2.3 (Finance analyst
   and Lease reader).

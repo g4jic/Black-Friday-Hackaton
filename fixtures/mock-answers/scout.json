@@ -1,5 +1,5 @@
 {
-  "_note": "SYNTHETIC DEMO DATA. Scripted Scout answers replayed by the MockRunner in demo mode (keyless). Same shape as the live structured output; buildListing validates every quote against the fixture text.",
+  "_note": "SYNTHETIC DEMO DATA. Scripted Scout answers replayed by the MockRunner in demo mode (keyless). Same shape as the live structured output (LISTING_EXTRACTION_SCHEMA); buildListing validates every quote against the fixture text.",
   "answers": {
     "demo-01": {
       "title": {
@@ -94,16 +94,10 @@
         "quote": "58m2 u prizemlju"
       },
       "deposit": {
-        "found": false,
-        "amount": null,
-        "currency": null,
-        "quote": null
+        "found": false
       },
       "serviceChargeMonthly": {
-        "found": false,
-        "amount": null,
-        "currency": null,
-        "quote": null
+        "found": false
       },
       "floor": {
         "found": true,
@@ -149,36 +143,22 @@
         "quote": "cena 900e"
       },
       "area": {
-        "found": false,
-        "value": null,
-        "quote": null
+        "found": false
       },
       "deposit": {
-        "found": false,
-        "amount": null,
-        "currency": null,
-        "quote": null
+        "found": false
       },
       "serviceChargeMonthly": {
-        "found": false,
-        "amount": null,
-        "currency": null,
-        "quote": null
+        "found": false
       },
       "floor": {
-        "found": false,
-        "value": null,
-        "quote": null
+        "found": false
       },
       "heating": {
-        "found": false,
-        "value": null,
-        "quote": null
+        "found": false
       },
       "parking": {
-        "found": false,
-        "value": null,
-        "quote": null
+        "found": false
       }
     },
     "demo-04": {
@@ -220,10 +200,7 @@
         "quote": "Depozit: 1.400 EUR"
       },
       "serviceChargeMonthly": {
-        "found": false,
-        "amount": null,
-        "currency": null,
-        "quote": null
+        "found": false
       },
       "floor": {
         "found": true,
@@ -274,10 +251,7 @@
         "quote": "Poslovni prostor 65 m2"
       },
       "deposit": {
-        "found": false,
-        "amount": null,
-        "currency": null,
-        "quote": null
+        "found": false
       },
       "serviceChargeMonthly": {
         "found": true,
@@ -334,16 +308,10 @@
         "quote": "POVRŠINA 50 M2"
       },
       "deposit": {
-        "found": false,
-        "amount": null,
-        "currency": null,
-        "quote": null
+        "found": false
       },
       "serviceChargeMonthly": {
-        "found": false,
-        "amount": null,
-        "currency": null,
-        "quote": null
+        "found": false
       },
       "floor": {
         "found": true,
@@ -394,16 +362,10 @@
         "quote": "80 m2, prizemlje, izlog 6 m"
       },
       "deposit": {
-        "found": false,
-        "amount": null,
-        "currency": null,
-        "quote": null
+        "found": false
       },
       "serviceChargeMonthly": {
-        "found": false,
-        "amount": null,
-        "currency": null,
-        "quote": null
+        "found": false
       },
       "floor": {
         "found": true,
@@ -443,10 +405,7 @@
         "quote": "Ulica Ive Andrića"
       },
       "rentMonthly": {
-        "found": false,
-        "amount": null,
-        "currency": null,
-        "quote": null
+        "found": false
       },
       "area": {
         "found": true,
@@ -454,16 +413,10 @@
         "quote": "Površina 60 m2"
       },
       "deposit": {
-        "found": false,
-        "amount": null,
-        "currency": null,
-        "quote": null
+        "found": false
       },
       "serviceChargeMonthly": {
-        "found": false,
-        "amount": null,
-        "currency": null,
-        "quote": null
+        "found": false
       },
       "floor": {
         "found": true,
