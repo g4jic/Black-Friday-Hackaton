@@ -60,8 +60,8 @@ No long dashes in this file; use a plain hyphen.
      it. Write the result here (site, terms URL, date, verdict).
   2. Plain HTTP reads use an honest `User-Agent: SuiteSpot/0.1 (hackathon)` with the repo URL, never a browser or
      search engine identity; at most one request per 2 seconds per site; respect robots.txt; skip blocked pages.
-     Note: `scripts/check-listing-fetch.ts` still sends a browser User-Agent (it was a one-off feasibility test).
-     Switch it to the honest one before running it again. An honest UA may be blocked more often; re-test.
+     `scripts/check-listing-fetch.ts` now sends the honest User-Agent (not re-run yet). An honest UA may be blocked
+     more often than the earlier browser UA; re-run the test before relying on the old numbers.
   3. `web_search` always with `allowed_domains` = the approved sites.
   - Then: plain HTTP GET first, Anthropic web_fetch only as fallback; check the page is the listing we asked for.
 

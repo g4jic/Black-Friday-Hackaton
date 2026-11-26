@@ -12,7 +12,8 @@ import "dotenv/config"
 import Anthropic from "@anthropic-ai/sdk"
 
 const MODEL = "claude-haiku-4-5"
-const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36"
+// Honest identity, never a browser or search engine (CLAUDE.md, "Listing sources").
+const UA = "SuiteSpot/0.1 (hackathon; +https://github.com/g4jic/Black-Friday-Hackaton)"
 const client = new Anthropic({ maxRetries: 1 })
 let inputTokens = 0
 let outputTokens = 0
