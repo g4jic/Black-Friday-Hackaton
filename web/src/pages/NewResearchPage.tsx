@@ -95,7 +95,6 @@ export function NewResearchPage({ config }: { config: Config | null }) {
     fetch("/api/demo-questionnaire")
       .then((response) => response.json() as Promise<{ profile: ProfileInput }>)
       .then((body) => {
-        setDemoProfile(body.profile)
         // A first visit has an empty questionnaire: start from the demo example so one click runs, keeping what Settings has.
         setForm((current) => {
           const example = toForm(body.profile)
@@ -107,6 +106,15 @@ export function NewResearchPage({ config }: { config: Config | null }) {
   }, [])
 
   const liveAvailable = Boolean(config?.liveAvailable)
+  // Without a key: three demo scenarios, each with a locked questionnaire, replayed from a recorded real run.
+  const scenarios = (config?.scenarios ?? []).filter((s) => s.recorded)
+  const [scenario, setScenario] = useState("cafe-novi-sad")
+  useEffect(() => {
+    fetch(`/api/demo-questionnaire?scenario=${encodeURIComponent(scenario)}`)
+      .then((response) => response.json() as Promise<{ profile: ProfileInput }>)
+      .then((body) => setDemoProfile(body.profile))
+      .catch(() => setDemoProfile(null))
+  }, [scenario])
   // Without live mode every run uses the fixed demo profile (the scripted answers were made for it).
   const profileLocked = !liveAvailable
   const shownForm = profileLocked && demoProfile ? toForm(demoProfile) : form
@@ -127,7 +135,7 @@ export function NewResearchPage({ config }: { config: Config | null }) {
 
   /** Live runs on SuiteSpot listings use the questionnaire as typed; demo runs use the demo profile. */
   const startOnCatalogue = (request: { source: "search" } | { source: "listing"; listingId: string }) => {
-    if (!liveAvailable) return void start(request.source === "search" ? { source: "demo" } : request)
+    if (!liveAvailable) return void start(request.source === "search" ? { source: "demo", scenario } : request)
     const checked = profileFromForm(form)
     if ("error" in checked) return setError(checked.error)
     void start({ mode: "live", ...request, profile: checked.profile }, settings.liveAccessCode)
@@ -150,7 +158,7 @@ export function NewResearchPage({ config }: { config: Config | null }) {
                 </span>
               </Pill>
               <span className="text-[13px] text-ink-2">
-                Without an AI model key on the server, runs use this fixed profile.
+                Without an AI model key on the server, runs use the locked profile of the demo scenario.
               </span>
             </div>
           ) : (
@@ -166,6 +174,25 @@ export function NewResearchPage({ config }: { config: Config | null }) {
               best matches at the same time, and every number shows its source.
             </p>
             {!liveAvailable && <NoKeyNotice />}
+            {!liveAvailable && scenarios.length > 0 && (
+              <div className="mt-4" role="radiogroup" aria-label="Demo scenario">
+                <p className="mb-2 text-xs font-medium text-ink">Demo scenario (recorded run with the real model)</p>
+                <div className="flex flex-wrap gap-2">
+                  {scenarios.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={scenario === s.id}
+                      onClick={() => setScenario(s.id)}
+                      className={cx("h-10 rounded-full px-4 text-sm font-medium", scenario === s.id ? "bg-brand text-ink" : "glass-strong text-ink hover:bg-white")}
+                    >
+                      {s.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <button
               type="button"
               onClick={() => startOnCatalogue({ source: "search" })}
@@ -335,7 +362,7 @@ function ProfileFields({ form, locked, onChange }: { form: ProfileForm; locked: 
 function NoKeyNotice() {
   return (
     <p className="mt-4 rounded-[18px] bg-white/70 px-4 py-3 text-[13px] leading-5 text-ink-2">
-      This server has no AI model key, so runs use scripted demo answers and the demo profile. Add ANTHROPIC_API_KEY to .env and restart to use the real model.
+      This server has no AI model key. "Find spaces" replays a recorded run of the real model for a demo scenario with a locked profile (labelled "Recorded run"). Add ANTHROPIC_API_KEY to .env and restart to run the model on your own questionnaire.
     </p>
   )
 }

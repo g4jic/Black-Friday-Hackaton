@@ -1,0 +1,23 @@
+{
+  "_note": "SYNTHETIC DEMO DATA. A locked demo questionnaire for the recorded scenario 'Shop in Novi Sad'. Revenue and margin are the owner's own estimates (questionnaire answers), not market figures.",
+  "profile": {
+    "businessType": "retail",
+    "description": "Small shop for local food products",
+    "headcount": 2,
+    "areaMinM2": 40,
+    "areaMaxM2": 90,
+    "currency": "EUR",
+    "monthlyBudget": 1300,
+    "expectedMonthlyRevenue": 10000,
+    "grossMarginRate": 0.35,
+    "walkInCustomers": true,
+    "leaseMonths": 36,
+    "city": "Novi Sad",
+    "fitOutBudget": 8000,
+    "equipmentBudget": 6000,
+    "specialNeeds": "A shop window on a busy street"
+  },
+  "requirements": [
+    { "id": "req-storefront", "text": "Ground floor with a shop window and direct street entrance (walk-in customers)", "hard": true, "aspect": "premises", "field": "walkInCustomers" }
+  ]
+}

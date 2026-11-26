@@ -10,7 +10,7 @@ import { LOCAL_LANDLORD, LOCAL_LISTINGS_FILE, LocalListingStore } from "../stora
 import { SupabaseListingStore, supabaseStoreConfig } from "../storage/supabase-listing-store.js"
 import { registerListingRoutes, type ActorResolver } from "./listing-routes.js"
 import { supabaseActorResolver, supabaseAuthConfig, type SupabaseAuthConfig } from "../auth/supabase-auth.js"
-import { registerResearchRoutes, type DemoCatalogue } from "./research-routes.js"
+import { registerResearchRoutes, type DemoCatalogue, type ResearchRoutesOptions } from "./research-routes.js"
 
 const webDist = fileURLToPath(new URL("../../../web/dist", import.meta.url))
 
@@ -23,6 +23,8 @@ export type ServerOptions = {
   readonly demoPace?: DemoLatency
   readonly liveRunner?: () => InferenceRunner
   readonly demoCatalogue?: DemoCatalogue
+  readonly loadRecording?: ResearchRoutesOptions["loadRecording"]
+  readonly replaySpeed?: number
   /** For tests: a store without a file. Default: the local store (seed + data/local-listings.json). */
   readonly listingStore?: ListingStore
   readonly resolveActor?: ActorResolver
@@ -45,7 +47,7 @@ export async function buildServer(options: ServerOptions = {}): Promise<FastifyI
   app.get("/api/auth-config", async () => (auth ? { enabled: true, url: auth.url, anonKey: auth.anonKey } : { enabled: false }))
   const resolveActor = options.resolveActor ?? (auth ? supabaseActorResolver(auth) : async () => LOCAL_LANDLORD)
   registerListingRoutes(app, { store: listingStore, resolveActor, backend: auth ? "supabase" : "local" })
-  registerResearchRoutes(app, { liveAvailable: () => runMode() === "live", demoPace: options.demoPace, liveRunner: options.liveRunner, demoCatalogue: options.demoCatalogue, listingStore })
+  registerResearchRoutes(app, { liveAvailable: () => runMode() === "live", demoPace: options.demoPace, liveRunner: options.liveRunner, demoCatalogue: options.demoCatalogue, listingStore, loadRecording: options.loadRecording, replaySpeed: options.replaySpeed })
 
   // In production the built web app is served by this same process (one Railway service).
   if (existsSync(webDist)) {

@@ -111,7 +111,7 @@ function ensureEntry(researchId: string): void {
 }
 
 export type StartRequest =
-  | { source: "demo" }
+  | { source: "demo"; scenario?: string }
   | { mode: "live"; source: "pasted"; listings: { text: string; url?: string; lease?: string }[]; profile?: unknown }
   | { mode: "live"; source: "search"; profile?: unknown }
   | { mode: "live"; source: "outside"; outside: { listing: unknown; leaseDraft?: string; url?: string; text?: string }; profile?: unknown }

@@ -28,6 +28,8 @@ import {
 } from "../../domain/index.js"
 import type { ListingStore } from "../../application/listings/listing-store.js"
 import { loadDemoQuestionnaire } from "../fixtures/demo-questionnaire.js"
+import { DEFAULT_SCENARIO, DEMO_SCENARIOS, isScenario, loadRecording, loadScenario, type DemoScenarioId } from "../fixtures/demo-scenarios.js"
+import { ReplayRunner, type Recording } from "../inference/recording-runner.js"
 import { seedCatalogue } from "../seed/seed-catalogue.js"
 import { seedLeaseAnswers } from "../seed/seed-lease-answers.js"
 import { createLiveRunner } from "../inference/live-runner.js"
@@ -42,6 +44,9 @@ export const MAX_ACTIVE_LIVE = 1
 const KEEP_SESSIONS = 20
 
 /** Demo pacing: slow enough to watch the agents work in the browser (deterministic per listing). */
+/** Recorded runs replay at twice the recorded speed (still clearly parallel on the timeline). */
+export const REPLAY_SPEED = 0.5
+
 export const DEMO_PACE: DemoLatency = {
   scout: (id) => 600 + ((Number(id.replace(/\D/g, "")) * 370) % 1800),
   leaseReader: 2600,
@@ -62,6 +67,10 @@ export type DemoCatalogue = {
 }
 
 export type ResearchRoutesOptions = {
+  /** Tests inject recordings; by default they are read from fixtures/recordings/. */
+  readonly loadRecording?: (id: DemoScenarioId) => Recording | null
+  /** Replay pace: 0.5 replays the recorded latencies at twice the speed. */
+  readonly replaySpeed?: number
   readonly demoCatalogue?: DemoCatalogue
   /** The published SuiteSpot listings ("Find spaces" and "Evaluate for my business" in live mode). */
   readonly listingStore?: ListingStore
@@ -73,7 +82,7 @@ export type ResearchRoutesOptions = {
 }
 
 type OutsideBody = { listing?: unknown; leaseDraft?: unknown; url?: unknown; text?: unknown }
-type Body = { mode?: ResearchMode; source?: "demo" | "pasted" | "search" | "listing" | "outside"; listingId?: unknown; outside?: OutsideBody; listings?: { text?: unknown; lease?: unknown; url?: unknown }[]; profile?: Partial<BusinessProfileInput> }
+type Body = { scenario?: unknown; mode?: ResearchMode; source?: "demo" | "pasted" | "search" | "listing" | "outside"; listingId?: unknown; outside?: OutsideBody; listings?: { text?: unknown; lease?: unknown; url?: unknown }[]; profile?: Partial<BusinessProfileInput> }
 
 /** Name of the environment variable with the live mode access code (also in .env.example, PROGRESS.md, CLAUDE.md). */
 export const ACCESS_CODE_ENV = "SUITESPOT_ACCESS_CODE"
@@ -137,11 +146,18 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
   const sessions = new Map<string, ResearchSession>()
   const secrets = () => [process.env.ANTHROPIC_API_KEY ?? ""].filter((s) => s.length >= 8)
 
-  app.get("/api/config", async () => ({ liveAvailable: options.liveAvailable(), liveNeedsAccessCode: Boolean(accessCode()), maxListings: MAX_LISTINGS, liveModel: LIVE_MODEL }))
+  app.get("/api/config", async () => ({
+    liveAvailable: options.liveAvailable(),
+    liveNeedsAccessCode: Boolean(accessCode()),
+    maxListings: MAX_LISTINGS,
+    liveModel: LIVE_MODEL,
+    scenarios: (Object.keys(DEMO_SCENARIOS) as DemoScenarioId[]).map((id) => ({ id, title: DEMO_SCENARIOS[id].title, recorded: Boolean((options.loadRecording ?? loadRecording)(id)) })),
+  }))
 
   /** The fixed demo questionnaire, shown locked on the New research screen (demo runs always use it). */
-  app.get("/api/demo-questionnaire", async () => {
-    const { profile, requirements } = loadDemoQuestionnaire()
+  app.get("/api/demo-questionnaire", async (req) => {
+    const asked = (req.query as { scenario?: unknown }).scenario
+    const { profile, requirements } = isScenario(asked) ? loadScenario(asked) : loadDemoQuestionnaire()
     return { profile: profile.input, requirements: requirements.map((r) => ({ id: r.id, text: r.text, hard: r.hard })) }
   })
 
@@ -181,8 +197,14 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
       }
       const source = body.source ?? "demo"
       const demo = loadDemoQuestionnaire()
-      // Demo runs always use the fixed demo profile (the scripted answers were made for it).
-      const profile = mode === "live" ? liveProfile(body.profile, demo.profile) : demo.profile
+      // A demo scenario has a locked questionnaire (its recorded or scripted answers were made for it).
+      const scenario: DemoScenarioId = isScenario(body.scenario) ? body.scenario : DEFAULT_SCENARIO
+      const locked = source === "demo" ? loadScenario(scenario) : demo
+      const profile = mode === "live" && source !== "demo" ? liveProfile(body.profile, demo.profile) : locked.profile
+      const recording = mode === "demo" && source === "demo" && !options.demoCatalogue ? (options.loadRecording ?? loadRecording)(scenario) : null
+      if (mode === "demo" && source === "demo" && !options.demoCatalogue && !recording && scenario !== DEFAULT_SCENARIO) {
+        throw new HttpError(400, `The demo scenario "${DEMO_SCENARIOS[scenario].title}" has not been recorded yet.`)
+      }
       let listings: ListingTextInput[] = []
       let referenceText: { input: ListingTextInput; candidateId: string } | undefined
       let leases: LeaseText[] = []
@@ -219,16 +241,19 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
         createListingBatch(listings) // validates 1 to 8, empty texts; throws DomainError
         leases = raw.flatMap((l, i) => (typeof l.lease === "string" && l.lease.trim() ? [createLeaseText(`pasted-${i + 1}`, l.lease, false)] : []))
       }
-      const requirements = profile === demo.profile ? demo.requirements : []
+      const requirements = profile === locked.profile ? locked.requirements : []
       const id = randomUUID()
       const session = new ResearchSession({
         id,
         mode,
         model: mode === "live" ? LIVE_MODEL : "mock",
+        ...(recording ? { answers: "recorded" as const } : {}),
         runner:
           mode === "live"
             ? (options.liveRunner ?? createLiveRunner)()
-            : new MockRunner({ script: demoRoomScript(pastedDemo && listings.length ? { scout: pastedDemo.scoutAnswers(), lease: pastedDemo.leaseAnswers() } : { scout: {}, lease: demoSeed().leaseAnswers }, options.demoPace ?? DEMO_PACE) }),
+            : recording
+              ? new ReplayRunner(recording, options.replaySpeed ?? REPLAY_SPEED)
+              : new MockRunner({ script: demoRoomScript(pastedDemo && listings.length ? { scout: pastedDemo.scoutAnswers(), lease: pastedDemo.leaseAnswers() } : { scout: {}, lease: demoSeed().leaseAnswers }, options.demoPace ?? DEMO_PACE) }),
         listings,
         ...(referenceText ? { referenceText } : {}),
         catalogue,

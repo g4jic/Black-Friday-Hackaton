@@ -95,7 +95,8 @@ export type ReportDTO = {
   failed: string | null
 }
 
-export type Config = { liveAvailable: boolean; liveNeedsAccessCode: boolean; maxListings: number; liveModel: string }
+export type DemoScenario = { id: string; title: string; recorded: boolean }
+export type Config = { liveAvailable: boolean; liveNeedsAccessCode: boolean; maxListings: number; liveModel: string; scenarios?: DemoScenario[] }
 
 export type Verdict = "good" | "check_before_signing" | "not_recommended"
 
