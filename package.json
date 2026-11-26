@@ -18,6 +18,7 @@
     "check:anthropic": "tsx scripts/check-anthropic-tools.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "0.74.0",
     "@fastify/static": "8.3.0",
     "@mozaik-ai/core": "6.0.0",
     "dotenv": "17.4.2",
