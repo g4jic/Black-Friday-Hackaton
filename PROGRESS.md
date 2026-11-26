@@ -3,6 +3,125 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
+## HANDOFF (26 Nov 2026, late night, Andrej): READ THIS FIRST
+Whoever continues (Aleksa or Andrej) starts a new session without this context. Read this section, then CLAUDE.md,
+then the step entries right below. Older sections further down are history; anything marked SUPERSEDED is no longer
+true.
+
+### Deadline and how we are judged
+- Submissions close **Friday 27 Nov 2026, 00:00 CET** (midnight Fri to Sat). Last submission counts.
+- **We have no demo slot.** The jury only sees the public repo and the README, so the README, a working quick start
+  and a short video carry the whole entry.
+
+### State in one paragraph
+SuiteSpot is a two-sided listing platform for commercial spaces. Landlords (Supabase Auth account) publish structured
+listings; tenants stay Guest and ask "Is this lease a good financial decision for my business?". Mozaik agents
+(Lease reader, Finance analyst, Report writer, plus code participants: listing form check, Ranker, Auditor) evaluate
+every candidate in parallel; every number carries a source; hard flags are decided by code and cut running loops at
+their breakpoint. Steps 0 to 6 of the plan are done. Listings live in Supabase (project SuiteSpot) with RLS checked;
+100 synthetic demo listings are seeded. Keyless runs use scripted demo answers (labelled as such on every result
+screen) until recorded runs exist (step 8).
+
+### Done (one commit each, all pushed)
+- Step 0 clean start (old fixtures and listing-fetch scripts removed). Step 1 `SpaceListing` entity and `ListingStore`
+  port. Step 2 frozen seed (100 listings, 100 demo landlords, fingerprint pinned in `tests/seed.test.ts`). Step 3
+  listing pages (browse, public listing, form, my listings). Step 4 "Find spaces" from the catalogue and "Evaluate for
+  my business" on one listing. Step 5 landlord accounts (Supabase Auth: log in, sign up, log out).
+- Fixes before step 6: permitted use is a hard flag in code on every evaluation (rule
+  `permitted_use_excludes_business`); honest answer label ("Scripted demo answers, no AI model", later "Recorded
+  run"); results polish (grouped, collapsed, plain-language sources; one money format "2,500 EUR"; main reason = best
+  plus and worst minus; "Can't judge: rent not stated"; "area unknown"); `.gitattributes` (LF everywhere).
+- Step 6 Supabase: migrations in `supabase/migrations/` (applied), checks in `supabase/checks/rls-checks.sql`,
+  `SupabaseListingStore`, `npm run seed:supabase`. Details in "Supabase" below.
+
+### Exact state
+- Tests: 22 files, 158 tests pass (`npm test`). Typecheck clean (`npm run typecheck`, server and web).
+- Last commit: see `git log -1` (this handoff is in it). Branch `main`, pushed to origin.
+- The keyless demo works: "Find spaces" gives 8 candidates from the seed, 2 rejected by the listing form check, peak
+  11 loops in parallel, the audit passes.
+
+### Next, in this order
+1. **Step 7, mode A ("Evaluate an outside listing"):** the user types the same REQUIRED fields as the landlord form
+   (rent, monthly costs, area, city, district, term, early exit, indexation, permitted uses, structural repairs) plus
+   optional pasted text and an optional lease draft. One listing per evaluation. Code compares the typed form with the
+   lease draft (Lease reader) and flags every mismatch with both sources. Never read any outside site.
+2. **Step 8, recorded scenarios:** `RecordingRunner` and `ReplayRunner`, `npm run record:demo` (records real model
+   answers once, with ANTHROPIC_API_KEY), the "Recorded run" label, and removal of `SUITESPOT_MODE` (live = a key
+   exists; `SUITESPOT_ACCESS_CODE` required on the hosted version; recorded scenarios need neither). **Record the
+   scenarios right after step 8 is done** (tell Andrej first; it costs a few cents per run).
+3. **Step 9, navigation and texts** (labels, empty states, every screen readable by a first-time visitor).
+4. **Railway deploy:** one service, `npm run build` then `npm start`. Set `SUITESPOT_ACCESS_CODE` (so a public URL
+   cannot spend our key), the three SUPABASE_* values and ANTHROPIC_API_KEY as Railway variables. In Supabase
+   (Authentication, URL configuration) set the Site URL and redirect URL to the Railway address.
+5. **README** (scored): one-line pitch, hero image, quick start that works keyless, how the agents run concurrently
+   (table + Mermaid + Mozaik Cloud screenshot), real vs scripted vs recorded, data is synthetic, not financial advice,
+   limits, credits.
+6. **Short demo video** (2-3 min) and the link in the README.
+7. **Fresh-clone test:** clone into a new folder, follow the README word for word, it must work the first time.
+- Optional step 10 (listing check) only if time is left.
+
+### How to run locally (PowerShell)
+```powershell
+npm install
+Copy-Item .env.example .env   # then fill in what you have (see below); never commit .env
+npm test
+npm run dev
+```
+- `npm run dev` starts the API on port 3000 and the web app on 5173 (http://localhost:5173). **Stop other local
+  projects that use 3000 or 5173 first** (Rook did); otherwise Vite moves to 5174 and the API fails to start.
+- **Without any keys** (empty .env): everything runs. Listings come from the local store (the 100 seeded demo
+  listings plus `data/local-listings.json`, ignored by git); no accounts, publishing is done as the "Local demo
+  landlord"; research runs use scripted demo answers with the fixed demo profile.
+- **With `ANTHROPIC_API_KEY` and `SUITESPOT_MODE=live`:** real model runs (claude-haiku-4-5), your own questionnaire,
+  "Find spaces" over the whole catalogue. Costs money (about $0.10 for a full run). `SUITESPOT_MODE` disappears in
+  step 8 (then a key alone means live).
+- **With `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`:** landlord accounts (sign up, log in) and
+  listings from the Supabase database instead of the local store. All three must be set for the database; URL + anon
+  key alone only turn on accounts.
+- Production: `npm run build` then `npm start` (one process serves the web app and the API on PORT).
+
+### Supabase
+- Project **SuiteSpot**, organisation **mRtw**, ref **oetcunfrpnjtmcqbdrbn** (region eu-west-1). The Supabase MCP
+  in Claude must be connected to an account that is a member of mRtw (it failed once on another account).
+- Migrations (applied through the MCP, keep the files in sync with the database):
+  `20261126220000_listings_and_contacts.sql` (tables `listings` and `listing_contacts`, domain rules as check
+  constraints, RLS on both) and `20261126230000_revoke_rls_auto_enable.sql` (the project's own
+  `rls_auto_enable()` is no longer callable by clients; its event trigger still works).
+- RLS rules, all verified on 26 Nov with `supabase/checks/rls-checks.sql` (runs in a transaction that is rolled
+  back), a negative control and a REST check with the anon key: anon and signed-in users read published listings; the
+  owner also reads their own unpublished ones; anon gets "permission denied" on `listing_contacts`; nobody changes,
+  deletes or creates demo listings or switches `is_demo` off. Security advisor after the revoke: one warning left,
+  "Leaked password protection disabled" (an Auth dashboard setting; decide whether to turn it on).
+- `npm run seed:supabase` is idempotent (accounts found by email and reused, rows upserted by id). In the database:
+  100 demo accounts (`@example.com`, confirmed, random password nobody knows, `app_metadata.is_demo`), 100 demo
+  listings (50 Novi Sad, 50 Beograd, all published), 100 contacts.
+- Demo listings are FROZEN: the generator `src/adapters/seed/generate-listings.ts` must not change (its fingerprint
+  test fails if it does); scripted answers and tests depend on it.
+- **Keys are NOT in the repo.** `.env` is ignored by git. Aleksa gets the Supabase keys privately from Andrej. The
+  service role key is server and seed script only: never in the frontend, never in git, never printed.
+
+### Decisions from tonight, with the reason
+1. **Two-sided platform, no outside listings.** Reason: the terms of use of 4zida.rs (section 12.2 forbids automated
+   use of its system), oglasi.rs (written permission required for copying) and svenekretnine.com (unauthorised
+   downloading of listings forbidden) do not allow us to read their listings, neither by fetch nor by web search. So
+   listings are published on SuiteSpot itself, and "Find spaces" searches only our own database.
+2. **Tenants stay Guest.** Their questionnaire, searches and results live in sessionStorage and disappear when the tab
+   closes; they never reach Supabase. Only landlords need an account (they publish and must be accountable).
+3. **Contacts in a separate table (`listing_contacts`).** A public read of listings can never leak a phone or an
+   email; anon has no access at all; the server reveals a contact only on an explicit "Show contact". On demo listings
+   the phone is partly masked ("+381 64 *** ** 37"), labelled "Demo contact", with no tel: or mailto: links, because
+   a generated number could belong to a real person.
+4. **Launch story.** Before launch the founders agree the first listings with landlords so the platform is not empty.
+   In this version all 100 listings and landlords are SYNTHETIC (`is_demo`, labelled "Demo listing"). Never claim they
+   are real partners.
+5. **Keyless honesty.** Without a key the agents replay scripted demo answers, and every result screen says
+   "Scripted demo answers, no AI model". After step 8 the keyless demo replays recorded real runs and says "Recorded
+   run". Code still checks every value against its source in both cases.
+6. **Rules in code.** Permitted use, budget, locked-in lease and unlimited rent increase are hard flags decided by
+   code (with a source), on every evaluation, also for form terms without a lease draft.
+7. **Prices are a synthetic assumption** roughly aligned with public 2025-2026 ranges (Kurir Biznis, Biznis.rs):
+   medians Novi Sad 10, Beograd 16.2 EUR/m2. Label them that way in the README.
+
 ## 26 Nov 2026, night (Andrej): DECISION - two-sided platform, no outside listings at all
 - Terms of use checked: 4zida.rs forbids automated use of its system (section 12.2), oglasi.rs requires written
   permission for copying, svenekretnine.com forbids unauthorised downloading of listings. Decision: SuiteSpot never
@@ -59,7 +178,7 @@ No long dashes in this file; use a plain hyphen.
   rolled back, plus a negative control and a REST check with the anon key): anon and authenticated read published
   listings, the owner also reads own unpublished ones, anon gets "permission denied" on `listing_contacts`, nobody
   changes, deletes or creates demo listings or switches `is_demo` off. Advisors: only `public.rls_auto_enable()`
-  (security definer, existed before our migration, not ours; left untouched pending a decision) and two expected
+  (security definer, existed before our migration, not ours; execute revoked from clients afterwards) and two expected
   performance notes. `SupabaseListingStore` (`src/adapters/storage/`): public reads with the anon key, landlord
   reads and writes with the landlord's token (RLS checks ownership a second time), only "Show contact" uses the
   service role key. Used when all three SUPABASE_* values are set. `npm run seed:supabase` (idempotent): 100 demo
@@ -117,8 +236,8 @@ this entry.
   spaces") can work for real without scraping anyone.
 - **Then:** README, deploy (Railway), Mozaik Cloud pairing, a fresh-clone test.
 
-## HANDOFF: Aleksa -> Andrej (26 Nov 2026, evening)
-Aleksa stops for today; Andrej continues with his own agent. Read this section first, then CLAUDE.md, then the plan.
+## SUPERSEDED HANDOFF: Aleksa -> Andrej (26 Nov 2026, evening)
+SUPERSEDED by the HANDOFF at the top. Kept as history: demo-01..08 fixtures, `npm run demo:*`, `check:listings`, pasting 1 to 8 listings and option D below no longer exist.
 
 ### State in one paragraph
 The full keyless pipeline works end to end in demo mode: 8 SYNTHETIC listings -> Scout (AI, 8 loops in parallel) ->
@@ -228,6 +347,7 @@ npm run dev
 
 
 ## Listing sites: terms of use and robots.txt (read 26 Nov 2026, ~15:00, Aleksa + Claude)
+HISTORY: the conclusion is now final, we read no outside listing site at all (see the HANDOFF at the top).
 Only the terms pages, robots.txt, llms.txt / AI info pages and the home page (to find the terms link) were read. No
 listings were downloaded. Read with `User-Agent: SuiteSpot/0.1 (hackathon; +repo URL)`, 2 s between requests.
 This is our reading of the texts, not legal advice.
@@ -261,7 +381,8 @@ photos, or be replaced by synthetic data.
   Pro: honest, safe, keeps a real-data path, a strong "we read the terms and respected them" point for the README.
   Con: mode B is not live; a permission reply may not arrive before Fri midnight; the user does more work in mode A.
 
-## Shift handover: Andrej -> Aleksa (26 Nov 2026, 15:05)
+## SUPERSEDED shift handover: Andrej -> Aleksa (26 Nov 2026, 15:05)
+SUPERSEDED by the HANDOFF at the top. History only.
 **Done so far**
 - Plan step 1, sub-steps 1-5: skeleton, resilience (mock runner, retries, failure isolation), domain model with tests,
   hard-flag cancellation spike, real Anthropic web search and web fetch check. Details under "Current state".
@@ -316,7 +437,8 @@ photos, or be replaced by synthetic data.
 - The honest User-Agent may be blocked more often than in the earlier test; re-run `npm run check:listings`.
 - Railway datacenter IPs may be blocked by listing sites; test live mode from the deployed service.
 
-## Current state
+## SUPERSEDED: state before the two-sided platform (history)
+SUPERSEDED by the HANDOFF at the top. Mentions of demo-01..08, pasted listings and SUITESPOT_MODE describe the old version.
 - **Report writer + Auditor + Reports screen (26 Nov), committed and pushed.** 102 tests pass. See the HANDOFF section.
   - Domain `src/domain/report.ts` (facts, `parseReportDraft`, `auditReport`), application `agents/report-writer.ts`
     (AI, `REPORT_SCHEMA`, `buildFacts`), `agents/auditor.ts` (code), events `report.drafted`, `audit.started`,
@@ -525,10 +647,10 @@ photos, or be replaced by synthetic data.
   for it.
 
 ## Next step
-- See "Next steps for Andrej" in the HANDOFF section at the top.
+- See "Next, in this order" in the HANDOFF section at the top.
 
 ## Open problems
-- See "Known bugs and limits" in the HANDOFF section at the top. Resolved since: the terms of use are read (option D),
+- Old list in the SUPERSEDED HANDOFF further up (some items no longer apply). Resolved since: the terms of use are read (option D),
   live mode no longer fetches listing pages, and `src/adapters/inference/live-runner.ts` sends
   `disable_parallel_tool_use` for Anthropic models.
 

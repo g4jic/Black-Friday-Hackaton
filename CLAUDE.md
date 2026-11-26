@@ -12,13 +12,15 @@
 - Push back directly when an idea is weak, and propose something better.
 
 ## Chosen project: SuiteSpot (decided Thu 26 Nov) - read this first
-**SuiteSpot:** a small business fills in a questionnaire and either pastes the text of 1 to 8 listings it is
-considering (mode A) or asks SuiteSpot to find candidates (mode B). Mozaik agents evaluate every candidate at the
-same time from different angles and answer one question: **"Is this lease a good financial decision for my business?"**
+**SuiteSpot:** a two-sided platform for commercial spaces. Landlords publish structured listings on SuiteSpot; a small
+business fills in a questionnaire and either asks SuiteSpot to find spaces in our own catalogue ("Find spaces") or
+evaluates one listing (from SuiteSpot, or an outside one whose required fields it types in: "Evaluate a space", mode A).
+Mozaik agents evaluate every candidate at the same time from different angles and answer one question: **"Is this
+lease a good financial decision for my business?"**
 The full build plan is **`2026-11-26-plan-lease-decision.md`**. Work state is in **`PROGRESS.md`** (read it at the start
 of every session, update it before every push). If the plan and this file disagree, ask the user.
-**Current state (26 Nov evening): read the HANDOFF section at the top of `PROGRESS.md` first** (what works, what does
-not, known limits, today's decisions, next steps, how to run and verify).
+**Current state (26 Nov, late night): read the HANDOFF section at the top of `PROGRESS.md` first** (steps 0 to 6
+done, exact state, next steps in order, how to run locally, Supabase, tonight's decisions with reasons).
 - Repo: https://github.com/g4jic/Black-Friday-Hackaton. Local path (Andrej): `C:\Users\Lenovo LOQ\Desktop\SuiteSpot`.
 - Two people work in relay through Claude Code CLI in PowerShell: one works, pushes, the other continues.
 - **Data: SuiteSpot is a two-sided platform (decided 26 Nov, late evening).** Why: 4zida.rs forbids automated use
@@ -31,7 +33,18 @@ not, known limits, today's decisions, next steps, how to run and verify).
   accounts, all `is_demo = true` and labelled "Demo listing". Launch story: before launch the founders agree the
   first listings with landlords so the platform is not empty; in this version the data is synthetic. Never claim
   they are real partners. OpenStreetMap for area data stays allowed.
-- Deploy on Railway: not done yet.
+- **Supabase (done, step 6):** project SuiteSpot, organisation mRtw, ref `oetcunfrpnjtmcqbdrbn`. Migrations in
+  `supabase/migrations/` (applied through the Supabase MCP; keep the files in sync), RLS checks in
+  `supabase/checks/rls-checks.sql`, `npm run seed:supabase` is idempotent. Contacts are in a separate table
+  `listing_contacts` (no anon access; the server reveals one on "Show contact"; demo phones partly masked, no tel: or
+  mailto:). The seed generator is FROZEN. **Keys are never in the repo**: `.env` is ignored; Aleksa gets the
+  Supabase keys privately from Andrej; the service role key is server and seed script only.
+- **Keyless honesty:** without a key the agents replay scripted demo answers and every result screen says "Scripted
+  demo answers, no AI model". After step 8 (recorded scenarios, `npm run record:demo`) the keyless demo replays
+  recorded real runs labelled "Recorded run". Never present scripted answers as a model's work.
+- Deploy on Railway: not done yet (after steps 7 to 9). Needs `SUITESPOT_ACCESS_CODE`, the SUPABASE_* values and
+  ANTHROPIC_API_KEY as Railway variables, and the Supabase Site URL set to the Railway address.
+- **No demo slot for us.** The jury only sees the public repo and the README (plus our video link).
 - Stripe and Solana are not used (no natural fit).
 - Never give a legal verdict on permitted use; report "check before signing: <what>".
 - **Writing rule:** no long dashes anywhere (UI, docs, comments, commits). Use a plain hyphen `-`.
@@ -43,7 +56,8 @@ not, known limits, today's decisions, next steps, how to run and verify).
 - **Black Friday AI Hackathon** by JigJoy. 26-27 Nov 2026. On site at Science Technology Park Belgrade, or online.
   **We are online.** All times are Belgrade (CET).
 - Thu 26 Nov: 10:00 kickoff, when **the brief goes public** (streamed for online teams).
-- Fri 27 Nov: 10:00-11:00 pitch preparation talk. 17:00-19:00 demos. **00:00 (midnight Fri→Sat) submissions close.**
+- Fri 27 Nov: 10:00-11:00 pitch preparation talk. 17:00-19:00 demos (we have no demo slot; the jury judges our repo
+  and README). **00:00 (midnight Fri→Sat) submissions close.**
   Only the latest submission before the deadline counts.
 - Site: https://build.jigjoy.ai · Rules: https://build.jigjoy.ai/rules · Contact: miodrag.todorovic@jigjoy.ai · Discord
   for announcements.
@@ -346,7 +360,7 @@ sendMessage("Hello", human.getId())
   first result and has to ask again). Mozaik 6.0.0 sends no `tool_choice` and no `disable_parallel_tool_use`. Rules:
   1. Every agent instruction says: "Call at most one tool per turn. Wait for its result before the next call."
   2. Design tools to take a batch when an agent needs several of the same lookup (for example `osm_lookup` takes a
-     list of queries, `fetch_listing` takes one URL but the Scout publishes candidates one by one), instead of
+     list of queries; one listing is still processed per loop), instead of
      relying on parallel calls.
   3. (Done in `src/adapters/inference/live-runner.ts`.) In live mode, pass a custom `AnthropicMessages` endpoint (its constructor takes an `endpointMapper`) whose
      mapper adds `tool_choice: { type: "auto", disable_parallel_tool_use: true }`, wired through
@@ -545,24 +559,16 @@ He is a QA Automation Engineer. Judging from what he shares on LinkedIn:
 ## Stack
 - Node.js 22 or newer (Andrej has Node 26), TypeScript (strict), `@mozaik-ai/core@6.0.0`, `dotenv`, `tsx`.
 - Web: Vite + React + TypeScript + Tailwind frontend; Fastify server running the Mozaik runtime and streaming events
-  with Server-Sent Events. One service on Railway. History in Supabase (live) or a local JSON file (demo mode).
+  with Server-Sent Events. One service on Railway. Landlord accounts and listings in Supabase (or a local store when
+  the SUPABASE_* values are empty); a guest's history and results only in sessionStorage.
 - Area data: OpenStreetMap (Nominatim + Overpass), free, no key; real `User-Agent`, max 1 request per second.
-- **Listing sources (rules for the Scout, agreed 26 Nov 2026):**
-  0. **Superseded (26 Nov, late evening): no reading of any outside listing site at all; listings live on SuiteSpot
-     (see "Data" at the top). The rules below are kept only as history.** Earlier decision: terms of use read (table in `PROGRESS.md`). 4zida.rs forbids automated use by the letter
-     of its terms; oglasi.rs and svenekretnine.com are unclear and restrict copying. So **no automated reading of any
-     listing site** unless that site gives written permission (emails drafted 26 Nov, Aleksa sends them). Real
-     listings come from text the user pastes (mode A, 1 to 8 listings). Rules 2 and 3 below apply only to a site that
-     gave permission.
-  1. Candidate sites: 4zida.rs, oglasi.rs, svenekretnine.com, each only after written permission. halooglasi.com is
-     out (its robots.txt blocks Anthropic crawlers and allows no AI input); nekretnine.rs is out (blocks all automated
-     access). Never work around a block. oglasi.rs robots.txt also disallows its own search URLs (`/oglasi?q=*`).
-  2. Plain HTTP reads identify themselves honestly: `User-Agent: SuiteSpot/0.1 (hackathon)` plus a contact URL (the
-     repo). Never pretend to be a browser or a search engine. **At most one request per 2 seconds per site.** Respect
-     robots.txt. A 403 or a block page means skip that page (soft finding "listing page could not be read").
-  3. `web_search` is always called with `allowed_domains` set to the approved sites only.
+- **Listing sources: none outside SuiteSpot (final, 26 Nov).** We read no outside listing site at all, neither by
+  fetch nor by web search (4zida.rs, oglasi.rs, svenekretnine.com restrict it in their terms; halooglasi.com and
+  nekretnine.rs block crawlers). There is no fetch_listing or web_search tool. The earlier per-site rules and the
+  demo-01..08 fixtures are SUPERSEDED and removed. An outside listing enters only as fields the user types (mode A).
 - **Live mode env vars (one name each, used the same in code, `.env.example`, PROGRESS.md and here):**
-  `SUITESPOT_MODE` (`demo` default, `live` needs `ANTHROPIC_API_KEY`) and `SUITESPOT_ACCESS_CODE` (optional; when set,
+  `SUITESPOT_MODE` (`demo` default, `live` needs `ANTHROPIC_API_KEY`; to be REMOVED in step 8, then a key alone means
+  live) and `SUITESPOT_ACCESS_CODE` (optional; when set,
   live runs need the header `X-Access-Code` with this value, which users enter under Settings; demo runs never need it).
   Never print or commit its value.
 - **Model key: Anthropic**, from the user's own Anthropic Console account (`ANTHROPIC_API_KEY` in `.env`). The user
