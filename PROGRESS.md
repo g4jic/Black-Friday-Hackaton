@@ -23,11 +23,22 @@ No long dashes in this file; use a plain hyphen.
   with interquartile range and min 3 comparables), hard-flag rules. `SuiteSpotState` holds candidates and findings and
   validates every write. 36 domain tests + 2 layering tests.
 
+- Step 4 (cancellation spike) WORKS on 6.0.0. `src/application/cancellation/candidate-cancellation.ts`:
+  `CandidateCancellation` (InterceptionHandler per loop) rewrites the next step of a rejected candidate's loop into a
+  final `model_message` "stopped: ..." (no extra model call, no idle); `cancellableTool` settles a running tool at once
+  with "Aborted mid-call" and aborts its I/O through an AbortSignal; `rejectCandidate` is the single entry point (state
+  rule + `candidate.rejected` event). The agent that raised the flag is never stopped by it.
+  `tests/cancellation.test.ts` (run with `SPIKE_REPORT=1` to print the timeline): 8 loops in parallel, c1 rejected at
+  ~85 ms; Lease (mid 2 s tool call) stopped at ~86 ms with no second model call; Location (between steps) stopped at
+  ~117 ms after 1 of 5 lookups; Premises (mid inference) answer replaced at ~303 ms; c2 untouched.
+
 ## Next step
-- Step 4: cancellation spike (hard flag between steps AND mid tool call). Then step 5 (real Anthropic call: web search
-  + web fetch on `claude-haiku-4-5`).
+- Step 5: real Anthropic call: web search + web fetch on `claude-haiku-4-5` (`npm run check:anthropic`).
+- Then plan step 2 (thin demo slice).
 
 ## Open problems
+- A model call already in flight cannot be aborted (InferenceRunner has no signal); we pay for it and replace its
+  answer. Acceptable: at most one call per stopped loop.
 - None yet.
 
 ## Decisions log
@@ -49,6 +60,7 @@ No long dashes in this file; use a plain hyphen.
 - None yet.
 
 ## Session log
+- 2026-11-26 13:55 (Andrej): step 4 cancellation spike done and pushed.
 - 2026-11-26 13:50 (Andrej): step 3 domain model done and pushed.
 - 2026-11-26 13:45 (Andrej): step 2 resilience done and pushed.
 - 2026-11-26 13:40 (Andrej): step 1 skeleton done and pushed.
