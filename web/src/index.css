@@ -162,7 +162,22 @@ button:active {
   }
 }
 
+/* Small menus and popovers: a short rise and fade from where they are anchored. */
+.pop-in {
+  animation: pop-in 180ms var(--ease-ios);
+  transform-origin: bottom left;
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .pop-in {
+    animation: none;
+  }
   .ring-busy {
     animation: none;
     box-shadow: 0 0 0 2px var(--color-brand);

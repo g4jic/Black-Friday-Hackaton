@@ -26,6 +26,8 @@ export type ResearchState = {
   peak: number
   lastAt: number
   done: boolean
+  /** true when the user stopped the run (research.done with cancelled). */
+  cancelled: boolean
   metrics: Metrics | null
   submitted: string[]
   report: ReportDTO | null
@@ -44,6 +46,7 @@ export const initialResearch = (id: string | null): ResearchState => ({
   peak: 0,
   lastAt: 0,
   done: false,
+  cancelled: false,
   metrics: null,
   submitted: [],
   report: null,
@@ -115,6 +118,7 @@ export function applyEvent(s: ResearchState, e: WireEvent): ResearchState {
     }
     case "research.done":
       next.done = true
+      next.cancelled = Boolean(e.data?.cancelled)
       next.metrics = (e.data?.metrics as Metrics) ?? null
       break
   }
