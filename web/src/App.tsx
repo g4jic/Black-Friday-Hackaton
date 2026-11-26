@@ -7,6 +7,7 @@ import { HistoryPage, ReportsPage } from "./pages/HistoryPages"
 import { NewResearchPage } from "./pages/NewResearchPage"
 import { ResearchPage } from "./pages/ResearchPage"
 import { SettingsPage } from "./pages/SettingsPage"
+import { RunView } from "./run/RunView"
 import { DashboardPage, NotFoundPage } from "./pages/SimplePages"
 import type { Config } from "./types"
 import { Pill } from "./ui"
@@ -63,6 +64,7 @@ function Page({ route, config }: { route: Route; config: Config | null }) {
     case "newResearch":
       return <NewResearchPage config={config} />
     case "run":
+      return <RunView key={route.researchId} researchId={route.researchId} />
     case "results":
       return <ResearchPage researchId={route.researchId} />
     case "history":

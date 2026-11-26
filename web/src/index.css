@@ -162,6 +162,141 @@ button:active {
   }
 }
 
+/*
+ * Research run orbit (run view). Everything moves with transform and opacity only. Positions are polar: an
+ * element sits at angle --turn on radius --radius (a share of the stage's half width, via container units).
+ * The ring layer's rotation is set from JS each frame (--orbit-angle); nodes counter-rotate to stay upright.
+ */
+.orbit-stage {
+  container-type: size;
+  position: relative;
+  aspect-ratio: 1;
+  width: min(100%, 600px);
+  margin-inline: auto;
+}
+.orbit-polar {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(calc(var(--turn) * 1turn)) translateX(calc(var(--radius) * 50cqw)) rotate(calc(var(--turn) * -1turn));
+}
+.orbit-chip {
+  transition:
+    transform 900ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 600ms cubic-bezier(0.16, 1, 0.3, 1);
+  font-size: clamp(10px, 2cqw, 12px);
+}
+.orbit-chip[data-phase="rejected"],
+.orbit-chip[data-phase="failed"] {
+  /* the red pulse plays first, then the chip leaves the orbit */
+  transition-delay: 650ms;
+  opacity: 0;
+}
+.orbit-ring-layer {
+  position: absolute;
+  inset: 0;
+  transform: rotate(var(--orbit-angle, 0deg));
+  will-change: transform;
+}
+.orbit-upright {
+  transform: rotate(calc(-1 * var(--orbit-angle, 0deg)));
+}
+/* the soft comet arc that makes the slow rotation readable */
+.orbit-comet {
+  position: absolute;
+  inset: 3%;
+  border-radius: 9999px;
+  background: conic-gradient(from 0deg, rgba(242, 92, 84, 0) 0turn, rgba(242, 92, 84, 0) 0.72turn, rgba(242, 92, 84, 0.32) 1turn);
+  -webkit-mask: radial-gradient(closest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+  mask: radial-gradient(closest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+}
+.orbit-node-enter {
+  animation: orbit-node-enter 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes orbit-node-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+/* glow behind a busy node: opacity and scale only */
+.orbit-glow {
+  position: absolute;
+  inset: -10px;
+  border-radius: 9999px;
+  background: radial-gradient(closest-side, rgba(242, 92, 84, 0.55), rgba(242, 92, 84, 0));
+  opacity: 0;
+  transform: scale(0.8);
+  transition:
+    opacity 400ms ease-out,
+    transform 400ms ease-out;
+}
+.orbit-glow[data-busy="true"] {
+  animation: orbit-glow 2.4s ease-in-out infinite;
+}
+@keyframes orbit-glow {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.12);
+  }
+}
+/* one short flash for one-shot work (the Ranker orders in a single step) */
+.orbit-flash {
+  animation: orbit-flash 1.2s ease-out both;
+}
+@keyframes orbit-flash {
+  0% {
+    opacity: 0.95;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+.orbit-pulse {
+  animation: orbit-pulse 650ms ease-out both;
+}
+@keyframes orbit-pulse {
+  from {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
+.live-dot {
+  animation: live-dot 1.6s ease-in-out infinite;
+}
+@keyframes live-dot {
+  50% {
+    opacity: 0.25;
+  }
+}
+.status-enter {
+  animation: status-enter 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes status-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.run-leave {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.98);
+  transition:
+    opacity 380ms ease-out,
+    transform 380ms ease-out;
+}
+
 /* Small menus and popovers: a short rise and fade from where they are anchored. */
 .pop-in {
   animation: pop-in 180ms var(--ease-ios);
@@ -175,8 +310,18 @@ button:active {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pop-in {
+  .pop-in,
+  .orbit-node-enter,
+  .orbit-glow[data-busy="true"],
+  .orbit-flash,
+  .orbit-pulse,
+  .live-dot,
+  .status-enter {
     animation: none;
+  }
+  .orbit-chip,
+  .run-leave {
+    transition: none;
   }
   .ring-busy {
     animation: none;
