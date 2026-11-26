@@ -1,6 +1,6 @@
 import { DomainError } from "./errors.js"
 import { unsourcedNumbers } from "./number-check.js"
-import { validateSource, type SourceRef } from "./source.js"
+import { LISTING_ID_PREFIXES, validateSource, type SourceRef } from "./source.js"
 
 /**
  * The report is written by an AI agent from FACTS that code takes from the shared state. Each fact is one short
@@ -62,7 +62,7 @@ export function parseReportDraft(answer: unknown): ReportDraft {
   }
 }
 
-const CANDIDATE_ID = /\b(?:demo|pasted)-[a-z0-9]+\b/g
+const CANDIDATE_ID = new RegExp(`\\b(?:${LISTING_ID_PREFIXES.join("|")})-[a-z0-9]+\\b`, "g")
 
 /**
  * The Auditor's rules (plain code):

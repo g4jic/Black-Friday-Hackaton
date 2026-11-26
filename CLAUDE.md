@@ -21,13 +21,17 @@ of every session, update it before every push). If the plan and this file disagr
 not, known limits, today's decisions, next steps, how to run and verify).
 - Repo: https://github.com/g4jic/Black-Friday-Hackaton. Local path (Andrej): `C:\Users\Lenovo LOQ\Desktop\SuiteSpot`.
 - Two people work in relay through Claude Code CLI in PowerShell: one works, pushes, the other continues.
-- Data (decided 26 Nov after reading the listing sites' terms of use, see `PROGRESS.md`): in mode A the user pastes
-  the text of 1 to 8 listings, and each becomes a candidate; our server never opens listing sites. OpenStreetMap for
-  area data, estimates with method and sources, a labelled synthetic demo dataset in the same shape as pasted
-  listings. Live web search (Anthropic `web_search` through our own function tool) only for a site that gives written
-  permission. A recorded real run, if any, keeps only links and extracted facts, never listing text or photos.
-- History of research runs in Supabase (live) or a local JSON file (demo mode): NOT built yet (runs live in memory).
-  Deploy on Railway: not done yet.
+- **Data: SuiteSpot is a two-sided platform (decided 26 Nov, late evening).** Why: 4zida.rs forbids automated use
+  of its system (section 12.2 of its terms), oglasi.rs requires written permission for copying, svenekretnine.com
+  forbids unauthorised downloading of listings. So **we never read other sites' listings, neither by fetch nor by web
+  search**. Listings are published directly on SuiteSpot: landlords (Supabase Auth account required) post structured
+  listings (table `listings`); tenants can stay Guest and their searches stay in sessionStorage. "Find spaces" picks
+  candidates from our own database; "Evaluate an outside listing" takes the same required fields typed by the user
+  (plus optional pasted text). Seed: 100 SYNTHETIC listings (50 Novi Sad, 50 Belgrade) with 100 demo landlord
+  accounts, all `is_demo = true` and labelled "Demo listing". Launch story: before launch the founders agree the
+  first listings with landlords so the platform is not empty; in this version the data is synthetic. Never claim
+  they are real partners. OpenStreetMap for area data stays allowed.
+- Deploy on Railway: not done yet.
 - Stripe and Solana are not used (no natural fit).
 - Never give a legal verdict on permitted use; report "check before signing: <what>".
 - **Writing rule:** no long dashes anywhere (UI, docs, comments, commits). Use a plain hyphen `-`.
@@ -544,7 +548,8 @@ He is a QA Automation Engineer. Judging from what he shares on LinkedIn:
   with Server-Sent Events. One service on Railway. History in Supabase (live) or a local JSON file (demo mode).
 - Area data: OpenStreetMap (Nominatim + Overpass), free, no key; real `User-Agent`, max 1 request per second.
 - **Listing sources (rules for the Scout, agreed 26 Nov 2026):**
-  0. **Decision (26 Nov):** terms of use read (table in `PROGRESS.md`). 4zida.rs forbids automated use by the letter
+  0. **Superseded (26 Nov, late evening): no reading of any outside listing site at all; listings live on SuiteSpot
+     (see "Data" at the top). The rules below are kept only as history.** Earlier decision: terms of use read (table in `PROGRESS.md`). 4zida.rs forbids automated use by the letter
      of its terms; oglasi.rs and svenekretnine.com are unclear and restrict copying. So **no automated reading of any
      listing site** unless that site gives written permission (emails drafted 26 Nov, Aleksa sends them). Real
      listings come from text the user pastes (mode A, 1 to 8 listings). Rules 2 and 3 below apply only to a site that

@@ -46,7 +46,7 @@ export function financeDemoScript(stepLatencyMs = 0): MockScript {
 export function reportWriterDemoScript(latencyMs = 0): MockScript {
   return async (input): Promise<MockReply> => {
     if (latencyMs > 0) await sleep(latencyMs)
-    const facts = [...lastUserText(input).matchAll(/^(F\d+) \[(\w+)\] ((?:demo|pasted)-[a-z0-9]+)\b(.*)$/gm)].map((m) => ({ id: m[1]!, kind: m[2]!, candidateId: m[3]!, text: `${m[3]}${m[4]}` }))
+    const facts = [...lastUserText(input).matchAll(/^(F\d+) \[(\w+)\] ([a-z0-9][a-z0-9-]*[a-z0-9])\b(.*)$/gm)].map((m) => ({ id: m[1]!, kind: m[2]!, candidateId: m[3]!, text: `${m[3]}${m[4]}` }))
     const ranks = facts.filter((f) => f.kind === "rank").slice(0, 3)
     const reasonOf = (id: string) => facts.find((f) => f.kind === "reason" && f.candidateId === id)
     const sentence = (fs: { id: string; text: string }[]) => ({ text: fs.map((f) => f.text).join(" "), facts: fs.map((f) => f.id) })

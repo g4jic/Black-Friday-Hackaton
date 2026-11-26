@@ -12,7 +12,7 @@ export type Field<T> = Sourced<T> | MissingData
 
 /** A listing as SuiteSpot knows it. Every value points to the listing text (field + quote) or is MissingData. */
 export type Listing = {
-  /** Listing text id ("pasted-2", "demo-04") or, in mode B with permission, the listing page URL. */
+  /** Listing text id ("pasted-2", "listing-ns014") or, in mode B with permission, the listing page URL. */
   readonly ref: string
   /** The listing text with contact data removed. Other agents (Premises inspector, Auditor) read it. */
   readonly text: string

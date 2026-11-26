@@ -4,7 +4,7 @@ import { existsSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 import type { InferenceRunner } from "@mozaik-ai/core"
 import type { DemoLatency } from "../inference/scripts/demo-script.js"
-import { registerResearchRoutes } from "./research-routes.js"
+import { registerResearchRoutes, type DemoCatalogue } from "./research-routes.js"
 
 const webDist = fileURLToPath(new URL("../../../web/dist", import.meta.url))
 
@@ -13,14 +13,14 @@ export function runMode(): "demo" | "live" {
   return process.env.SUITESPOT_MODE === "live" && Boolean(process.env.ANTHROPIC_API_KEY) ? "live" : "demo"
 }
 
-export type ServerOptions = { readonly demoPace?: DemoLatency; readonly liveRunner?: () => InferenceRunner }
+export type ServerOptions = { readonly demoPace?: DemoLatency; readonly liveRunner?: () => InferenceRunner; readonly demoCatalogue?: DemoCatalogue }
 
 export async function buildServer(options: ServerOptions = {}): Promise<FastifyInstance> {
   const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" } })
 
   app.get("/api/health", async () => ({ status: "ok", mode: runMode() }))
   // The API key stays in this process: no route returns it, and every outgoing event is scrubbed of it.
-  registerResearchRoutes(app, { liveAvailable: () => runMode() === "live", demoPace: options.demoPace, liveRunner: options.liveRunner })
+  registerResearchRoutes(app, { liveAvailable: () => runMode() === "live", demoPace: options.demoPace, liveRunner: options.liveRunner, demoCatalogue: options.demoCatalogue })
 
   // In production the built web app is served by this same process (one Railway service).
   if (existsSync(webDist)) {

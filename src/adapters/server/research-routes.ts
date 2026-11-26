@@ -18,7 +18,7 @@ import {
   type LeaseText,
   type ListingTextInput,
 } from "../../domain/index.js"
-import { loadDemoLeases, loadDemoListings, loadDemoQuestionnaire, loadLeaseAnswers, loadScoutAnswers } from "../fixtures/demo-listings.js"
+import { loadDemoQuestionnaire } from "../fixtures/demo-questionnaire.js"
 import { createLiveRunner } from "../inference/live-runner.js"
 import { MockRunner } from "../inference/mock-runner.js"
 import { demoRoomScript, type DemoLatency } from "../inference/scripts/demo-script.js"
@@ -39,7 +39,19 @@ export const DEMO_PACE: DemoLatency = {
 }
 export const FAST_PACE: DemoLatency = { scout: () => 10, leaseReader: 60, financeStep: 20, reportWriter: 20 }
 
+/**
+ * The listings a demo run uses, with the scripted model answers for them. None is built in right now: the old
+ * fixtures were removed and the seeded catalogue replaces them. Tests pass their own.
+ */
+export type DemoCatalogue = {
+  readonly listings: () => ListingTextInput[]
+  readonly leases: () => LeaseText[]
+  readonly scoutAnswers: () => Record<string, unknown>
+  readonly leaseAnswers: () => Record<string, unknown>
+}
+
 export type ResearchRoutesOptions = {
+  readonly demoCatalogue?: DemoCatalogue
   /** Whether live mode may be used (SUITESPOT_MODE=live and a key on the server). */
   readonly liveAvailable: () => boolean
   readonly demoPace?: DemoLatency
@@ -127,9 +139,11 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
       }
       let listings: ListingTextInput[]
       let leases: LeaseText[]
+      const catalogue = options.demoCatalogue
       if ((body.source ?? "demo") === "demo") {
-        listings = loadDemoListings()
-        leases = loadDemoLeases()
+        if (!catalogue) throw new HttpError(503, "The demo catalogue is not available on this server yet.")
+        listings = catalogue.listings()
+        leases = catalogue.leases()
       } else {
         if (mode !== "live") throw new HttpError(400, "Pasted listings need live mode: demo mode replays scripted answers for the demo listings only.")
         const raw = Array.isArray(body.listings) ? body.listings : []
@@ -146,7 +160,7 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
         id,
         mode,
         model: mode === "live" ? LIVE_MODEL : "mock",
-        runner: mode === "live" ? (options.liveRunner ?? createLiveRunner)() : new MockRunner({ script: demoRoomScript({ scout: loadScoutAnswers(), lease: loadLeaseAnswers() }, options.demoPace ?? DEMO_PACE) }),
+        runner: mode === "live" ? (options.liveRunner ?? createLiveRunner)() : new MockRunner({ script: demoRoomScript({ scout: catalogue?.scoutAnswers() ?? {}, lease: catalogue?.leaseAnswers() ?? {} }, options.demoPace ?? DEMO_PACE) }),
         listings,
         leases,
         profile,

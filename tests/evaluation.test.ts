@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { createHuman } from "@mozaik-ai/core"
-import { loadDemoLeases, loadDemoListings, loadDemoQuestionnaire, loadLeaseAnswers, loadScoutAnswers } from "../src/adapters/fixtures/demo-listings.js"
+import { loadDemoQuestionnaire } from "../src/adapters/fixtures/demo-questionnaire.js"
+import { sampleLeaseAnswers, sampleLeases, sampleListings, sampleScoutAnswers } from "./fixtures/sample-listings.js"
 import { MockRunner, developerText, lastUserText, type MockScript } from "../src/adapters/inference/mock-runner.js"
 import { demoRoomScript } from "../src/adapters/inference/scripts/demo-script.js"
 import { FINANCE_NAME, createFinanceAnalyst } from "../src/application/agents/finance-analyst.js"
@@ -25,9 +26,9 @@ import {
 } from "../src/domain/index.js"
 import { answerText, waitFor } from "./helpers.js"
 
-const THREE = ["demo-01", "demo-04", "demo-07"]
+const THREE = ["listing-01", "listing-04", "listing-07"]
 const LATENCY = { scout: () => 10, leaseReader: 100, financeStep: 30 }
-const room = () => demoRoomScript({ scout: loadScoutAnswers(), lease: loadLeaseAnswers() }, LATENCY)
+const room = () => demoRoomScript({ scout: sampleScoutAnswers(), lease: sampleLeaseAnswers() }, LATENCY)
 
 function setup(script: MockScript, profile?: BusinessProfile) {
   const rt = createAppRuntime({ runner: new MockRunner({ script }), maxParallelInference: 8, resilience: { retries: 0 } })
@@ -37,7 +38,7 @@ function setup(script: MockScript, profile?: BusinessProfile) {
   for (const p of [recorder.participant, user, ...agents]) rt.join(p)
   const q = loadDemoQuestionnaire()
   rt.state.setQuestionnaire(profile ?? q.profile, q.requirements)
-  rt.state.submitLeases(loadDemoLeases())
+  rt.state.submitLeases(sampleLeases())
   return { rt, recorder, user }
 }
 
@@ -46,11 +47,11 @@ const forCandidate = (id: string) => (e: { event: { payload: unknown } }) => pay
 
 async function runThree(script: MockScript = room(), profile?: BusinessProfile) {
   const ctx = setup(script, profile)
-  submitListings(ctx.rt, loadDemoListings().filter((l) => THREE.includes(l.id!)), ctx.user.getId())
+  submitListings(ctx.rt, sampleListings().filter((l) => THREE.includes(l.id!)), ctx.user.getId())
   const settled = () =>
-    ["demo-01", "demo-04"].every((id) => ctx.recorder.events.some((e) => e.type === "finance.explained" && forCandidate(id)(e))) &&
-    ctx.recorder.events.some((e) => e.type === "model.answer" && ctx.rt.loopForEvent(e.event)?.key === "finance:demo-07:1")
-  await waitFor(settled, 5000, "both finished candidates explained and demo-07's finance loop ended")
+    ["listing-01", "listing-04"].every((id) => ctx.recorder.events.some((e) => e.type === "finance.explained" && forCandidate(id)(e))) &&
+    ctx.recorder.events.some((e) => e.type === "model.answer" && ctx.rt.loopForEvent(e.event)?.key === "finance:listing-07:1")
+  await waitFor(settled, 5000, "both finished candidates explained and listing-07's finance loop ended")
   return ctx
 }
 
@@ -77,59 +78,59 @@ describe("Finance analyst + Lease reader (keyless, MockRunner)", () => {
 
   it("a hard flag in the lease cuts the Finance loop while it is still running; its result never arrives", async () => {
     const { rt, recorder } = await runThree()
-    const c = rt.state.candidate("demo-07")
+    const c = rt.state.candidate("listing-07")
     expect(c.status).toBe("rejected")
-    expect(c.rejection).toMatchObject({ rule: "locked_in_without_exit", raisedBy: LEASE_READER_NAME, source: { kind: "lease", ref: "lease-demo-07", clause: "tenantMayTerminateEarly" } })
+    expect(c.rejection).toMatchObject({ rule: "locked_in_without_exit", raisedBy: LEASE_READER_NAME, source: { kind: "lease", ref: "lease-listing-07", clause: "tenantMayTerminateEarly" } })
     expect(c.laterFlags.map((f) => f.rule)).toEqual(["unlimited_rent_increase"]) // the second hard flag is recorded, not lost
 
     // The rejection event names the reason, the source and the loops it cut (for the Rejected row in the UI).
     const rejected = recorder.events.filter((e) => e.type === "candidate.rejected")
     expect(rejected).toHaveLength(1)
-    expect(payload<{ cancelledLoops: unknown[] }>(rejected[0]!).cancelledLoops).toEqual([{ loopKey: "finance:demo-07:1", agent: FINANCE_NAME }])
+    expect(payload<{ cancelledLoops: unknown[] }>(rejected[0]!).cancelledLoops).toEqual([{ loopKey: "finance:listing-07:1", agent: FINANCE_NAME }])
 
     // Finance was mid tool call (waiting for the lease terms) and was stopped there.
     const cancelled = recorder.events.filter((e) => e.type === "loop.cancelled")
     expect(cancelled.map((e) => payload<{ loopKey: string; where: string }>(e))).toEqual([
-      expect.objectContaining({ loopKey: "finance:demo-07:1", where: "mid tool call", rule: "locked_in_without_exit" }),
+      expect.objectContaining({ loopKey: "finance:listing-07:1", where: "mid tool call", rule: "locked_in_without_exit" }),
     ])
     expect(recorder.events.indexOf(rejected[0]!)).toBeLessThan(recorder.events.indexOf(cancelled[0]!))
-    const answer = recorder.events.find((e) => e.type === "model.answer" && rt.loopForEvent(e.event)?.key === "finance:demo-07:1")!
+    const answer = recorder.events.find((e) => e.type === "model.answer" && rt.loopForEvent(e.event)?.key === "finance:listing-07:1")!
     expect(answerText(answer.event).startsWith(STOPPED_PREFIX)).toBe(true)
 
     // The Finance result never arrives: no explanation, no term-level figures.
-    expect(recorder.events.some((e) => e.type === "finance.explained" && forCandidate("demo-07")(e))).toBe(false)
-    const financeFindings = rt.state.findings.filter((f) => f.candidateId === "demo-07" && f.author === FINANCE_NAME).map((f) => f.id)
-    expect(financeFindings).toEqual(["demo-07:finance:monthly_cost", "demo-07:finance:initial_costs", "demo-07:finance:rent_per_m2"])
+    expect(recorder.events.some((e) => e.type === "finance.explained" && forCandidate("listing-07")(e))).toBe(false)
+    const financeFindings = rt.state.findings.filter((f) => f.candidateId === "listing-07" && f.author === FINANCE_NAME).map((f) => f.id)
+    expect(financeFindings).toEqual(["listing-07:finance:monthly_cost", "listing-07:finance:initial_costs", "listing-07:finance:rent_per_m2"])
     expect(unhandled).toEqual([])
   })
 
   it("a soft flag stops nothing; a clean lease raises no flag", async () => {
     const { rt, recorder } = await runThree()
-    const soft = rt.state.findings.filter((f) => f.candidateId === "demo-04" && f.severity === "soft")
-    expect(soft.map((f) => f.id).sort()).toEqual(["demo-04:lease:concern:long_notice", "demo-04:lease:concern:personal_guarantee", "demo-04:lease:concern:tenant_pays_structural_repairs"])
+    const soft = rt.state.findings.filter((f) => f.candidateId === "listing-04" && f.severity === "soft")
+    expect(soft.map((f) => f.id).sort()).toEqual(["listing-04:lease:concern:long_notice", "listing-04:lease:concern:personal_guarantee", "listing-04:lease:concern:tenant_pays_structural_repairs"])
     expect(soft.every((f) => f.checkBeforeSigning && f.source.kind === "lease" && f.source.quote)).toBe(true)
-    for (const id of ["demo-01", "demo-04"]) {
+    for (const id of ["listing-01", "listing-04"]) {
       expect(rt.state.candidate(id).status).toBe("evaluating")
       expect(recorder.events.some((e) => e.type === "finance.explained" && forCandidate(id)(e))).toBe(true)
       expect(recorder.events.some((e) => (e.type === "loop.cancelled" || e.type === "candidate.rejected") && forCandidate(id)(e))).toBe(false)
     }
-    expect(rt.state.findings.filter((f) => f.candidateId === "demo-01" && f.severity !== "info")).toEqual([])
-    // The term-level figures used the lease terms (60 months for demo-04), not the questionnaire's 36.
-    expect(rt.state.findings.find((f) => f.id === "demo-04:finance:total_cost_over_term")?.claim).toContain("over 60 months")
+    expect(rt.state.findings.filter((f) => f.candidateId === "listing-01" && f.severity !== "info")).toEqual([])
+    // The term-level figures used the lease terms (60 months for listing-04), not the questionnaire's 36.
+    expect(rt.state.findings.find((f) => f.id === "listing-04:finance:total_cost_over_term")?.claim).toContain("over 60 months")
   })
 
   it("break-even is MissingData without a gross margin, and a sourced figure with one", async () => {
     // The demo questionnaire gives a margin, so the missing case builds a profile without one.
     const { grossMarginRate: _margin, ...withoutMarginInput } = loadDemoQuestionnaire().profile.input
     const { rt } = await runThree(room(), BusinessProfile.create(withoutMarginInput))
-    const be = rt.state.findings.find((f) => f.id === "demo-01:finance:break_even_revenue")!
+    const be = rt.state.findings.find((f) => f.id === "listing-01:finance:break_even_revenue")!
     expect(isMissingData(be.value)).toBe(true)
     expect(be.source).toEqual({ kind: "profile", ref: "questionnaire", field: "grossMarginRate" })
 
     const withMargin = BusinessProfile.create({ ...loadDemoQuestionnaire().profile.input, grossMarginRate: 0.65 })
     const second = await runThree(room(), withMargin)
-    const be2 = second.rt.state.findings.find((f) => f.id === "demo-01:finance:break_even_revenue")!
-    const monthly = second.rt.state.findings.find((f) => f.id === "demo-01:finance:monthly_cost")!.value as Sourced<Money>
+    const be2 = second.rt.state.findings.find((f) => f.id === "listing-01:finance:break_even_revenue")!
+    const monthly = second.rt.state.findings.find((f) => f.id === "listing-01:finance:monthly_cost")!.value as Sourced<Money>
     expect((be2.value as Sourced<Money>).value.amount).toBeCloseTo(monthly.value.amount / 0.65, 2)
     expect(be2.source.kind).toBe("calc")
   })
@@ -179,8 +180,8 @@ describe("partial acceptance and unverified leases", () => {
   }
 
   it("the live failure, keyless: a computed deposit and a stitched quote cost one clause, not the deal breakers", async () => {
-    const base = loadLeaseAnswers()["lease-demo-07"] as Record<string, unknown>
-    const script = leaseOverride("lease-demo-07", (retry) =>
+    const base = sampleLeaseAnswers()["lease-listing-07"] as Record<string, unknown>
+    const script = leaseOverride("lease-listing-07", (retry) =>
       JSON.stringify({
         ...base,
         deposit: retry
@@ -189,36 +190,36 @@ describe("partial acceptance and unverified leases", () => {
       }),
     )
     const { rt, recorder } = await runThree(script)
-    const lease = rt.state.leaseClauses.get("demo-07")!
+    const lease = rt.state.leaseClauses.get("listing-07")!
     expect(lease.unverified.map((u) => u.field)).toEqual(["deposit"])
     expect(isMissingData(lease.deposit)).toBe(true)
     // The verified clauses still decide: the hard flag is raised and Finance is cut while it waits.
-    expect(rt.state.candidate("demo-07").rejection?.rule).toBe("locked_in_without_exit")
-    expect(recorder.events.some((e) => e.type === "loop.cancelled" && payload<{ loopKey: string }>(e).loopKey === "finance:demo-07:1")).toBe(true)
-    expect(rt.state.findings.find((f) => f.id === "demo-07:lease:concern:unverified_deposit")).toMatchObject({ severity: "soft", checkBeforeSigning: "what the lease says about deposit" })
+    expect(rt.state.candidate("listing-07").rejection?.rule).toBe("locked_in_without_exit")
+    expect(recorder.events.some((e) => e.type === "loop.cancelled" && payload<{ loopKey: string }>(e).loopKey === "finance:listing-07:1")).toBe(true)
+    expect(rt.state.findings.find((f) => f.id === "listing-07:lease:concern:unverified_deposit")).toMatchObject({ severity: "soft", checkBeforeSigning: "what the lease says about deposit" })
     expect(recorder.events.filter((e) => e.type === "lease.extraction_rejected")).toHaveLength(1)
     expect(unhandled).toEqual([])
   })
 
   it("when the lease is not verified, term-level figures say so and carry questionnaire sources, never lease ones", async () => {
-    const { rt, recorder } = await runThree(leaseOverride("lease-demo-01", () => "I cannot read this lease."))
-    expect(recorder.events.some((e) => e.type === "lease.failed" && forCandidate("demo-01")(e))).toBe(true)
-    const total = rt.state.findings.find((f) => f.id === "demo-01:finance:total_cost_over_term")!
+    const { rt, recorder } = await runThree(leaseOverride("lease-listing-01", () => "I cannot read this lease."))
+    expect(recorder.events.some((e) => e.type === "lease.failed" && forCandidate("listing-01")(e))).toBe(true)
+    const total = rt.state.findings.find((f) => f.id === "listing-01:finance:total_cost_over_term")!
     expect(total.claim).toContain("lease not verified: term from the questionnaire")
     expect(total.checkBeforeSigning).toContain("do not use verified lease terms")
     const kinds = (s: SourceRef): string[] => [s.kind, ...(s.inputs ?? []).flatMap(kinds)]
     expect(kinds(total.source)).not.toContain("lease")
     expect(JSON.stringify(total.source)).toContain('"field":"leaseMonths"')
-    // A verified lease is used as such (demo-04: 60 months from the lease, no note).
-    const verified = rt.state.findings.find((f) => f.id === "demo-04:finance:total_cost_over_term")!
+    // A verified lease is used as such (listing-04: 60 months from the lease, no note).
+    const verified = rt.state.findings.find((f) => f.id === "listing-04:finance:total_cost_over_term")!
     expect(verified.claim).not.toContain("not verified")
     expect(kinds(verified.source)).toContain("lease")
   })
 })
 
 describe("quotes in parts and amounts in months of rent (plain code)", () => {
-  const lease = () => loadDemoLeases().find((l) => l.listingId === "demo-07")!
-  const answer = (patch: Record<string, unknown>) => ({ ...(loadLeaseAnswers()["lease-demo-07"] as object), ...patch })
+  const lease = () => sampleLeases().find((l) => l.listingId === "listing-07")!
+  const answer = (patch: Record<string, unknown>) => ({ ...(sampleLeaseAnswers()["lease-listing-07"] as object), ...patch })
   it("a quote may have several parts; each must be in the text", () => {
     const ok = buildLease(lease(), answer({ term: { found: true, value: 10, unit: "years", quote: ["Član 2.", "na period od 10 (deset) godina"] } }))
     expect(ok.term).toMatchObject({ value: 120, source: { quote: "Član 2. ... na period od 10 (deset) godina" } })
@@ -229,33 +230,33 @@ describe("quotes in parts and amounts in months of rent (plain code)", () => {
     expect(() => buildLease(lease(), answer({ deposit: { found: true, amount: 1050, currency: "EUR", quote: "Zakupac uplaćuje depozit u visini jedne mesečne zakupnine. Mesečna zakupnina iznosi 1.050 EUR" } }))).toThrow(/does not appear in the text/)
   })
   it("months of rent: the number (digit or word) must be in the quote, and code computes the amount", () => {
-    const clauses = buildLease(lease(), loadLeaseAnswers()["lease-demo-07"])
+    const clauses = buildLease(lease(), sampleLeaseAnswers()["lease-listing-07"])
     expect(clauses.deposit).toMatchObject({ value: { monthsOfRent: 1 } })
-    const terms = leaseTermsFor(rtListing("demo-07"), loadDemoQuestionnaire().profile, clauses)
+    const terms = leaseTermsFor(rtListing("listing-07"), loadDemoQuestionnaire().profile, clauses)
     expect(terms).toMatchObject({ deposit: { value: { cents: 105000 }, source: { kind: "calc", ref: "deposit = 1 x monthly rent" } } })
     expect(() => buildLease(lease(), answer({ deposit: { found: true, monthsOfRent: 2, quote: ["depozit u visini jedne mesečne zakupnine"] } }))).toThrow(/monthsOfRent 2 does not appear/)
   })
 })
 
 function rtListing(id: string) {
-  const text = loadDemoListings().find((l) => l.id === id)!
-  return buildListing(createListingBatch([text])[0]!, loadScoutAnswers()[id])
+  const text = sampleListings().find((l) => l.id === id)!
+  return buildListing(createListingBatch([text])[0]!, sampleScoutAnswers()[id])
 }
 
 describe("lease rules and number check (plain code)", () => {
   it("code decides the flags from the scripted clauses; years become months", () => {
-    const leases = loadDemoLeases()
-    const answers = loadLeaseAnswers()
+    const leases = sampleLeases()
+    const answers = sampleLeaseAnswers()
     const read = (id: string) => buildLease(leases.find((l) => l.listingId === id)!, answers[`lease-${id}`])
-    const hard = read("demo-07")
+    const hard = read("listing-07")
     expect(hard.term).toMatchObject({ value: 120, source: { quote: "na period od 10 (deset) godina" } })
     expect(evaluateLease(hard, "Lease reader").hardFlags.map((f) => f.rule)).toEqual(["locked_in_without_exit", "unlimited_rent_increase"])
-    expect(evaluateLease(read("demo-04"), "Lease reader")).toMatchObject({ hardFlags: [] })
-    expect(evaluateLease(read("demo-01"), "Lease reader")).toEqual({ hardFlags: [], concerns: [] })
+    expect(evaluateLease(read("listing-04"), "Lease reader")).toMatchObject({ hardFlags: [] })
+    expect(evaluateLease(read("listing-01"), "Lease reader")).toEqual({ hardFlags: [], concerns: [] })
   })
   it("a lease quote that is not in the lease is rejected", () => {
-    const lease = loadDemoLeases().find((l) => l.listingId === "demo-01")!
-    const answer = { ...(loadLeaseAnswers()["lease-demo-01"] as object), personalGuarantee: { found: true, value: true, quote: "Direktor lično jemči" } }
+    const lease = sampleLeases().find((l) => l.listingId === "listing-01")!
+    const answer = { ...(sampleLeaseAnswers()["lease-listing-01"] as object), personalGuarantee: { found: true, value: true, quote: "Direktor lično jemči" } }
     expect(() => buildLease(lease, answer)).toThrow(/does not appear in the text/)
   })
   it("accepts formatting and rounding of given numbers, rejects others", () => {

@@ -2,7 +2,7 @@ import { DomainError } from "./errors.js"
 
 /**
  * Where a value comes from. Every number SuiteSpot shows carries one.
- * - listing: a listing text the user pasted or a demo fixture ("pasted-3", "demo-02") + field + quote (the exact
+ * - listing: a listing text the user pasted or a SuiteSpot listing ("pasted-3", "listing-ns014") + field + quote (the exact
  *   excerpt of the text the value was taken from), or a listing page URL (mode B, only with the site's permission)
  * - osm: an OpenStreetMap element ("node/123") or the Overpass query that produced it
  * - lease: a lease document id (+ clause)
@@ -25,8 +25,10 @@ export type SourceRef = {
   readonly inputs?: readonly SourceRef[]
 }
 
-/** Id of a listing text: "pasted-<n>" (user paste) or "demo-<id>" (synthetic fixture). */
-export const LISTING_TEXT_ID = /^(pasted|demo)-[a-z0-9-]+$/
+/** Prefixes of a listing (candidate) id: "pasted-<n>" (text the user pasted) or "listing-<id>" (a SuiteSpot listing). */
+export const LISTING_ID_PREFIXES = ["pasted", "listing"] as const
+/** Id of a listing text: a prefix, a hyphen and one lowercase alphanumeric part ("pasted-2", "listing-ns014"). */
+export const LISTING_TEXT_ID = new RegExp(`^(?:${LISTING_ID_PREFIXES.join("|")})-[a-z0-9]+$`)
 
 /** Per quote part. A quote may have up to MAX_QUOTE_PARTS parts, each found verbatim in the text. */
 export const MAX_QUOTE_LENGTH = 200

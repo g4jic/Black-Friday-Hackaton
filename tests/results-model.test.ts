@@ -42,9 +42,9 @@ const play = (...cs: CandidateDTO[]): ResearchState =>
   [{ seq: ++seq, at: 0, type: "listings.submitted", data: { listingIds: cs.map((c) => c.id) } } as WireEvent, ...cs.map(snapshot)].reduce(applyEvent, initialResearch("r1"))
 
 describe("results list (one list, highest score first)", () => {
-  const top = candidate("demo-01", "Liman 2, Narodnog fronta", 72, { ranking: ranking({ rank: 2, score: 80 }) })
-  const second = candidate("demo-06", "Podbara", 50, { ranking: ranking({ rank: 1, score: 61, scoreHigh: 81, confidence: "medium", verdict: { verdict: "check_before_signing", why: "Ranked, but some inputs are unknown" }, components: [{ name: "cost", weight: 45, value: 0.9 }, { name: "area", weight: 20, value: 0.7 }, { name: "lease", weight: 20, value: null }, { name: "checks", weight: 15, value: 1 }] }) })
-  const rejected = candidate("demo-02", "Zmaj Jovina", 58, { status: "rejected", rejection: { rule: "budget", reason: "Monthly cost is 113% over the budget", raisedBy: "Finance analyst", aspect: "finance", source: calc } })
+  const top = candidate("listing-01", "Liman 2, Narodnog fronta", 72, { ranking: ranking({ rank: 2, score: 80 }) })
+  const second = candidate("listing-06", "Podbara", 50, { ranking: ranking({ rank: 1, score: 61, scoreHigh: 81, confidence: "medium", verdict: { verdict: "check_before_signing", why: "Ranked, but some inputs are unknown" }, components: [{ name: "cost", weight: 45, value: 0.9 }, { name: "area", weight: 20, value: 0.7 }, { name: "lease", weight: 20, value: null }, { name: "checks", weight: 15, value: 1 }] }) })
+  const rejected = candidate("listing-02", "Zmaj Jovina", 58, { status: "rejected", rejection: { rule: "budget", reason: "Monthly cost is 113% over the budget", raisedBy: "Finance analyst", aspect: "finance", source: calc } })
 
   it("sorts by the score, puts rejected candidates apart, and answers in one sentence", () => {
     const s = play(second, rejected, top)
@@ -65,12 +65,12 @@ describe("results list (one list, highest score first)", () => {
 
 describe("candidate page", () => {
   it("costs name their source in plain words and say what is missing", () => {
-    const c = candidate("demo-03", "Grbavica", 60, {
+    const c = candidate("listing-03", "Grbavica", 60, {
       hasLease: false,
       findings: [
-        { id: "demo-03:finance:monthly_cost", aspect: "finance", severity: "info", claim: "Monthly cost 900 EUR; unknown: Utilities cost", author: "Finance analyst", value: { kind: "money", amount: 900, currency: "EUR" }, source: calc },
-        { id: "demo-03:finance:exit_cost_after_12_months", aspect: "finance", severity: "info", claim: "Exit cost after 12 months: needs lease terms", author: "Finance analyst", value: { kind: "missing", missing: ["notice"] }, source: calc },
-        { id: "demo-03:finance:exit_cost_known_part", aspect: "finance", severity: "info", claim: "Known part", author: "Finance analyst", value: { kind: "money", amount: 10000, currency: "EUR" }, source: calc },
+        { id: "listing-03:finance:monthly_cost", aspect: "finance", severity: "info", claim: "Monthly cost 900 EUR; unknown: Utilities cost", author: "Finance analyst", value: { kind: "money", amount: 900, currency: "EUR" }, source: calc },
+        { id: "listing-03:finance:exit_cost_after_12_months", aspect: "finance", severity: "info", claim: "Exit cost after 12 months: needs lease terms", author: "Finance analyst", value: { kind: "missing", missing: ["notice"] }, source: calc },
+        { id: "listing-03:finance:exit_cost_known_part", aspect: "finance", severity: "info", claim: "Known part", author: "Finance analyst", value: { kind: "money", amount: 10000, currency: "EUR" }, source: calc },
       ],
     })
     const rows = costRows(c)
@@ -81,10 +81,10 @@ describe("candidate page", () => {
   })
 
   it("hard flags come first among the risks", () => {
-    const c = candidate("demo-07", "Novo naselje", 80, {
+    const c = candidate("listing-07", "Novo naselje", 80, {
       status: "rejected",
-      rejection: { rule: "no_exit", reason: "The tenant cannot end the lease early", raisedBy: "Lease reader", aspect: "lease", source: { kind: "lease", ref: "lease-demo-07" } },
-      findings: [{ id: "demo-07:lease:x", aspect: "lease", severity: "soft", claim: "Long notice", checkBeforeSigning: "the 9 months' notice", author: "Lease reader", source: { kind: "lease", ref: "lease-demo-07" } }],
+      rejection: { rule: "no_exit", reason: "The tenant cannot end the lease early", raisedBy: "Lease reader", aspect: "lease", source: { kind: "lease", ref: "lease-listing-07" } },
+      findings: [{ id: "listing-07:lease:x", aspect: "lease", severity: "soft", claim: "Long notice", checkBeforeSigning: "the 9 months' notice", author: "Lease reader", source: { kind: "lease", ref: "lease-listing-07" } }],
     })
     const { risks } = strengthsAndRisks(c)
     expect(risks[0]).toEqual({ text: "Hard flag: The tenant cannot end the lease early", hard: true, source: "from the lease draft" })

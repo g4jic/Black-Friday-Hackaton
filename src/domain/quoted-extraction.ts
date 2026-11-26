@@ -78,7 +78,7 @@ const inQuote = (quote: string, value: number) =>
   (NUMBER_WORDS[value] ?? []).some((w) => normalizeText(quote).split(/[^\p{L}]+/u).includes(w))
 
 export type ExtractionOptions = {
-  /** Id of the text, used in error messages ("demo-03", "lease-demo-07"). */
+  /** Id of the text, used in error messages ("pasted-1", "lease-listing-ns014"). */
   readonly textId: string
   /** Builds the source of one value from the field name and its quote. */
   readonly sourceFor: (field: string, quote: string) => SourceRef

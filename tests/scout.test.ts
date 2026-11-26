@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { createHuman, type InferenceInput } from "@mozaik-ai/core"
-import { loadDemoListings, loadScoutAnswers } from "../src/adapters/fixtures/demo-listings.js"
+import { sampleListings, sampleScoutAnswers } from "./fixtures/sample-listings.js"
 import { MockRunner, lastUserText, type MockReply, type MockScript } from "../src/adapters/inference/mock-runner.js"
 import { listingIdOf, scoutDemoScript } from "../src/adapters/inference/scripts/scout-script.js"
 import { createScout, submitListings } from "../src/application/agents/scout.js"
@@ -44,12 +44,12 @@ describe("Scout (keyless, MockRunner)", () => {
   })
 
   // Different latency per listing, so loops finish in a known order that is NOT the input order.
-  const LATENCY: Record<string, number> = { "demo-01": 240, "demo-02": 30, "demo-03": 180, "demo-04": 90, "demo-05": 150, "demo-06": 60, "demo-07": 210, "demo-08": 120 }
+  const LATENCY: Record<string, number> = { "listing-01": 240, "listing-02": 30, "listing-03": 180, "listing-04": 90, "listing-05": 150, "listing-06": 60, "listing-07": 210, "listing-08": 120 }
 
   it("reads 8 demo listings in parallel and publishes candidate.found one by one, as each is read", async () => {
-    const { rt, recorder, user, scout } = setup(scoutDemoScript(loadScoutAnswers(), { latencyMs: (id) => LATENCY[id] ?? 0 }))
+    const { rt, recorder, user, scout } = setup(scoutDemoScript(sampleScoutAnswers(), { latencyMs: (id) => LATENCY[id] ?? 0 }))
     const started = Date.now()
-    submitListings(rt, loadDemoListings(), user.getId())
+    submitListings(rt, sampleListings(), user.getId())
 
     const found = () => recorder.events.filter((e) => e.type === "candidate.found")
     await waitFor(() => found().length === 8, 3000, "8 candidates")
@@ -88,33 +88,33 @@ describe("Scout (keyless, MockRunner)", () => {
   })
 
   it("a listing without an area gets MissingData, never an invented number", async () => {
-    const { rt, recorder, user } = setup(scoutDemoScript(loadScoutAnswers()))
-    submitListings(rt, loadDemoListings(), user.getId())
+    const { rt, recorder, user } = setup(scoutDemoScript(sampleScoutAnswers()))
+    submitListings(rt, sampleListings(), user.getId())
     await waitFor(() => rt.state.candidates.size === 8, 3000, "8 candidates")
 
-    const demo03 = rt.state.candidate("demo-03").listing
+    const demo03 = rt.state.candidate("listing-03").listing
     expect(isMissingData(demo03.area)).toBe(true)
     expect(demo03.area).toEqual({ status: "missing_data", missing: ["area"] })
     // What the text does state carries its source and quote.
-    expect(demo03.rentMonthly).toMatchObject({ source: { kind: "listing", ref: "demo-03", field: "rentMonthly", quote: "cena 900e" } })
+    expect(demo03.rentMonthly).toMatchObject({ source: { kind: "listing", ref: "listing-03", field: "rentMonthly", quote: "cena 900e" } })
     expect(isMissingData(demo03.rentMonthly)).toBe(false)
     // "Cena na upit" (price on request) stays missing.
-    expect(isMissingData(rt.state.candidate("demo-08").listing.rentMonthly)).toBe(true)
+    expect(isMissingData(rt.state.candidate("listing-08").listing.rentMonthly)).toBe(true)
     // "depozit: jedna kirija": the Scout reports 1 month of rent, code computes the amount from the sourced rent.
-    expect(rt.state.candidate("demo-07").listing.deposit).toMatchObject({
+    expect(rt.state.candidate("listing-07").listing.deposit).toMatchObject({
       value: { cents: 105000, currency: "EUR" },
-      source: { kind: "calc", inputs: [{ kind: "listing", ref: "demo-07", field: "deposit", quote: "depozit: jedna kirija" }, { kind: "listing", field: "rentMonthly" }] },
+      source: { kind: "calc", inputs: [{ kind: "listing", ref: "listing-07", field: "deposit", quote: "depozit: jedna kirija" }, { kind: "listing", field: "rentMonthly" }] },
     })
 
-    const announced = recorder.events.find((e) => e.type === "candidate.found" && payload<{ candidateId: string }>(e).candidateId === "demo-03")
+    const announced = recorder.events.find((e) => e.type === "candidate.found" && payload<{ candidateId: string }>(e).candidateId === "listing-03")
     expect(payload<{ missing: string[] }>(announced!).missing).toContain("area")
   })
 
   it("pasted text: phone numbers and emails are removed before the Scout, the model or the bus see them", async () => {
     const modelInputs: string[] = []
     const answers = {
-      "pasted-1": { ...(loadScoutAnswers()["demo-03"] as object) },
-      "pasted-2": { ...(loadScoutAnswers()["demo-06"] as object) },
+      "pasted-1": { ...(sampleScoutAnswers()["listing-03"] as object) },
+      "pasted-2": { ...(sampleScoutAnswers()["listing-06"] as object) },
     }
     const inner = scoutDemoScript(answers)
     const { rt, recorder, user } = setup(async (input: InferenceInput) => {
@@ -122,8 +122,8 @@ describe("Scout (keyless, MockRunner)", () => {
       return inner(input)
     })
     const pasted: ListingTextInput[] = [
-      { text: loadDemoListings()[2]!.text + "\nzvati na 064/123-4567 ili +381 21 456 7890, mail vlasnik.lokala@example.com" },
-      { text: loadDemoListings()[5]!.text + "\nINFO 065 111 2222" },
+      { text: sampleListings()[2]!.text + "\nzvati na 064/123-4567 ili +381 21 456 7890, mail vlasnik.lokala@example.com" },
+      { text: sampleListings()[5]!.text + "\nINFO 065 111 2222" },
     ]
     submitListings(rt, pasted, user.getId())
     await waitFor(() => rt.state.candidates.size === 2, 3000, "2 candidates")
@@ -140,7 +140,7 @@ describe("Scout (keyless, MockRunner)", () => {
   })
 
   it("a value without a source goes back to the Scout as feedback, then the fixed listing becomes a candidate", async () => {
-    const good = loadScoutAnswers()["demo-01"] as Record<string, unknown>
+    const good = sampleScoutAnswers()["listing-01"] as Record<string, unknown>
     const messages: string[] = []
     const script: MockScript = async (input): Promise<MockReply> => {
       const text = lastUserText(input)
@@ -150,7 +150,7 @@ describe("Scout (keyless, MockRunner)", () => {
       return { text: JSON.stringify(answer) }
     }
     const { rt, recorder, user } = setup(script)
-    submitListings(rt, [loadDemoListings()[0]!], user.getId())
+    submitListings(rt, [sampleListings()[0]!], user.getId())
     await waitFor(() => rt.state.candidates.size === 1, 3000, "candidate after retry")
 
     const rejected = recorder.events.filter((e) => e.type === "listing.extraction_rejected")
@@ -167,33 +167,33 @@ describe("Scout (keyless, MockRunner)", () => {
       calls++
       throw new Error('400 {"type":"invalid_request_error","message":"output_config.format.schema: Invalid schema"}')
     })
-    submitListings(rt, [loadDemoListings()[0]!], user.getId())
+    submitListings(rt, [sampleListings()[0]!], user.getId())
     await waitFor(() => rt.state.failedListings.length === 1, 3000, "failed listing")
 
     expect(calls).toBe(1)
     expect(recorder.events.filter((e) => e.type === "listing.extraction_rejected")).toEqual([])
     expect(recorder.events.filter((e) => e.type === "agent.halted")).toHaveLength(1)
-    expect(rt.state.failedListings[0]).toMatchObject({ listingId: "demo-01", attempts: 1 })
+    expect(rt.state.failedListings[0]).toMatchObject({ listingId: "listing-01", attempts: 1 })
     expect(rt.state.failedListings[0]!.reason).toMatch(/^Provider error: .*400.*Invalid schema/)
     expect(unhandled).toEqual([])
   })
 
   it("a field that stays wrong after the retry becomes unverified MissingData; the verified fields are kept", async () => {
-    const answers = loadScoutAnswers()
+    const answers = sampleScoutAnswers()
     const script: MockScript = async (input): Promise<MockReply> => {
       const id = listingIdOf(input)
-      if (id === "demo-02") return { text: JSON.stringify({ ...(answers[id] as object), area: { found: true, value: 999, quote: ["58m2 u prizemlju"] } }) }
+      if (id === "listing-02") return { text: JSON.stringify({ ...(answers[id] as object), area: { found: true, value: 999, quote: ["58m2 u prizemlju"] } }) }
       return { text: JSON.stringify(answers[id!]) }
     }
     const { rt, recorder, user } = setup(script)
-    submitListings(rt, loadDemoListings().slice(0, 3), user.getId())
+    submitListings(rt, sampleListings().slice(0, 3), user.getId())
     await waitFor(() => rt.state.candidates.size === 3, 3000, "3 candidates")
 
-    const demo02 = rt.state.candidate("demo-02").listing
+    const demo02 = rt.state.candidate("listing-02").listing
     expect(demo02.area).toEqual({ status: "missing_data", missing: ["area"], unverified: "value 999 does not appear in its quote" })
     expect(demo02.unverified).toEqual([{ field: "area", reason: "value 999 does not appear in its quote" }])
     expect(demo02.rentMonthly).toMatchObject({ value: { cents: 320000 } }) // verified fields stay
-    const found = recorder.events.find((e) => e.type === "candidate.found" && payload<{ candidateId: string }>(e).candidateId === "demo-02")!
+    const found = recorder.events.find((e) => e.type === "candidate.found" && payload<{ candidateId: string }>(e).candidateId === "listing-02")!
     expect(payload<{ unverified: unknown[] }>(found).unverified).toHaveLength(1)
     expect(recorder.events.filter((e) => e.type === "listing.extraction_rejected")).toHaveLength(1)
     expect(rt.state.failedListings).toEqual([])
@@ -201,18 +201,18 @@ describe("Scout (keyless, MockRunner)", () => {
   })
 
   it("an answer that is not JSON twice goes to the failed queue; the other listings are not affected", async () => {
-    const answers = loadScoutAnswers()
+    const answers = sampleScoutAnswers()
     const script: MockScript = async (input): Promise<MockReply> => {
       const id = listingIdOf(input)
-      return id === "demo-02" ? { text: "I could not read this listing." } : { text: JSON.stringify(answers[id!]) }
+      return id === "listing-02" ? { text: "I could not read this listing." } : { text: JSON.stringify(answers[id!]) }
     }
     const { rt, recorder, user } = setup(script)
-    submitListings(rt, loadDemoListings().slice(0, 3), user.getId())
+    submitListings(rt, sampleListings().slice(0, 3), user.getId())
     await waitFor(() => recorder.events.some((e) => e.type === "listing.extraction_failed") && rt.state.candidates.size === 2, 3000, "1 failed, 2 found")
 
-    expect(rt.state.failedListings[0]).toMatchObject({ listingId: "demo-02", attempts: 2, reason: "The answer is not valid JSON" })
-    expect(rt.state.candidates.has("demo-02")).toBe(false)
-    expect(recorder.events.filter((e) => e.type === "candidate.found").map((e) => payload<{ candidateId: string }>(e).candidateId).sort()).toEqual(["demo-01", "demo-03"])
+    expect(rt.state.failedListings[0]).toMatchObject({ listingId: "listing-02", attempts: 2, reason: "The answer is not valid JSON" })
+    expect(rt.state.candidates.has("listing-02")).toBe(false)
+    expect(recorder.events.filter((e) => e.type === "candidate.found").map((e) => payload<{ candidateId: string }>(e).candidateId).sort()).toEqual(["listing-01", "listing-03"])
     expect(unhandled).toEqual([])
   })
 })

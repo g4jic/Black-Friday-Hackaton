@@ -3,6 +3,25 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
+## 26 Nov 2026, night (Andrej): DECISION - two-sided platform, no outside listings at all
+- Terms of use checked: 4zida.rs forbids automated use of its system (section 12.2), oglasi.rs requires written
+  permission for copying, svenekretnine.com forbids unauthorised downloading of listings. Decision: SuiteSpot never
+  reads other sites' listings, neither by fetch nor by web search. Listings are posted directly on SuiteSpot.
+- Landlords need an account (Supabase Auth, email + password, email confirmation off). Tenants can stay Guest
+  (searches in sessionStorage). The 8 demo-01..08 fixtures are replaced by 100 seeded SYNTHETIC listings with 100
+  demo landlord accounts. Plan approved (steps 0 to 10, one commit each). Answers: contacts in a separate table
+  `listing_contacts` (no anon SELECT, revealed through our server, cascade delete), demo phones partly masked with
+  "Demo contact" and no tel:/mailto:; mode A = one outside listing per evaluation; `SUITESPOT_MODE` is removed (live =
+  a key exists, `SUITESPOT_ACCESS_CODE` required on the hosted version, recorded scenarios need neither); the Scout
+  reads only pasted text in mode A, database listings go through code and the Lease reader compares the form with
+  the lease draft; the migration is applied through the Supabase MCP after the SQL is approved.
+- Step 0 DONE (clean start): removed `fixtures/listings`, `fixtures/leases`, `fixtures/mock-answers`, the
+  `check:listings`, `demo:scout` and `demo:evaluate` scripts. Tests now use their own small synthetic set
+  (`tests/fixtures/sample-listings.ts`, ids `listing-01..08`, one role each). Listing ids are now `pasted-<n>` or
+  `listing-<id>` (`LISTING_ID_PREFIXES` in `src/domain/source.ts`). The server takes an injectable `DemoCatalogue`;
+  none is built in, so **"Run demo" answers 503 until step 4** (seeded catalogue) and step 8 (recorded scenarios).
+  `npm run screenshots` also waits for step 8. 122 tests pass, typecheck clean.
+
 ## 26 Nov 2026, late evening (Andrej): app flow, run orbit, results redesign
 What changed (commits 1c11f9e to the last one of the day; 122 tests pass, typecheck clean, keyless demo unchanged):
 - **App flow:** own router (no dependency): `/`, `/research/new`, `/research/:id/run`, `/research/:id`,

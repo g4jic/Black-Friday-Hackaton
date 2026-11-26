@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
-import { loadDemoLeases, loadDemoListings, loadDemoQuestionnaire, loadLeaseAnswers, loadScoutAnswers } from "../src/adapters/fixtures/demo-listings.js"
+import { loadDemoQuestionnaire } from "../src/adapters/fixtures/demo-questionnaire.js"
+import { sampleLeaseAnswers, sampleLeases, sampleListings, sampleScoutAnswers } from "./fixtures/sample-listings.js"
 import { MockRunner, developerText, lastUserText, type MockScript } from "../src/adapters/inference/mock-runner.js"
 import { demoRoomScript } from "../src/adapters/inference/scripts/demo-script.js"
 import { FAST_PACE } from "../src/adapters/server/research-routes.js"
@@ -8,8 +9,8 @@ import { auditReport, createFact, validateSource, type ReportDraft } from "../sr
 
 async function run(script?: (inner: MockScript) => MockScript) {
   const { profile, requirements } = loadDemoQuestionnaire()
-  const inner = demoRoomScript({ scout: loadScoutAnswers(), lease: loadLeaseAnswers() }, FAST_PACE)
-  const s = new ResearchSession({ id: "t", mode: "demo", model: "mock", runner: new MockRunner({ script: script ? script(inner) : inner }), listings: loadDemoListings(), leases: loadDemoLeases(), profile, requirements })
+  const inner = demoRoomScript({ scout: sampleScoutAnswers(), lease: sampleLeaseAnswers() }, FAST_PACE)
+  const s = new ResearchSession({ id: "t", mode: "demo", model: "mock", runner: new MockRunner({ script: script ? script(inner) : inner }), listings: sampleListings(), leases: sampleLeases(), profile, requirements })
   const start = Date.now()
   while (s.status !== "done" && Date.now() - start < 10_000) await new Promise((r) => setTimeout(r, 20))
   return s
@@ -32,12 +33,12 @@ describe("Report writer + Auditor (keyless)", () => {
     expect(report.failed).toBeNull()
     expect(report.audit).toMatchObject({ corrected: 0, removed: 0, attempts: 1 })
     expect(report.audit.checked).toBeGreaterThan(5)
-    expect(report.recommended).toEqual(["demo-01", "demo-06", "demo-05"])
-    for (const id of ["demo-02", "demo-07"]) {
+    expect(report.recommended).toEqual(["listing-01", "listing-06", "listing-05"])
+    for (const id of ["listing-02", "listing-07"]) {
       expect(report.recommended).not.toContain(id)
       expect(report.sections.recommendation!.some((x) => x.text.includes(id))).toBe(false)
     }
-    expect(report.sections.rejected!.map((x) => x.text).join(" ")).toContain("demo-07")
+    expect(report.sections.rejected!.map((x) => x.text).join(" ")).toContain("listing-07")
     // Every sentence cites facts, and every fact carries a valid source.
     for (const list of Object.values(report.sections)) for (const x of list) {
       expect(x.facts.length).toBeGreaterThan(0)
@@ -82,20 +83,20 @@ describe("Report writer + Auditor (keyless)", () => {
 
   it("recommending a rejected candidate is rejected, in the list and in the text", () => {
     const facts = [
-      createFact({ id: "F1", kind: "rank", candidateId: "demo-01", text: "demo-01 is ranked #1 of 2 with a score of 80 out of 100, confidence high.", source: { kind: "profile", ref: "questionnaire", field: "monthlyBudget" } }),
-      createFact({ id: "F2", kind: "rejected", candidateId: "demo-07", text: "demo-07 was rejected by a hard flag.", source: { kind: "lease", ref: "lease-demo-07", clause: "tenantMayTerminateEarly" } }),
+      createFact({ id: "F1", kind: "rank", candidateId: "listing-01", text: "listing-01 is ranked #1 of 2 with a score of 80 out of 100, confidence high.", source: { kind: "profile", ref: "questionnaire", field: "monthlyBudget" } }),
+      createFact({ id: "F2", kind: "rejected", candidateId: "listing-07", text: "listing-07 was rejected by a hard flag.", source: { kind: "lease", ref: "lease-listing-07", clause: "tenantMayTerminateEarly" } }),
     ]
     const draft: ReportDraft = {
-      recommended: ["demo-07"],
-      recommendation: [{ text: "Go for demo-07, score 80.", facts: ["F2"] }],
+      recommended: ["listing-07"],
+      recommendation: [{ text: "Go for listing-07, score 80.", facts: ["F2"] }],
       checkBeforeSigning: [],
       rejected: [],
       unknowns: [{ text: "Rent is 999 EUR.", facts: [] }],
     }
-    const { problems } = auditReport(draft, facts, ["demo-01"], ["demo-07"])
+    const { problems } = auditReport(draft, facts, ["listing-01"], ["listing-07"])
     const messages = problems.map((p) => `${p.section}: ${p.message}`)
-    expect(messages).toContain("recommended: demo-07 was rejected by a hard flag and can never be recommended")
-    expect(messages).toContain("recommendation: recommends demo-07, which was rejected by a hard flag")
+    expect(messages).toContain("recommended: listing-07 was rejected by a hard flag and can never be recommended")
+    expect(messages).toContain("recommendation: recommends listing-07, which was rejected by a hard flag")
     expect(messages).toContain("unknowns: states a number or names a candidate without citing a fact")
   })
 })

@@ -3,6 +3,7 @@ import { MockRunner } from "../src/adapters/inference/mock-runner.js"
 import { FAST_PACE } from "../src/adapters/server/research-routes.js"
 import { buildServer } from "../src/adapters/server/server.js"
 import type { WireEvent } from "../src/application/research/wire.js"
+import { SAMPLE_CATALOGUE } from "./fixtures/sample-listings.js"
 
 const FAKE_KEY = "sk-ant-test-0123456789-THIS-MUST-NEVER-LEAVE-THE-SERVER"
 
@@ -34,7 +35,7 @@ describe("server", () => {
   it("streams the research events over SSE in bus order, and resumes after Last-Event-ID", async () => {
     process.env.ANTHROPIC_API_KEY = FAKE_KEY
     delete process.env.SUITESPOT_MODE
-    const app = await buildServer({ demoPace: FAST_PACE })
+    const app = await buildServer({ demoCatalogue: SAMPLE_CATALOGUE, demoPace: FAST_PACE })
     const post = await app.inject({ method: "POST", url: "/api/research", payload: { source: "demo" } })
     expect(post.statusCode).toBe(201)
     const { id } = post.json() as { id: string }
@@ -48,17 +49,17 @@ describe("server", () => {
     expect(events.every((e, i) => i === 0 || e.data.at >= events[i - 1]!.data.at)).toBe(true)
     expect(events.at(-1)).toMatchObject({ event: "done", data: { type: "research.done" } })
 
-    // The demo story is in the right order: Finance starts on demo-07, the lease rejects it, Finance is cut.
+    // The demo story is in the right order: Finance starts on listing-07, the lease rejects it, Finance is cut.
     const index = (pred: (e: WireEvent) => boolean) => events.findIndex((e) => pred(e.data))
-    const financeStart = index((e) => e.type === "loop.started" && e.loopKey === "finance:demo-07:1")
-    const rejected = index((e) => e.type === "candidate.rejected" && e.candidateId === "demo-07")
-    const cancelled = index((e) => e.type === "loop.cancelled" && e.loopKey === "finance:demo-07:1")
+    const financeStart = index((e) => e.type === "loop.started" && e.loopKey === "finance:listing-07:1")
+    const rejected = index((e) => e.type === "candidate.rejected" && e.candidateId === "listing-07")
+    const cancelled = index((e) => e.type === "loop.cancelled" && e.loopKey === "finance:listing-07:1")
     expect(financeStart).toBeGreaterThan(0)
     expect(financeStart).toBeLessThan(rejected)
     expect(rejected).toBeLessThan(cancelled)
     expect(events.filter((e) => e.data.type === "candidate.found")).toHaveLength(8)
     const metrics = events.at(-1)!.data.data!.metrics as { loops: number; peakParallel: number; rejected: number }
-    expect(metrics.rejected).toBe(2) // demo-02 over budget (Finance) and demo-07 (lease)
+    expect(metrics.rejected).toBe(2) // listing-02 over budget (Finance) and listing-07 (lease)
     expect(metrics.peakParallel).toBeGreaterThan(1)
 
     const resumed = parseSse((await app.inject({ method: "GET", url: `/api/research/${id}/events`, headers: { "last-event-id": "10" } })).body)
@@ -70,7 +71,7 @@ describe("server", () => {
   it("the API key never appears in any server response", async () => {
     process.env.ANTHROPIC_API_KEY = FAKE_KEY
     process.env.SUITESPOT_MODE = "demo"
-    const app = await buildServer({ demoPace: FAST_PACE })
+    const app = await buildServer({ demoCatalogue: SAMPLE_CATALOGUE, demoPace: FAST_PACE })
     const bodies: string[] = []
     const call = async (url: string, method: "GET" | "POST" = "GET", payload?: object) => {
       const res = await app.inject({ method, url, payload })
@@ -92,7 +93,7 @@ describe("server", () => {
   it("cancel: every loop stops at its next breakpoint, nothing is ranked, and the run ends as cancelled", async () => {
     delete process.env.SUITESPOT_MODE
     // Demo pace slow enough that loops are still running when Cancel arrives.
-    const app = await buildServer({ demoPace: { scout: () => 300, leaseReader: 600, financeStep: 300, reportWriter: 300 } })
+    const app = await buildServer({ demoCatalogue: SAMPLE_CATALOGUE, demoPace: { scout: () => 300, leaseReader: 600, financeStep: 300, reportWriter: 300 } })
     const { id } = (await app.inject({ method: "POST", url: "/api/research", payload: { source: "demo" } })).json() as { id: string }
     expect((await app.inject({ method: "POST", url: "/api/research/unknown-id/cancel" })).statusCode).toBe(404)
     await new Promise((r) => setTimeout(r, 450)) // the Scout has started, Finance and Lease reader are working
@@ -119,7 +120,7 @@ describe("server", () => {
     process.env.ANTHROPIC_API_KEY = FAKE_KEY
     process.env.SUITESPOT_MODE = "live"
     process.env.SUITESPOT_ACCESS_CODE = "open-sesame"
-    const app = await buildServer({ demoPace: FAST_PACE, liveRunner: () => new MockRunner({ latencyMs: 50, script: () => ({ text: "{}" }) }) })
+    const app = await buildServer({ demoCatalogue: SAMPLE_CATALOGUE, demoPace: FAST_PACE, liveRunner: () => new MockRunner({ latencyMs: 50, script: () => ({ text: "{}" }) }) })
     expect((await app.inject({ method: "GET", url: "/api/config" })).json()).toMatchObject({ liveAvailable: true, liveNeedsAccessCode: true })
     const live = { mode: "live", source: "pasted", listings: [{ text: "Lokal 60 m2, Novi Sad, 900 EUR" }] }
     const missing = await app.inject({ method: "POST", url: "/api/research", payload: live })
@@ -147,7 +148,7 @@ describe("server", () => {
     process.env.ANTHROPIC_API_KEY = FAKE_KEY
     process.env.SUITESPOT_MODE = "live"
     // A slow fake "live" model: no network, no cost.
-    const app = await buildServer({ demoPace: FAST_PACE, liveRunner: () => new MockRunner({ latencyMs: 400, script: () => ({ text: "{}" }) }) })
+    const app = await buildServer({ demoCatalogue: SAMPLE_CATALOGUE, demoPace: FAST_PACE, liveRunner: () => new MockRunner({ latencyMs: 400, script: () => ({ text: "{}" }) }) })
     const nine = Array.from({ length: 9 }, (_, i) => ({ text: `Lokal ${i + 1}, Novi Sad` }))
     const tooMany = await app.inject({ method: "POST", url: "/api/research", payload: { mode: "live", source: "pasted", listings: nine } })
     expect(tooMany.statusCode).toBe(400)

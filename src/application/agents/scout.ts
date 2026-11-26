@@ -47,7 +47,7 @@ export function missingFields(listing: Listing): string[] {
 }
 
 /**
- * Entry point for both inputs (demo fixtures and the user's 1 to 8 pasted texts): state removes contact data and
+ * Entry point for both inputs (SuiteSpot listings and the user's 1 to 8 pasted texts): state removes contact data and
  * stores the texts, then one domain event tells the room. The Scout notices it; nobody calls the Scout.
  */
 export function submitListings(rt: AppRuntime, inputs: readonly ListingTextInput[], producerId: string): ListingText[] {

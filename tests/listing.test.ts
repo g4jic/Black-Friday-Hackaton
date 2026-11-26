@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { loadDemoListings, loadScoutAnswers } from "../src/adapters/fixtures/demo-listings.js"
+import { sampleListings, sampleScoutAnswers } from "./fixtures/sample-listings.js"
 import {
   DomainError,
   EMAIL_PLACEHOLDER,
@@ -24,8 +24,8 @@ function expectDomainError(fn: () => unknown, code: string, messagePart?: string
   throw new Error(`Expected DomainError "${code}"`)
 }
 
-const [demo01] = createListingBatch([{ id: "demo-01", text: loadDemoListings().find((l) => l.id === "demo-01")!.text, synthetic: true }])
-const goodAnswer = () => structuredClone(loadScoutAnswers()["demo-01"]) as Record<string, Record<string, unknown>>
+const [demo01] = createListingBatch([{ id: "listing-01", text: sampleListings().find((l) => l.id === "listing-01")!.text, synthetic: true }])
+const goodAnswer = () => structuredClone(sampleScoutAnswers()["listing-01"]) as Record<string, Record<string, unknown>>
 
 describe("contact removal (before anything else sees the text)", () => {
   it("removes Serbian-style phone numbers and emails", () => {
@@ -47,11 +47,11 @@ describe("contact removal (before anything else sees the text)", () => {
     const result = redactContacts(raw)
     expect(result).toEqual({ text: raw, phones: 0, emails: 0 })
   })
-  it("the demo fixtures carry the synthetic label and contain no contacts", () => {
-    const fixtures = loadDemoListings()
+  it("the test listings carry the synthetic label and contain no contacts", () => {
+    const fixtures = sampleListings()
     expect(fixtures).toHaveLength(8)
     for (const f of fixtures) {
-      expect(f.text.startsWith("SYNTHETIC DEMO DATA")).toBe(true)
+      expect(f.text.startsWith("SYNTHETIC TEST DATA")).toBe(true)
       expect(redactContacts(f.text)).toMatchObject({ phones: 0, emails: 0 })
     }
   })
@@ -86,7 +86,7 @@ describe("listing source and quotes", () => {
 describe("buildListing: plain code checks every value against the listing text", () => {
   it("accepts the scripted answer and keeps the quote as the source", () => {
     const listing = buildListing(demo01!, JSON.stringify(goodAnswer()))
-    expect(listing.rentMonthly).toMatchObject({ source: { kind: "listing", ref: "demo-01", field: "rentMonthly", quote: "Cena: 1.250 € mesečno" } })
+    expect(listing.rentMonthly).toMatchObject({ source: { kind: "listing", ref: "listing-01", field: "rentMonthly", quote: "Mesečna cena: 1.250 € mesečno" } })
     expect(isMissingData(listing.rentMonthly)).toBe(false)
   })
   it("rejects a value without a source (no quote)", () => {
@@ -111,8 +111,8 @@ describe("buildListing: plain code checks every value against the listing text",
     expectDomainError(() => buildListing(demo01!, "Inference failed: timeout"), "invalid_extraction", "not valid JSON")
   })
   it("every scripted demo answer passes the same checks against its fixture", () => {
-    const answers = loadScoutAnswers()
-    for (const text of createListingBatch(loadDemoListings())) {
+    const answers = sampleScoutAnswers()
+    for (const text of createListingBatch(sampleListings())) {
       expect(() => buildListing(text, answers[text.id])).not.toThrow()
     }
   })

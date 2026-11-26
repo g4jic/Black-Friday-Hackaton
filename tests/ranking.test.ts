@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { createHuman } from "@mozaik-ai/core"
-import { loadDemoLeases, loadDemoListings, loadDemoQuestionnaire, loadLeaseAnswers, loadScoutAnswers } from "../src/adapters/fixtures/demo-listings.js"
+import { loadDemoQuestionnaire } from "../src/adapters/fixtures/demo-questionnaire.js"
+import { sampleLeaseAnswers, sampleLeases, sampleListings, sampleScoutAnswers } from "./fixtures/sample-listings.js"
 import { MockRunner } from "../src/adapters/inference/mock-runner.js"
 import { demoRoomScript } from "../src/adapters/inference/scripts/demo-script.js"
 import { createFinanceAnalyst } from "../src/application/agents/finance-analyst.js"
@@ -29,14 +30,14 @@ import { waitFor } from "./helpers.js"
 const FAST = { scout: () => 10, leaseReader: 60, financeStep: 20 }
 
 async function runDemo() {
-  const rt = createAppRuntime({ runner: new MockRunner({ script: demoRoomScript({ scout: loadScoutAnswers(), lease: loadLeaseAnswers() }, FAST) }), maxParallelInference: 8, resilience: { retries: 0 } })
+  const rt = createAppRuntime({ runner: new MockRunner({ script: demoRoomScript({ scout: sampleScoutAnswers(), lease: sampleLeaseAnswers() }, FAST) }), maxParallelInference: 8, resilience: { retries: 0 } })
   const recorder = createRecorder()
   const user = createHuman({ name: "User", capabilities: [], handlers: [] })
   for (const p of [recorder.participant, user, createScout(rt, { model: "mock" }), createFinanceAnalyst(rt, { model: "mock" }), createLeaseReader(rt, { model: "mock" }), createRanker(rt)]) rt.join(p)
   const q = loadDemoQuestionnaire()
   rt.state.setQuestionnaire(q.profile, q.requirements)
-  rt.state.submitLeases(loadDemoLeases())
-  submitListings(rt, loadDemoListings(), user.getId())
+  rt.state.submitLeases(sampleLeases())
+  submitListings(rt, sampleListings(), user.getId())
   await waitFor(() => recorder.events.some((e) => e.type === "ranking.done"), 5000, "ranking.done")
   const scored = recorder.events.filter((e) => e.type === "candidate.scored").map((e) => e.event.payload as { candidateId: string; rank: number; score: number; confidence: string; reasons: CandidateScore["reasons"] })
   return { rt, recorder, scored }
@@ -46,26 +47,26 @@ describe("Ranker (keyless, plain code)", () => {
   it("ranks every candidate that was not rejected; a hard flag is never ranked", async () => {
     const { rt, recorder, scored } = await runDemo()
     const rejected = [...rt.state.candidates.values()].filter((c) => c.isRejected()).map((c) => c.id).sort()
-    expect(rejected).toEqual(["demo-02", "demo-07"])
-    expect(scored.map((s) => s.candidateId)).not.toContain("demo-02")
-    expect(scored.map((s) => s.candidateId)).not.toContain("demo-07")
+    expect(rejected).toEqual(["listing-02", "listing-07"])
+    expect(scored.map((s) => s.candidateId)).not.toContain("listing-02")
+    expect(scored.map((s) => s.candidateId)).not.toContain("listing-07")
     expect(scored).toHaveLength(6)
     expect(scored.map((s) => s.rank)).toEqual([1, 2, 3, 4, 5, 6])
     const done = recorder.events.find((e) => e.type === "ranking.done")!.event.payload as { excluded: string[] }
     expect(done.excluded.sort()).toEqual(rejected)
-    expect(() => rt.state.recordRanking({ ...(rt.state.rankings.get("demo-01")!), candidateId: "demo-07" })).toThrow(DomainError)
+    expect(() => rt.state.recordRanking({ ...(rt.state.rankings.get("listing-01")!), candidateId: "listing-07" })).toThrow(DomainError)
     for (const id of scored.map((s) => s.candidateId)) expect(rt.state.candidate(id).status).toBe("scored")
   })
 
   it("a candidate without a stated rent cannot rank first, and the reason says why (with a source)", async () => {
     const { scored } = await runDemo()
-    const noRent = scored.find((s) => s.candidateId === "demo-08")!
+    const noRent = scored.find((s) => s.candidateId === "listing-08")!
     expect(noRent.rank).toBe(6)
     expect(noRent.confidence).toBe("low")
     expect(noRent.reasons[0]).toEqual({
       text: "Cannot rank first: the listing does not state the rent (missing data)",
       effect: "order",
-      source: { kind: "listing", ref: "demo-08", field: "rentMonthly", missing: true },
+      source: { kind: "listing", ref: "listing-08", field: "rentMonthly", missing: true },
     })
   })
 
@@ -78,12 +79,12 @@ describe("Ranker (keyless, plain code)", () => {
     }
   })
 
-  it("demo: demo-01 (all data) ranks first, ahead of the candidates without a lease draft; ranges are shown as such", async () => {
+  it("demo: listing-01 (all data) ranks first, ahead of the candidates without a lease draft; ranges are shown as such", async () => {
     const { scored } = await runDemo()
     const view = scored.map((s) => [s.candidateId, s.rank, s.score, (s as { scoreHigh?: number }).scoreHigh])
-    expect(view[0]).toEqual(["demo-01", 1, 80, 80])
-    expect(view.find((v) => v[0] === "demo-03")).toEqual(["demo-03", expect.any(Number), 60, 100])
-    expect(view.find((v) => v[0] === "demo-06")).toEqual(["demo-06", 2, 74, 94])
+    expect(view[0]).toEqual(["listing-01", 1, 80, 80])
+    expect(view.find((v) => v[0] === "listing-03")).toEqual(["listing-03", expect.any(Number), 60, 100])
+    expect(view.find((v) => v[0] === "listing-06")).toEqual(["listing-06", 2, 74, 94])
   })
 
   it("the same input gives the same order and scores", async () => {
@@ -96,11 +97,11 @@ describe("Ranker (keyless, plain code)", () => {
 
 describe("score rules (domain)", () => {
   const { profile } = loadDemoQuestionnaire()
-  const listingText = createListingBatch([loadDemoListings().find((l) => l.id === "demo-01")!])[0]!
-  const listing = buildListing(listingText, loadScoutAnswers()["demo-01"])
-  const lease = buildLease(loadDemoLeases().find((l) => l.listingId === "demo-01")!, loadLeaseAnswers()["lease-demo-01"])
-  const monthly = sourced(Money.of(1310, "EUR"), { kind: "calc", ref: "sum of monthly cost lines", inputs: [{ kind: "listing", ref: "demo-01", field: "rentMonthly", quote: "Cena: 1.250 € mesečno" }] })
-  const base: RankingInput = { candidateId: "demo-01", listing, profile, monthlyCost: monthly, lease, hasLeaseDraft: true, softFindings: [] }
+  const listingText = createListingBatch([sampleListings().find((l) => l.id === "listing-01")!])[0]!
+  const listing = buildListing(listingText, sampleScoutAnswers()["listing-01"])
+  const lease = buildLease(sampleLeases().find((l) => l.listingId === "listing-01")!, sampleLeaseAnswers()["lease-listing-01"])
+  const monthly = sourced(Money.of(1310, "EUR"), { kind: "calc", ref: "sum of monthly cost lines", inputs: [{ kind: "listing", ref: "listing-01", field: "rentMonthly", quote: "Cena: 1.250 € mesečno" }] })
+  const base: RankingInput = { candidateId: "listing-01", listing, profile, monthlyCost: monthly, lease, hasLeaseDraft: true, softFindings: [] }
   /** The range by hand: unknown parts as 0 (low end) and as full (high end). */
   const byHand = (s: CandidateScore) => ({
     low: Math.round(s.components.reduce((a, c) => a + c.weight * (c.value ?? 0), 0)),
@@ -133,7 +134,7 @@ describe("score rules (domain)", () => {
     const cheapNoLease = scoreCandidate({ ...base, candidateId: "x-cheap-no-lease", lease: null, hasLeaseDraft: false, monthlyCost: sourced(Money.of(700, "EUR"), monthly.source) })
     expect(cheapNoLease.scoreHigh).toBeGreaterThan(full.score)
     expect(cheapNoLease.score).toBeLessThan(full.score)
-    expect(rankCandidates([cheapNoLease, full]).map((r) => r.candidateId)).toEqual(["demo-01", "x-cheap-no-lease"])
+    expect(rankCandidates([cheapNoLease, full]).map((r) => r.candidateId)).toEqual(["listing-01", "x-cheap-no-lease"])
   })
 
   it("a candidate without rent ranks after every candidate with rent, whatever its range", () => {
