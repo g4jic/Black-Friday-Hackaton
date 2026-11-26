@@ -31,9 +31,9 @@ The finance analysis is the core of the result; location and premises findings c
 ## 3. Scope
 
 **Must have (the demo depends on it)**
-- Web app (English), designed with Uizze from the start: questionnaire, mode choice, follow-up questions, live
-  research view (agents working in parallel, candidates appearing, flags, cancellations), ranked report with sources,
-  research history.
+- Web app (English), designed from the start (look defined in `DESIGN.md`): questionnaire, mode choice, follow-up
+  questions, live research view (agents working in parallel, candidates appearing, flags, cancellations), ranked report
+  with sources, research history.
 - Live research: web search for listings, OpenStreetMap data for the area, estimates with method and sources.
 - Candidate pipeline with parallel evaluators, hard and soft flags, cancellation on hard flag, auditor, scoring.
 - **Demo mode (keyless, deterministic):** a labelled synthetic dataset plus one recorded real research run, replayed
@@ -154,7 +154,7 @@ receives "Candidate rejected by <aspect>: <reason>. Stop and answer 'stopped'." 
 - Screens: questionnaire, mode choice, follow-up questions, live research (agent lanes over time, candidates as cards
   that update, flags and cancellations visible), report (ranked candidates, every figure with a source link or an
   estimate badge, "not financial or legal advice"), history list and history detail.
-- Design with Uizze (see `CLAUDE.md`). Clean, calm, finance-grade. The live research view is the hero of the demo.
+- The look follows `DESIGN.md`. Clean, calm, finance-grade. The live research view is the hero of the demo.
 - Run metrics on the report: candidates, loops, peak loops in parallel, flags, cancellations, duration, tokens, cost.
 
 ## 10. Reliability (required)
@@ -169,7 +169,7 @@ end-to-end test where one evaluator fails and the others still finish.
 2. **Thu 15:00-18:00:** thin slice in demo mode: Scout (fixtures) + Finance analyst + Lease reader on 3 candidates,
    events streamed to a first live research screen.
 3. **Thu 18:00-22:00:** Location analyst (OSM), Premises inspector, Auditor, Ranker, hard-flag cancellation, history.
-   Design pass with Uizze on the questionnaire and live research screens.
+   Design pass on the questionnaire and live research screens.
 4. **Fri 09:00-13:00:** live mode end to end (real search, OSM, `claude-haiku-4-5`), Interviewer, mode A, record one
    real run as a fixture, report screen.
 5. **Fri 13:00-16:00:** Railway deploy, design polish, metrics, fixes. Feature freeze at 16:00.
@@ -184,9 +184,8 @@ end-to-end test where one evaluator fails and the others still finish.
 - `main` must always run in demo mode (`npm test` passes). Small commits with clear messages.
 - `.env` is in `.gitignore`; only `.env.example` is committed. Never commit keys (`sk-ant-...`, `jjk_...`, `pk_...`).
   Commit `package-lock.json`. Pin `@mozaik-ai/core` to exactly `6.0.0`.
-- **Uizze:** the Uizze MCP is only on Andrej's machine. Design-heavy steps (new screens, design passes) are done in
-  Andrej's sessions. In Aleksa's sessions, use the free Uizze skills if installed (`npx skills@latest add uizze/uizze`)
-  and the existing design system in the repo; write design work that needs the MCP into `PROGRESS.md` as "for Andrej".
+- **Design:** Design is done by Aleksa and Claude in Aleksa's sessions; `DESIGN.md` is the single source of truth for
+  the look.
 - The person not coding: tests the app, prepares the demo scenario and the demo script, collects screenshots.
 
 ## 12a. Feasibility check (done 26 Nov, 13:10, on a real Novi Sad listing)

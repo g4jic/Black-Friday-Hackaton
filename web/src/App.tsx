@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 
 type Health = { status: string; mode: "demo" | "live" }
 
-// Placeholder screen for the skeleton. The real screens are designed with Uizze in a later step.
+// Placeholder screen for the skeleton. The real screens follow DESIGN.md in a later step.
 export function App() {
   const [health, setHealth] = useState<Health | null>(null)
   const [error, setError] = useState<string | null>(null)

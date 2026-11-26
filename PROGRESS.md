@@ -54,7 +54,7 @@ No long dashes in this file; use a plain hyphen.
 - No long dashes anywhere. Never print or commit `.env` or keys. Update this file and run `npm test` before every push.
 
 **Open questions**
-- Era or Spade (team decision). Then DESIGN.md and the Uizze design pass (needs Andrej's Uizze MCP).
+- Era or Spade (team decision). Then DESIGN.md and the design pass (Aleksa and Claude).
 - Terms of use of the three listing sites are not read yet.
 - The honest User-Agent may be blocked more often than in the earlier test; re-run `npm run check:listings`.
 - Railway datacenter IPs may be blocked by listing sites; test live mode from the deployed service.
@@ -131,6 +131,12 @@ No long dashes in this file; use a plain hyphen.
 - Mozaik sends no `disable_parallel_tool_use`; add the custom AnthropicMessages mapper in live mode (see CLAUDE.md).
 
 ## Decisions log
+- 2026-11-26: mockup review (Aleksa). The Finance analyst is an AI agent that calls the lease cost calculator as a tool;
+  only code computes numbers. The checking agent is called Auditor, never Verifier. Photo analysis is out of scope. The
+  concept mockups in `design/concepts/` still show "Finance: plain code", "Verifier" and "photos + text"; they are not
+  updated, because they will be replaced by the new design.
+- 2026-11-26: Uizze is no longer used. Design is done by Aleksa and Claude in Aleksa's sessions; DESIGN.md is the
+  single source of truth for the look.
 - 2026-11-26: halooglasi.com is out: its robots.txt blocks Anthropic crawlers and does not allow AI input. We respect
   that instead of imitating a browser. nekretnine.rs is out for now (blocks all automated access).
 - 2026-11-26: gross margin stays optional; missing margin = "missing data" for break-even and payback.
@@ -147,9 +153,6 @@ No long dashes in this file; use a plain hyphen.
   Novi Sad listing (plan section 12a). Always read the listing page, not the search snippet.
 - 2026-11-26: project SuiteSpot chosen; live web search via Anthropic `web_search` inside our own function tool;
   OpenStreetMap for area data; Supabase for history; Railway for deploy; Stripe and Solana not used.
-
-## For Andrej (needs the Uizze MCP)
-- After the team picks Era or Spade: write DESIGN.md from the chosen pack and run the Uizze design pass.
 
 ## Session log
 - 2026-11-26 15:05 (Andrej): two design concepts (Era, Spade) in design/concepts; shift handover to Aleksa.

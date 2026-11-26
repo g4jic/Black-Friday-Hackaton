@@ -25,8 +25,8 @@ of every session, update it before every push). If the plan and this file disagr
 - Stripe and Solana are not used (no natural fit).
 - Never give a legal verdict on permitted use; report "check before signing: <what>".
 - **Writing rule:** no long dashes anywhere (UI, docs, comments, commits). Use a plain hyphen `-`.
-- UI is English and must look excellent: use Uizze (MCP on Andrej's machine; free skills elsewhere). The README is
-  written at the end and must be excellent, it is scored.
+- UI is English and must look excellent. Design is done by Aleksa and Claude in Aleksa's sessions; `DESIGN.md` is the
+  single source of truth for the look. The README is written at the end and must be excellent, it is scored.
 
 ## The event (facts, checked 25-26 Nov 2026)
 - **Black Friday AI Hackathon** by JigJoy. 26-27 Nov 2026. On site at Science Technology Park Belgrade, or online.
@@ -518,7 +518,7 @@ He is a QA Automation Engineer. Judging from what he shares on LinkedIn:
    once", and a JSONL trace of events.
 7. **Safety in plain code**: validate every LLM output (`structuredOutput` plus a schema check) before it changes state.
    Money-moving or booking actions go through interception (human approval or another agent's veto).
-8. **UI from the start, built with Uizze.** The live research view is the hero of the demo. The engine still comes first in each slice: logic is scored, the UI makes it visible.
+8. **UI from the start, styled by `DESIGN.md`.** The live research view is the hero of the demo. The engine still comes first in each slice: logic is scored, the UI makes it visible.
 9. Git: a **public repo** from the start, small commits with clear messages, `.env` in `.gitignore`, and an
    `.env.example` committed. **Never print or commit keys.**
 10. Tests only for the core logic (state rules, validators), plus one end-to-end mock run that must pass before every
@@ -538,19 +538,6 @@ He is a QA Automation Engineer. Judging from what he shares on LinkedIn:
      repo). Never pretend to be a browser or a search engine. **At most one request per 2 seconds per site.** Respect
      robots.txt. A 403 or a block page means skip that page (soft finding "listing page could not be read").
   3. `web_search` is always called with `allowed_domains` set to the approved sites only.
-
-## Uizze (UI references and design skills)
-- The Uizze MCP (`https://uizze.com/mcp`) is installed and signed in only in Andrej's Claude Code CLI. Tools:
-  `find_ui_references` (1-3 real screens for ONE concrete design question) and `find_ui_materials` (fonts, icons,
-  animated icons, design packs).
-- Free skills from `uizze/uizze` (install with `npx skills@latest add uizze/uizze`): `uizze-ui` (image-first: target
-  image, implement, render, compare, fix), `ui-design`, `anti-ui-slop` (design contract and finish gate),
-  `image-to-ui`, `ui-radar`.
-- Rules: use the project's own design system first; search only for an unresolved design question; 1-3 results;
-  inspect the images; never copy other apps' branding; keep font and icon license notices; never fake Uizze output.
-  A design pack becomes `DESIGN.md` only after the user picks it.
-- In a session without the MCP, use the skills and `DESIGN.md`, and note design work that needs the MCP in
-  `PROGRESS.md` as "for Andrej".
 - **Model key: Anthropic**, from the user's own Anthropic Console account (`ANTHROPIC_API_KEY` in `.env`). The user
   manages the budget himself. Default model: `claude-haiku-4-5` (cheapest model in Mozaik's bundled list). Mozaik
   6.0.0's bundled Anthropic names are `claude-haiku-4-5`, `claude-sonnet-4-6`, `claude-opus-4-7`, `claude-opus-4-8`.
