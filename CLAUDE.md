@@ -19,7 +19,7 @@ Mozaik agents evaluate every candidate at the same time from different angles an
 lease a good financial decision for my business?"**
 The full build plan is **`2026-11-26-plan-lease-decision.md`**. Work state is in **`PROGRESS.md`** (read it at the start
 of every session, update it before every push). If the plan and this file disagree, ask the user.
-**Current state (26 Nov, late night): read the HANDOFF section at the top of `PROGRESS.md` first** (steps 0 to 6
+**Current state (27 Nov, early morning): read the HANDOFF section at the top of `PROGRESS.md` first** (steps 0 to 6
 done, exact state, next steps in order, how to run locally, Supabase, tonight's decisions with reasons).
 - Repo: https://github.com/g4jic/Black-Friday-Hackaton. Local path (Andrej): `C:\Users\Lenovo LOQ\Desktop\SuiteSpot`.
 - Two people work in relay through Claude Code CLI in PowerShell: one works, pushes, the other continues.
@@ -567,8 +567,7 @@ He is a QA Automation Engineer. Judging from what he shares on LinkedIn:
   nekretnine.rs block crawlers). There is no fetch_listing or web_search tool. The earlier per-site rules and the
   demo-01..08 fixtures are SUPERSEDED and removed. An outside listing enters only as fields the user types (mode A).
 - **Live mode env vars (one name each, used the same in code, `.env.example`, PROGRESS.md and here):**
-  `SUITESPOT_MODE` (`demo` default, `live` needs `ANTHROPIC_API_KEY`; to be REMOVED in step 8, then a key alone means
-  live) and `SUITESPOT_ACCESS_CODE` (optional; when set,
+  (`SUITESPOT_MODE` was REMOVED on 27 Nov: a server with `ANTHROPIC_API_KEY` runs live, without it keyless) and `SUITESPOT_ACCESS_CODE` (optional; when set,
   live runs need the header `X-Access-Code` with this value, which users enter under Settings; demo runs never need it).
   Never print or commit its value.
 - **Model key: Anthropic**, from the user's own Anthropic Console account (`ANTHROPIC_API_KEY` in `.env`). The user

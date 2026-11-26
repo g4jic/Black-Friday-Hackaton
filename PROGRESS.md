@@ -3,7 +3,78 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
-## HANDOFF (26 Nov 2026, late night, Andrej): READ THIS FIRST
+## HANDOFF (27 Nov 2026, early morning, Andrej's night shift): READ THIS FIRST
+Whoever continues starts a new session without this context. Read this section, then CLAUDE.md. The handoff from
+26 Nov late night (right below) is still true for Supabase, the decisions and the deadline, except where this one
+says otherwise.
+
+### Deadline
+- Submissions close **Friday 27 Nov 2026, 00:00 CET**. No demo slot: the jury sees only the public repo, the README
+  and our video link. Feature freeze Fri 18:00; after that only README, video, screenshots and the fresh-clone test.
+
+### What changed tonight (P1 to P4 of the night prompt; one commit each)
+- **P1, everything works** (13f5187): `SUITESPOT_MODE` is REMOVED. The server runs live whenever
+  `ANTHROPIC_API_KEY` is set, otherwise keyless with scripted answers (labelled). A down API gives one human message
+  (`web/src/app/api-fetch.ts`), never "Failed to fetch". "Find spaces" searches all 100 listings; no "8 candidates"
+  or "no API key" chips.
+- **P2, navigation** (86d63e7): menu Home, Find spaces, Evaluate an outside listing, Listings, History, Assumptions
+  (active state by `?mode=`); avatar menu My spaces, My listings, List a space, Settings, Sign in / Sign up /
+  Sign out. Reports page and route removed (the report stays a results tab). SVG logo (`web/src/app/Logo.tsx`), Home
+  titled "Find your SuiteSpot".
+- **P3, accounts** (53dae06): one kind of account (everyone can search and list; "landlord" only means the party in
+  a lease). Save button on a listing page; **My spaces** shows saved listings + an empty "Spaces I rent" with a CTA;
+  **My listings** shows a view count per listing + empty "Offers" and "Rented out" sections with a CTA. Pages that
+  need an account ask a guest to sign in (`RequireLandlord`, name kept for now). New migration
+  `20261127010000_saved_listings_and_views.sql` (APPLIED): `saved_listings` (each user sees and changes only their
+  own rows) and `listing_views` (only the server counts, through `record_listing_view`, service role only; the owner
+  reads their own counts). Checked with `supabase/checks/rls-checks-saved-views.sql` (all passed); the security
+  advisor still shows only "Leaked password protection disabled".
+- **P3, Evaluate an outside listing** (96512bc): the evaluate tab asks for the SAME required fields as the listing
+  form (shared `ListingTermsFields`), plus optional lease draft and link. The server builds the candidate through
+  `SpaceListing.create` (`outsideCandidate` in `research-routes.ts`); missing fields give a 400 with every problem
+  listed on the page; nothing is stored. Needs a key (without one the page shows the no-key notice). Verified live:
+  a good cafe lease in Novi Sad scored 96/100, every number sourced to a form field or a lease quote.
+- **P4, partly** (c6413f8): an unverified lease clause now reads "SuiteSpot could not confirm what the lease says
+  about <clause in words>: <plain reason>" instead of the internal field name and raw checker text.
+
+### NOT done tonight (exact state, for Aleksa)
+1. **Outside listing, optional pasted listing text:** not built. The plan was: the Scout reads the pasted text and
+   code compares its extracted fields with the typed ones, flagging every mismatch with both sources. The old
+   `source: "pasted"` server path still exists (unused by the UI). Build it only if time allows; otherwise leave it
+   out of the README.
+2. **P4, 10 varied evaluations** (good ones, bad leases, wrong permitted use, missing data, both cities) with fixes
+   to instructions or rules where a score or verdict is wrong: NOT run. Do it with a key before recording (about
+   $0.10 each). Write the results here.
+3. **P5, recorded runs:** NOT started. 3 demo scenarios with a locked profile (cafe Novi Sad, office Beograd, shop
+   Novi Sad), `RecordingRunner` / `ReplayRunner`, `npm run record:demo`, "Recorded run" label. Until then the keyless
+   demo stays "Scripted demo answers, no AI model" (honest, already labelled).
+4. Small: the "Your business" card stretches to the full height of the evaluate form (cosmetic). `RequireLandlord`
+   and `auth.landlord` keep their old names in code (UI texts are already neutral).
+
+### For Aleksa (not tonight, in this order)
+1. Railway deploy: one service, `npm run build` then `npm start`. Variables: `ANTHROPIC_API_KEY`,
+   `SUITESPOT_ACCESS_CODE` (so a public URL cannot spend our key), `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
+   `SUPABASE_SERVICE_ROLE_KEY`. In Supabase (Authentication, URL configuration) set Site URL and redirect URL to the
+   Railway address.
+2. README (scored), short video (2-3 min), fresh-clone test (clone, follow the README word for word, works first try).
+3. Items 1 to 3 of "NOT done" above, if time allows (P4 before P5).
+4. Later features, only if everything above is done: offers and inquiries between users; lease records and the rent
+   schedule; test rent payment through Stripe test mode (not Solana); the optional "Listing check" before publishing.
+
+### How to run locally (PowerShell)
+```powershell
+npm install
+Copy-Item .env.example .env   # fill in what you have; never commit .env
+npm test                      # 162 tests
+npm run typecheck
+npm run dev                   # API on 3000, web on 5173 (5174 if 5173 is taken)
+```
+- No keys: keyless demo (scripted answers, fixed demo profile), local listing store, no accounts.
+- `ANTHROPIC_API_KEY` set: live runs with claude-haiku-4-5 (about $0.10 per full run), your own questionnaire,
+  "Evaluate an outside listing" enabled. There is no mode variable any more.
+- The three `SUPABASE_*` values: accounts, listings, saved spaces and view counts from the database.
+
+## PREVIOUS HANDOFF (26 Nov 2026, late night, Andrej): partly SUPERSEDED by the one above (SUITESPOT_MODE is gone; steps 7 to 9 were replaced by the night prompt)
 Whoever continues (Aleksa or Andrej) starts a new session without this context. Read this section, then CLAUDE.md,
 then the step entries right below. Older sections further down are history; anything marked SUPERSEDED is no longer
 true.
