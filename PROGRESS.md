@@ -4,17 +4,26 @@ Read this at the start of every session. Update it before every push. Newest ent
 No long dashes in this file; use a plain hyphen.
 
 ## Current state
-- Nothing built yet. Repo contains `CLAUDE.md`, `2026-11-26-plan-lease-decision.md` and this file.
+- Step 1 (skeleton) done: one root `package.json`, `@mozaik-ai/core` pinned to 6.0.0, Fastify server
+  (`src/adapters/server/`, `/api/health`, serves `web/dist` in production), Vite + React + Tailwind 4 web app in `web/`,
+  Vitest. Mode is `SUITESPOT_MODE` (default `demo`; `live` also needs `ANTHROPIC_API_KEY`).
+- Commands (PowerShell): `npm install`, `npm run dev` (server :3000 + web :5173), `npm test`, `npm run build`, `npm start`.
 
 ## Next step
-- Plan step 1: repo skeleton (server + web), `@mozaik-ai/core@6.0.0`, mock runner, resilience helpers, domain model
-  with tests. Spike the cancellation interception (plan section 8). Check web search and web fetch support for
-  `claude-haiku-4-5` with one real call (needs `ANTHROPIC_API_KEY` in `.env`).
+- Step 2: mock InferenceRunner, resilient runner, safe processors, process guards, failure-isolation test.
+- Then step 3 (domain model + tests), step 4 (cancellation spike, incl. hard flag mid tool call), step 5 (real
+  Anthropic call: web search + web fetch on `claude-haiku-4-5`).
 
 ## Open problems
 - None yet.
 
 ## Decisions log
+- 2026-11-26: one root package.json (server + web), Vitest for tests. Push after every step, only when `npm test` passes.
+- 2026-11-26: Mozaik 6.0.0 facts read from the bundle: interception runs before EVERY step (also `message_received`
+  and `model_message`); `ModelContext` is mutated in place, so every loop needs its own context (never share
+  `agent.getMemory().getContext()` across parallel loops); loop events are `message_received.started/completed`
+  (not `context_update.*`); only the first function call of an inference is executed; `runLoop` returns void and
+  the loopId only appears in event payloads.
 - 2026-11-26: listings come from live web search, no listing database (option 2). Feasibility checked on a real
   Novi Sad listing (plan section 12a). Always read the listing page, not the search snippet.
 - 2026-11-26: project SuiteSpot chosen; live web search via Anthropic `web_search` inside our own function tool;
@@ -24,4 +33,5 @@ No long dashes in this file; use a plain hyphen.
 - None yet.
 
 ## Session log
+- 2026-11-26 13:40 (Andrej): step 1 skeleton done and pushed.
 - 2026-11-26 13:00 (Andrej): planning done, files committed.
