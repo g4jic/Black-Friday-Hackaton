@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>SuiteSpot concept</title>
+<!--
+  Concept mockups for the design comparison (not app code).
+  Render: node design/concepts/src/render.mjs  ->  design/concepts/<theme>/<n>-<screen>.png
+  All business data below is synthetic demo data. Fonts are free substitutes from Google Fonts.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700&family=Archivo:wdth,wght@100..125,300..800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=IBM+Plex+Mono:wght@400;500&display=block" rel="stylesheet" />
+<style>
+  /* ---------- shared status rules (identical in both directions) ---------- */
+  :root {
+    --hard: #B4291F; --hard-bg: #FBE9E6; --hard-line: #E9B2AB;
+    --soft: #8A5A00; --soft-bg: #FCF1D2; --soft-line: #EBCF84;
+    --est: #6B6B6B; --est-bg: #F3F3F1; --est-line: #9A9A96;
+  }
+  /* ---------- A: Era + deep green ---------- */
+  body.era {
+    --bg: #EEEBE8; --surface: #F7F5F2; --card: #FFFDFB; --text: #282327; --muted: #676166; --border: #D4D0CB;
+    --accent: #1F5C45; --on-accent: #F7F5F2; --accent-soft: #E3EDE7; --accent-text: #1F5C45;
+    --font-display: "Hanken Grotesk", system-ui, sans-serif; --font-body: "Hanken Grotesk", system-ui, sans-serif;
+    --display-wdth: 100; --display-weight: 500; --display-track: -0.035em;
+    --r-card: 0px; --r-ctl: 6px; --r-pill: 6px; --bw: 1.3px;
+    --label-case: none; --label-track: 0; --label-size: 12px;
+  }
+  /* ---------- B: Spade language + lime ---------- */
+  body.spade {
+    --bg: #FFFFFF; --surface: #F4FAED; --card: #FFFFFF; --text: #090F05; --muted: #55604C; --border: #DCE6D0;
+    --accent: #B2EB76; --on-accent: #090F05; --accent-soft: #EAF8D9; --accent-text: #18280E;
+    --font-display: "Archivo", system-ui, sans-serif; --font-body: "DM Sans", system-ui, sans-serif;
+    --display-wdth: 118; --display-weight: 560; --display-track: -0.02em;
+    --r-card: 8px; --r-ctl: 8px; --r-pill: 4px; --bw: 1px;
+    --label-case: uppercase; --label-track: 0.06em; --label-size: 11px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 13px; line-height: 1.4;
+         width: 1440px; -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+  .display { font-family: var(--font-display); font-variation-settings: "wdth" var(--display-wdth); font-weight: var(--display-weight); letter-spacing: var(--display-track); }
+  .label { font-size: var(--label-size); text-transform: var(--label-case); letter-spacing: var(--label-track); color: var(--muted); font-weight: 500; }
+  .muted { color: var(--muted); }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .between { justify-content: space-between; }
+  .grow { flex: 1; }
+
+  /* top bar */
+  .top { height: 56px; display: flex; align-items: center; gap: 24px; padding: 0 24px; border-bottom: var(--bw) solid var(--border); background: var(--surface); }
+  body.spade .top { background: var(--bg); }
+  .brand { font-family: var(--font-display); font-variation-settings: "wdth" var(--display-wdth); font-weight: 650; font-size: 18px; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px; }
+  .brand i { width: 18px; height: 18px; background: var(--accent); display: inline-block; border-radius: var(--r-pill); }
+  .nav { display: flex; gap: 4px; }
+  .nav a { padding: 6px 12px; border-radius: var(--r-ctl); color: var(--muted); text-decoration: none; font-weight: 500; }
+  .nav a.on { color: var(--text); background: var(--card); border: var(--bw) solid var(--border); }
+  body.spade .nav a.on { background: var(--surface); border-color: transparent; }
+
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: var(--r-pill); font-size: 11.5px; font-weight: 500; border: var(--bw) solid var(--border); background: var(--card); white-space: nowrap; }
+  .badge.accent { background: var(--accent-soft); border-color: transparent; color: var(--accent-text); }
+  .badge.solid { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+  .badge.hard { background: var(--hard-bg); color: var(--hard); border-color: var(--hard-line); }
+  .badge.soft { background: var(--soft-bg); color: var(--soft); border-color: var(--soft-line); }
+  .badge.est { background: var(--est-bg); color: var(--est); border: var(--bw) dashed var(--est-line); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; background: currentColor; }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: var(--r-ctl); font-weight: 600; font-size: 13px; border: var(--bw) solid var(--border); background: var(--card); color: var(--text); }
+  .btn.primary { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+  body.era .btn.primary { background: var(--accent); }
+
+  .card { background: var(--card); border: var(--bw) solid var(--border); border-radius: var(--r-card); }
+  body.spade .card.surface { background: var(--surface); border-color: transparent; }
+
+  /* source chip: every number carries one */
+  .src { display: inline-flex; align-items: center; gap: 4px; font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--muted); padding: 1px 6px; border-radius: var(--r-pill); border: var(--bw) solid var(--border); background: var(--surface); white-space: nowrap; }
+  .src b { font-weight: 500; color: var(--accent-text); }
+  .src.est { border-style: dashed; border-color: var(--est-line); background: var(--est-bg); color: var(--est); }
+  .src.est b { color: var(--est); }
+  .src.miss { border-color: var(--soft-line); background: var(--soft-bg); color: var(--soft); }
+  .src.miss b { color: var(--soft); }
+
+  .num { font-family: var(--font-display); font-variation-settings: "wdth" var(--display-wdth); font-weight: var(--display-weight); letter-spacing: var(--display-track); }
+  .num.est { color: var(--est); }
+
+  .page { padding: 20px 24px 28px; }
+  .h1 { font-size: 30px; line-height: 1.1; }
+  body.spade .h1 { font-size: 30px; }
+
+  /* stats strip */
+  .stats { display: grid; grid-template-columns: repeat(6, 1fr); border: var(--bw) solid var(--border); border-radius: var(--r-card); background: var(--card); }
+  body.spade .stats { background: var(--surface); border-color: transparent; }
+  .stat { padding: 12px 16px; border-right: var(--bw) solid var(--border); }
+  .stat:last-child { border-right: 0; }
+  .stat .v { font-size: 30px; line-height: 1.1; margin: 4px 0 4px; }
+
+  /* lanes */
+  .lanes { padding: 14px 16px 12px; }
+  .axis { display: grid; grid-template-columns: 128px 1fr; font-size: 10.5px; color: var(--muted); }
+  .ticks { position: relative; height: 16px; }
+  .ticks span { position: absolute; transform: translateX(-50%); font-family: "IBM Plex Mono", monospace; }
+  .lane { display: grid; grid-template-columns: 128px 1fr; align-items: center; height: 46px; border-top: var(--bw) solid var(--border); }
+  .lane .who { font-weight: 600; font-size: 12.5px; display: flex; flex-direction: column; line-height: 1.15; }
+  .lane .who small { font-weight: 400; color: var(--muted); font-size: 10.5px; }
+  .track { position: relative; height: 100%; }
+  .bar { position: absolute; height: 12px; border-radius: 2px; background: var(--accent); top: 17px; font-family: "IBM Plex Mono", monospace; font-size: 9px; line-height: 12px; padding-left: 4px; color: var(--on-accent); overflow: hidden; white-space: nowrap; }
+  .bar.l2 { top: 3px; } .bar.l3 { top: 31px; }
+  .bar.code { background: var(--text); color: var(--bg); }
+  .bar.stopped { background: repeating-linear-gradient(135deg, var(--hard) 0 3px, var(--hard-bg) 3px 6px); color: var(--hard); font-weight: 500; }
+  .bar.stopped span { background: var(--hard-bg); padding: 0 3px; }
+  .bar.wait { background: var(--accent-soft); border: var(--bw) dashed var(--accent-text); color: var(--accent-text); }
+  .tag { position: absolute; font-family: "IBM Plex Mono", monospace; font-size: 9.5px; color: var(--muted); top: 1px; }
+  .now { position: absolute; top: -18px; bottom: 0; width: 0; border-left: 1.5px solid var(--hard); }
+  .now::before { content: "now 00:41"; position: absolute; top: 0; left: 4px; font-family: "IBM Plex Mono", monospace; font-size: 10px; color: var(--hard); }
+  .flagmark { position: absolute; top: 4px; width: 0; bottom: 4px; border-left: 1.5px dashed var(--hard); }
+
+  /* candidate cards */
+  .cands { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+  .cand { min-width: 0; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .cand.rejected { background: repeating-linear-gradient(135deg, transparent 0 8px, rgba(180,41,31,.04) 8px 16px), var(--card); border-color: var(--hard-line); }
+  .cand .addr { font-weight: 600; font-size: 13.5px; }
+  .cand .big { font-size: 26px; line-height: 1; }
+  .checks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  .chk { font-size: 10px; padding: 3px 4px; border-radius: var(--r-pill); text-align: center; background: var(--surface); color: var(--muted); border: var(--bw) solid var(--border); }
+  .chk.done { background: var(--accent-soft); color: var(--accent-text); border-color: transparent; font-weight: 600; }
+  .chk.run { border: var(--bw) solid var(--accent); color: var(--accent-text); }
+  body.spade .chk.run { border-color: #7DBF3A; }
+  .chk.stop { background: var(--hard-bg); color: var(--hard); border-color: var(--hard-line); text-decoration: line-through; }
+  .chk.flag { background: var(--soft-bg); color: var(--soft); border-color: var(--soft-line); }
+
+  /* stream */
+  .stream { display: flex; flex-direction: column; }
+  .ev { display: grid; grid-template-columns: 40px minmax(0,1fr); gap: 8px; padding: 9px 14px; border-top: var(--bw) solid var(--border); }
+  .ev:first-child { border-top: 0; }
+  .ev .t { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--muted); padding-top: 2px; }
+  .ev .who { font-weight: 600; }
+  .ev.hard { background: var(--hard-bg); box-shadow: inset 3px 0 0 var(--hard); }
+  .ev.soft { box-shadow: inset 3px 0 0 #D9A62A; }
+  .ev.verify { box-shadow: inset 3px 0 0 var(--accent); }
+  body.spade .ev.verify { box-shadow: inset 3px 0 0 #7DBF3A; }
+  .ev p { margin-top: 2px; }
+  .ev .srcs { margin-top: 4px; display: flex; gap: 4px; flex-wrap: wrap; }
+
+  .sectionhead { padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: var(--bw) solid var(--border); }
+  .sectionhead h3 { font-size: 14px; font-weight: 600; }
+
+  .notice { display: flex; gap: 10px; align-items: center; padding: 9px 14px; border-radius: var(--r-card); border: var(--bw) solid var(--border); background: var(--card); font-size: 12.5px; }
+  body.spade .notice { background: var(--surface); border-color: transparent; }
+
+  /* report */
+  .rank { display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; padding: 12px 14px; border-top: var(--bw) solid var(--border); align-items: start; }
+  .rank.on { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+  body.spade .rank.on { box-shadow: inset 3px 0 0 #7DBF3A; }
+  .rank .n { font-size: 22px; line-height: 1; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: var(--bw) solid var(--border); border-radius: var(--r-card); background: var(--card); }
+  body.spade .kpis { background: var(--surface); border-color: transparent; }
+  .kpi { padding: 16px 18px; border-right: var(--bw) solid var(--border); display: flex; flex-direction: column; gap: 6px; }
+  .kpi:last-child { border-right: 0; }
+  .kpi .v { font-size: 44px; line-height: 1; }
+  .three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .col h4 { font-size: 13px; font-weight: 650; display: flex; align-items: center; gap: 8px; }
+  .item { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; padding: 9px 0; border-top: var(--bw) solid var(--border); align-items: baseline; }
+  .item .val { font-weight: 600; font-size: 14px; text-align: right; }
+  .item .val.est { color: var(--est); }
+  .item .s { grid-column: 1 / -1; }
+  .checkitem { padding: 9px 10px; margin-top: 8px; border-radius: var(--r-pill); background: var(--soft-bg); border: var(--bw) solid var(--soft-line); color: #4A3500; font-size: 12.5px; }
+  .checkitem b { color: var(--soft); }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-weight: 500; color: var(--muted); font-size: var(--label-size); text-transform: var(--label-case); letter-spacing: var(--label-track); padding: 8px 12px; border-bottom: var(--bw) solid var(--border); }
+  td { padding: 9px 12px; border-bottom: var(--bw) solid var(--border); vertical-align: middle; }
+  td.r, th.r { text-align: right; }
+  .range { position: relative; height: 30px; margin: 10px 0 4px; }
+  .range .base { position: absolute; left: 0; right: 0; top: 13px; height: 4px; background: var(--border); border-radius: 2px; }
+  .range .iqr { position: absolute; top: 9px; height: 12px; background: var(--est-bg); border: var(--bw) dashed var(--est-line); border-radius: 2px; }
+  .range .me { position: absolute; top: 4px; width: 3px; height: 22px; background: var(--accent); }
+  body.spade .range .me { background: #090F05; }
+
+  /* questionnaire */
+  .steps { display: flex; flex-direction: column; gap: 8px; }
+  .step { padding: 12px 14px; display: flex; gap: 12px; align-items: flex-start; }
+  .step .k { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--muted); padding-top: 2px; }
+  .step.done .k { color: var(--accent-text); }
+  .step.on { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+  .step.on .k, .step.on small { color: var(--on-accent); opacity: .85; }
+  .step small { display: block; color: var(--muted); font-size: 11.5px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-weight: 600; font-size: 13px; }
+  .input { height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border: var(--bw) solid var(--border); border-radius: var(--r-ctl); background: var(--card); font-size: 16px; }
+  .input.focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  body.spade .input.focus { border-color: #7DBF3A; }
+  .input .unit { color: var(--muted); font-size: 13px; }
+  .help { font-size: 12px; color: var(--muted); }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .opt { padding: 14px; display: flex; flex-direction: column; gap: 4px; }
+  .opt.on { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  body.spade .opt.on { background: var(--accent-soft); border-color: #7DBF3A; box-shadow: none; }
+  .progress { height: 4px; background: var(--border); border-radius: 2px; position: relative; }
+  .progress i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); border-radius: 2px; }
+  body.spade .progress i { background: #7DBF3A; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const q = new URLSearchParams(location.search)
+const theme = q.get("theme") || "era"
+const screenNo = q.get("screen") || "1"
+document.body.className = theme
+
+/* ===================== synthetic demo content (shared by both directions) ===================== */
+const RUN = { title: "Bakery space, Novi Sad", id: "run-0412", mode: "Mode B: find candidates" }
+const C = {
+  c1: { addr: "Bulevar oslobođenja 42", area: 58, rent: "1,450", site: "4zida.rs", status: "rejected" },
+  c2: { addr: "Zmaj Jovina 9", area: 44, rent: "1,100", site: "oglasi.rs", status: "evaluating" },
+  c3: { addr: "Futoška 71", area: 52, rent: "950", site: "4zida.rs", status: "evaluating" },
+  c4: { addr: "Laze Telečkog 3", area: 36, rent: "1,250", site: "svenekretnine.com", status: "evaluating" },
+  c5: { addr: "Narodnog fronta 23", area: 61, rent: "890", site: "4zida.rs", status: "found" },
+}
+const src = (kind, ref, cls = "") => `<span class="src ${cls}"><b>${kind}</b> ${ref}</span>`
+const badge = (cls, text, dot = true) => `<span class="badge ${cls}">${dot ? '<span class="dot"></span>' : ""}${text}</span>`
+
+function topBar(active) {
+  const items = ["New research", "Live", "Report", "History"]
+  return `<div class="top">
+    <div class="brand"><i></i>SuiteSpot</div>
+    <nav class="nav">${items.map((n) => `<a class="${n === active ? "on" : ""}">${n}</a>`).join("")}</nav>
+    <div class="grow"></div>
+    ${badge("est", "Demo data, synthetic", false)}
+    ${badge("", "Keyless mock mode", false)}
+  </div>`
+}
+const disclaimer = `<div class="notice"><span class="badge soft" style="flex:none">Not financial advice</span>
+  <span>SuiteSpot compares lease costs from public listings and your own numbers. It does not give legal advice on permitted use. Check every item marked <b>check before signing</b> with the landlord or a lawyer.</span></div>`
+
+/* ===================== 1. live research ===================== */
+function live() {
+  const T = 45, pct = (s) => (s / T) * 100
+  const bar = (a, b, cls = "", label = "", lvl = "") =>
+    `<div class="bar ${cls} ${lvl}" style="left:${pct(a)}%;width:${pct(b - a)}%"><span>${label}</span></div>`
+  const lanes = [
+    ["Scout", "LLM, web search", [[0, 4, "", "search"], [4, 6, "", "c1"], [6, 9, "", "c2"], [9, 13, "", "c3"], [13, 17, "", "c4"], [33, 37, "", "c5"]]],
+    ["Lease reader", "LLM, 1 loop per candidate", [[6, 14, "stopped", "c1 stopped 14s", ""], [9, 22, "", "c2", "l2"], [13, 26, "", "c3", "l3"], [17, 32, "", "c4", ""], [37, 41, "", "c5", "l2"]]],
+    ["Location", "LLM + OSM", [[6, 14, "stopped", "c1 stopped", "l2"], [9, 25, "", "c2", ""], [13, 30, "", "c3", "l3"], [17, 41, "", "c4", "l2"]]],
+    ["Premises", "LLM, photos + text", [[6, 14, "stopped", "c1 stopped", "l3"], [9, 20, "", "c2", "l2"], [13, 34, "", "c3", ""], [17, 41, "", "c4", "l3"]]],
+    ["Finance", "plain code", [[7, 8, "code", "c1"], [22, 23, "code", "c2"], [26, 27, "code", "c3"], [32, 33, "code", "c4"]]],
+    ["Verifier", "LLM, checks claims", [[14, 19, "", "c2", "l2"], [23, 29, "", "c2"], [27, 35, "", "c3", "l3"], [34, 41, "", "c4", "l2"]]],
+    ["You", "approval breakpoint", [[29, 41, "wait", "approve OSM batch for c4?"]]],
+  ]
+  const ticks = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45]
+  const laneHtml = lanes.map(([n, s, bars]) => `<div class="lane"><div class="who">${n}<small>${s}</small></div><div class="track">${bars.map((b) => bar(...b)).join("")}<div class="flagmark" style="left:${pct(8)}%"></div></div></div>`).join("")
+
+  const chk = (labels) => `<div class="checks">${labels.map(([t, c]) => `<div class="chk ${c}">${t}</div>`).join("")}</div>`
+  const card = (id, extra) => {
+    const c = C[id]
+    const st = { rejected: badge("hard", "Rejected"), evaluating: badge("accent", "Evaluating"), found: badge("", "Found, queued") }[c.status]
+    return `<div class="card cand ${c.status}">
+      <div class="row between"><span class="mono muted" style="font-size:11px">${id.toUpperCase()}</span>${st}</div>
+      <div class="addr">${c.addr}</div>
+      <div class="row" style="align-items:baseline;gap:6px"><span class="num big" style="${c.status === "rejected" ? "color:var(--hard)" : ""}">€${c.rent}</span><span class="muted">/ month</span></div>
+      <div class="row" style="flex-wrap:wrap;gap:4px">${src("listing", `${c.site} · rent`)}${src("listing", `${c.area} m²`)}</div>
+      ${extra}
+    </div>`
+  }
+  const cards = [
+    card("c1", `${chk([["Lease", "stop"], ["Area", "stop"], ["Space", "stop"], ["Finance", "done"]])}<div class="badge hard" style="white-space:normal">Over budget: €1,450 &gt; €1,300 limit</div>`),
+    card("c2", `${chk([["Lease", "done"], ["Area", "done"], ["Space", "done"], ["Finance", "done"]])}<div class="badge soft" style="white-space:normal">Rent per m² above the usual range</div>`),
+    card("c3", `${chk([["Lease", "done"], ["Area", "done"], ["Space", "run"], ["Finance", "done"]])}<div class="badge soft" style="white-space:normal">Service charge not stated</div>`),
+    card("c4", `${chk([["Lease", "done"], ["Area", "run"], ["Space", "run"], ["Finance", "done"]])}<div class="badge soft" style="white-space:normal">Check food use is allowed</div>`),
+    card("c5", `${chk([["Lease", "run"], ["Area", ""], ["Space", ""], ["Finance", ""]])}<div class="badge est" style="white-space:normal">61 m² is above your 60 m² maximum</div>`),
+  ]
+
+  const ev = (t, cls, who, cand, text, srcs) => `<div class="ev ${cls}"><div class="t">${t}</div><div>
+      <div class="row between"><span class="who">${who}</span><span class="mono muted" style="font-size:10.5px">${cand}</span></div>
+      <p>${text}</p>${srcs ? `<div class="srcs">${srcs}</div>` : ""}</div></div>`
+  const stream = [
+    ev("00:41", "", "Location", "C4", "3 bakeries within 300 m. Waiting for your approval to run a second OSM batch.", src("osm", "query #18 · shop=bakery r=300m")),
+    ev("00:38", "verify", "Verifier", "C3", "Confirmed rent €950 against the listing text. Accepted into state.", src("listing", "4zida.rs · line 14")),
+    ev("00:36", "soft", "Lease reader", "C4", "Listing says \"lokal u pešačkoj zoni\". Food service use not stated. Check before signing: permitted use.", src("listing", "svenekretnine.com · line 22")),
+    ev("00:34", "", "Scout", "C5", "New candidate: Narodnog fronta 23, 61 m², €890.", src("listing", "4zida.rs · id 77120")),
+    ev("00:31", "verify", "Verifier", "C2", "Sent back: \"deposit 3 months\" not found in source. Lease reader re-read: deposit is 2 months.", src("listing", "oglasi.rs · line 9")),
+    ev("00:27", "", "Finance", "C3", "Monthly cost €1,090 (rent + estimated utilities). 12.1% of expected revenue.", src("calc", "monthlyCost") + src("est", "utilities by heating", "est")),
+    ev("00:23", "soft", "Finance", "C2", "Rent €25.00/m² is above the usual range €18.40 to €24.10 (6 comparables).", src("est", "IQR of 6 listings", "est")),
+    ev("00:18", "soft", "Lease reader", "C3", "Service charge (building costs) is not stated. Check before signing.", src("listing", "4zida.rs · no field", "miss")),
+    ev("00:14", "hard", "Interception", "C1", "3 running loops on C1 stopped at their next step. No further model calls.", src("rule", "CandidateCancellation")),
+    ev("00:08", "hard", "Finance", "C1", "Hard flag: rent €1,450 is over your €1,300 monthly budget. Candidate rejected.", src("listing", "4zida.rs · rent") + src("profile", "budget")),
+    ev("00:04", "", "Scout", "C1-C4", "Found 4 candidates on approved sites (4zida.rs, oglasi.rs, svenekretnine.com).", src("search", "allowed_domains = 3")),
+  ].join("")
+
+  return `${topBar("Live")}
+  <div class="page" style="display:flex;flex-direction:column;gap:14px">
+    <div class="row between">
+      <div>
+        <div class="row" style="gap:10px"><span class="label">${RUN.id}</span>${badge("accent", "Running · 00:41")}${badge("", RUN.mode, false)}</div>
+        <h1 class="display h1" style="margin-top:6px">${RUN.title}</h1>
+      </div>
+      <div class="row"><span class="btn">Pause new candidates</span><span class="btn primary">Approve OSM batch for C4</span></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="label">Candidates</div><div class="num v">5</div><div class="muted">3 evaluating · 1 rejected</div></div>
+      <div class="stat"><div class="label">Loops running now</div><div class="num v">9</div><div class="muted">peak 11 at 00:17</div></div>
+      <div class="stat"><div class="label">Findings</div><div class="num v">23</div><div class="muted">21 verified · 2 sent back</div></div>
+      <div class="stat"><div class="label">Hard flags</div><div class="num v" style="color:var(--hard)">1</div><div class="muted">C1 over budget</div></div>
+      <div class="stat"><div class="label">Check before signing</div><div class="num v" style="color:var(--soft)">4</div><div class="muted">C2, C3, C4</div></div>
+      <div class="stat"><div class="label">Cost so far</div><div class="num v">$0.064</div><div>${src("calc", "tokens x price")}</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) 372px;gap:14px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="card">
+          <div class="sectionhead"><h3>Agent lanes</h3><div class="row"><span class="row muted" style="gap:4px"><i class="bar" style="position:static;width:18px;display:inline-block"></i>LLM loop</span><span class="row muted" style="gap:4px"><i class="bar code" style="position:static;width:18px;display:inline-block"></i>code</span><span class="row muted" style="gap:4px"><i class="bar stopped" style="position:static;width:18px;display:inline-block"></i>stopped by hard flag</span></div></div>
+          <div class="lanes">
+            <div class="axis"><div></div><div class="ticks">${ticks.map((t) => `<span style="left:${pct(t)}%">${t}s</span>`).join("")}</div></div>
+            <div style="position:relative">${laneHtml}<div style="position:absolute;left:128px;right:0;top:0;bottom:0;pointer-events:none"><div class="now" style="left:${pct(41)}%"></div></div></div>
+          </div>
+        </div>
+        <div class="cands">${cards.join("")}</div>
+      </div>
+      <div class="card">
+        <div class="sectionhead"><h3>Findings and flags</h3><span class="muted">newest first</span></div>
+        <div class="stream">${stream}</div>
+      </div>
+    </div>
+  </div>`
+}
+
+/* ===================== 2. report ===================== */
+function report() {
+  const rank = (n, id, verdict, cls, note, on = false) => `<div class="rank ${on ? "on" : ""}">
+    <div class="num n">${n}</div>
+    <div><div style="font-weight:600">${C[id].addr}</div><div class="muted">${C[id].area} m² · €${C[id].rent}/month · ${C[id].site}</div><div style="margin-top:6px">${note}</div></div>
+    ${badge(cls, verdict)}</div>`
+  const item = (k, v, s, est = false) => `<div class="item"><span>${k}</span><span class="val ${est ? "est" : ""}">${v}</span><span class="s">${s}</span></div>`
+  const pos = (x) => ((x - 14) / (28 - 14)) * 100
+  return `${topBar("Report")}
+  <div class="page" style="display:flex;flex-direction:column;gap:14px">
+    <div class="row between">
+      <div><div class="row" style="gap:10px"><span class="label">${RUN.id} · finished in 00:52 · 5 candidates</span>${badge("accent", "Complete")}</div>
+      <h1 class="display h1" style="margin-top:6px">Is this lease a good financial decision?</h1></div>
+      <div class="row"><span class="btn">Export audit trail (JSONL)</span><span class="btn primary">Download report</span></div>
+    </div>
+    ${disclaimer}
+    <div style="display:grid;grid-template-columns:340px 1fr;gap:14px;align-items:start">
+      <div class="card">
+        <div class="sectionhead"><h3>Ranking</h3><span class="muted">by total cost over term</span></div>
+        ${rank(1, "c3", "Best fit", "accent", `<span class="badge soft">2 to check</span>`, true)}
+        ${rank(2, "c2", "Pricey", "soft", `<span class="badge soft">Above usual rent per m²</span>`)}
+        ${rank(3, "c4", "Check use", "soft", `<span class="badge soft">Food use not confirmed</span>`)}
+        ${rank(4, "c5", "Too big", "est", `<span class="badge est">61 m² over your maximum</span>`)}
+        <div class="rank" style="opacity:.85"><div class="num n" style="color:var(--hard)">×</div><div><div style="font-weight:600">${C.c1.addr}</div><div class="muted">Rejected at 00:08 by Finance</div></div>${badge("hard", "Rejected")}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="row between"><div><span class="label">#1 · C3</span><h2 class="display" style="font-size:26px;margin-top:2px">Futoška 71, 52 m²</h2></div>${src("listing", "4zida.rs · id 76311 · read 26 Nov 2026 14:02")}</div>
+        <div class="kpis">
+          <div class="kpi"><span class="label">Monthly cost</span><span class="num v">€1,090</span><span class="row" style="gap:4px;flex-wrap:wrap">${src("calc", "rent + utilities")}${src("est", "utilities", "est")}</span></div>
+          <div class="kpi"><span class="label">Share of revenue</span><span class="num v">12.1%</span><span>${src("calc", "€1,090 / €9,000")}</span></div>
+          <div class="kpi"><span class="label">Break-even revenue</span><span class="num v">€1,758</span><span>${src("calc", "cost / 62% margin")}</span></div>
+          <div class="kpi"><span class="label">Payback of setup</span><span class="num v">4 mo</span><span>${src("calc", "€14,500 / €4,490")}</span></div>
+        </div>
+        <div class="three">
+          <div class="card col" style="padding:14px"><h4><span class="badge accent">Known</span>From the listing and you</h4>
+            ${item("Rent", "€950", src("listing", "4zida.rs · line 14"))}
+            ${item("Area", "52 m²", src("listing", "4zida.rs · line 11"))}
+            ${item("Deposit", "€1,900", src("listing", "4zida.rs · \"2 kirije\""))}
+            ${item("Equipment budget", "€6,500", src("profile", "questionnaire"))}
+            ${item("Expected revenue", "€9,000", src("profile", "questionnaire"))}
+            ${item("Bakeries within 300 m", "3", src("osm", "query #11"))}
+          </div>
+          <div class="card col" style="padding:14px"><h4><span class="badge est">Estimated</span>Method shown</h4>
+            ${item("Utilities", "€140/mo", src("est", "heating type: gas, 52 m²", "est"), true)}
+            ${item("Fit-out", "€8,000", src("est", "€154/m² light retail fit-out", "est"), true)}
+            ${item("Fair rent per m²", "€16.80 to €22.10", src("est", "IQR of 7 comparables", "est"), true)}
+            <div class="range"><div class="base"></div><div class="iqr" style="left:${pos(16.8)}%;width:${pos(22.1) - pos(16.8)}%"></div><div class="me" style="left:${pos(18.27)}%"></div></div>
+            <div class="row between muted" style="font-size:11px"><span>€14</span><span>this space €18.27/m² · within range</span><span>€28</span></div>
+          </div>
+          <div class="card col" style="padding:14px"><h4><span class="badge soft">Check before signing</span></h4>
+            <div class="checkitem"><b>Service charge.</b> The listing does not state building costs. Ask for the last 12 months.</div>
+            <div class="checkitem"><b>VAT on rent.</b> Not stated whether VAT is added on top of €950.</div>
+            <div class="checkitem"><b>Permitted use.</b> Confirm a bakery with on-site baking is allowed in this unit.</div>
+            <div class="checkitem"><b>Notice period.</b> Not in the listing. We assumed 3 months in the exit cost.</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="sectionhead"><h3>Cost over the 36-month term</h3><span class="num" style="font-size:22px">€54,776</span></div>
+          <table>
+            <tr><th>Line</th><th class="r">Amount</th><th>Source</th></tr>
+            <tr><td>Rent over the term, 3% yearly indexation</td><td class="r">€35,236</td><td>${src("calc", "Σ rent x 1.03^year")} ${src("listing", "indexation clause")}</td></tr>
+            <tr><td>Utilities over the term</td><td class="r" style="color:var(--est)">€5,040</td><td>${src("est", "€140 x 36", "est")}</td></tr>
+            <tr><td>Fit-out</td><td class="r" style="color:var(--est)">€8,000</td><td>${src("est", "€154/m²", "est")}</td></tr>
+            <tr><td>Equipment</td><td class="r">€6,500</td><td>${src("profile", "questionnaire")}</td></tr>
+            <tr><td>Service charge</td><td class="r" style="color:var(--soft)">missing data</td><td>${src("check", "not stated in listing", "miss")}</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>`
+}
+
+/* ===================== 3. questionnaire ===================== */
+function questionnaire() {
+  const step = (k, t, s, cls) => `<div class="card step ${cls}"><span class="k">${k}</span><div><div style="font-weight:600">${t}</div><small>${s}</small></div></div>`
+  const sum = (k, v, s) => `<div class="item"><span class="muted">${k}</span><span class="val">${v}</span><span class="s">${s}</span></div>`
+  return `${topBar("New research")}
+  <div class="page" style="display:grid;grid-template-columns:280px 1fr 320px;gap:24px;align-items:start;padding-top:32px">
+    <div class="steps">
+      <span class="label" style="margin-bottom:4px">Step 3 of 6</span>
+      <div class="progress" style="margin-bottom:8px"><i style="width:50%"></i></div>
+      ${step("01", "Your business", "Bakery, Novi Sad", "done")}
+      ${step("02", "The space you need", "30 to 60 m², street level", "done")}
+      ${step("03", "Money", "Budget, revenue, margin", "on")}
+      ${step("04", "Lease terms", "Term, notice, indexation", "")}
+      ${step("05", "Space or search", "Mode A or mode B", "")}
+      ${step("06", "Review and start", "", "")}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:20px;max-width:620px">
+      <div><span class="label">Money</span><h1 class="display" style="font-size:40px;line-height:1.05;margin-top:6px">What can the space cost you?</h1>
+      <p class="muted" style="font-size:15px;margin-top:8px">These numbers stay yours. Every result that uses them is labelled <span class="src"><b>profile</b> questionnaire</span> so you can see where it came from.</p></div>
+      <div class="field"><label>Monthly budget for the space</label><div class="input">€ <span class="grow">1,300</span><span class="unit">per month, all costs</span></div><span class="help">A candidate above this is rejected automatically (hard flag).</span></div>
+      <div class="field"><label>Expected monthly revenue</label><div class="input focus">€ <span class="grow">9,000</span><span class="unit">per month</span></div><span class="help">Used for the share of revenue that goes to the space.</span></div>
+      <div class="field"><label>Gross margin <span class="badge" style="margin-left:6px">optional</span></label><div class="input"><span class="grow">62</span><span class="unit">%</span></div><span class="help">Leave empty if you do not know it. Break-even and payback then show <span class="src miss"><b>missing data</b></span>, never a guess.</span></div>
+      <div class="seg">
+        <div class="field"><label>Equipment budget</label><div class="input">€ <span class="grow">6,500</span></div></div>
+        <div class="field"><label>Fit-out</label><div class="seg" style="gap:8px"><div class="card opt on"><b>Let SuiteSpot estimate</b><span class="help">Shown as an estimate with its method</span></div><div class="card opt"><b>I have a quote</b><span class="help">Enter the amount</span></div></div></div>
+      </div>
+      <div class="row between" style="margin-top:8px"><span class="btn">Back</span><span class="btn primary">Continue to lease terms</span></div>
+    </div>
+    <div class="card surface" style="padding:16px">
+      <div class="row between"><h3 style="font-size:14px">So far</h3><span class="mono muted" style="font-size:11px">draft</span></div>
+      ${sum("Business", "Bakery", src("profile", "step 01"))}
+      ${sum("City", "Novi Sad", src("profile", "step 01"))}
+      ${sum("Area", "30 to 60 m²", src("profile", "step 02"))}
+      ${sum("Budget", "€1,300/mo", src("profile", "step 03"))}
+      ${sum("Revenue", "€9,000/mo", src("profile", "step 03"))}
+      <div class="notice" style="margin-top:14px;font-size:12px;align-items:flex-start"><span class="badge soft" style="flex:none">Note</span><span>Use synthetic or your own numbers only. SuiteSpot is not financial advice.</span></div>
+    </div>
+  </div>`
+}
+
+/* ===================== 4. history ===================== */
+function historyScreen() {
+  const runs = [
+    ["26 Nov 2026 14:02", "Bakery, Novi Sad", "B", "5", "Futoška 71", "€1,090", ["hard", "1"], ["soft", "4"], "00:52", "$0.071", "Complete"],
+    ["26 Nov 2026 11:40", "Bakery, Novi Sad", "A", "1", "Zmaj Jovina 9", "€1,300", null, ["soft", "3"], "00:21", "$0.018", "Complete"],
+    ["25 Nov 2026 18:15", "Barber shop, Beograd", "B", "7", "Cara Dušana 18", "€820", ["hard", "2"], ["soft", "5"], "01:04", "$0.093", "Complete"],
+    ["25 Nov 2026 16:03", "Florist, Niš", "B", "4", "Obrenovićeva 27", "€610", ["hard", "1"], ["soft", "2"], "00:47", "$0.058", "Complete"],
+    ["25 Nov 2026 10:22", "Coffee bar, Novi Sad", "B", "6", "none fit", "-", ["hard", "6"], null, "00:39", "$0.049", "No fit"],
+    ["24 Nov 2026 21:48", "Bookshop, Subotica", "A", "1", "Korzo 4", "€540", null, ["soft", "2"], "00:18", "$0.015", "Complete"],
+    ["24 Nov 2026 19:30", "Tailor, Kragujevac", "B", "3", "-", "-", null, null, "00:12", "$0.006", "Failed: 1 agent halted"],
+  ]
+  const st = (s) => s === "Complete" ? badge("accent", s) : s === "No fit" ? badge("soft", s) : badge("hard", s)
+  const f = (x) => x ? badge(x[0], x[1], false) : `<span class="muted">0</span>`
+  return `${topBar("History")}
+  <div class="page" style="display:flex;flex-direction:column;gap:16px">
+    <div class="row between">
+      <div><span class="label">Demo mode · stored in a local JSON file</span><h1 class="display h1" style="margin-top:6px">Research history</h1></div>
+      <div class="row"><div class="input" style="height:34px;width:260px;font-size:13px"><span class="muted">Search business or address</span></div><span class="btn primary">New research</span></div>
+    </div>
+    <div class="stats" style="grid-template-columns:repeat(5,1fr)">
+      <div class="stat"><div class="label">Runs</div><div class="num v">7</div>${src("calc", "count of runs")}</div>
+      <div class="stat"><div class="label">Candidates evaluated</div><div class="num v">27</div>${src("calc", "Σ candidates")}</div>
+      <div class="stat"><div class="label">Hard flags caught</div><div class="num v" style="color:var(--hard)">10</div>${src("calc", "Σ hard flags")}</div>
+      <div class="stat"><div class="label">Median run time</div><div class="num v">00:39</div>${src("calc", "median duration")}</div>
+      <div class="stat"><div class="label">Total model cost</div><div class="num v">$0.310</div>${src("calc", "Σ tokens x price")}</div>
+    </div>
+    <div class="card">
+      <table>
+        <tr><th>Started</th><th>Business</th><th>Mode</th><th class="r">Candidates</th><th>Best fit</th><th class="r">Monthly cost</th><th>Hard</th><th>To check</th><th class="r">Time</th><th class="r">Cost</th><th>Status</th></tr>
+        ${runs.map((r) => `<tr><td class="mono" style="font-size:12px">${r[0]}</td><td style="font-weight:600">${r[1]}</td><td><span class="badge">${r[2]}</span></td><td class="r">${r[3]}</td><td>${r[4]}</td><td class="r num" style="font-size:15px">${r[5]}</td><td>${f(r[6])}</td><td>${f(r[7])}</td><td class="r mono" style="font-size:12px">${r[8]}</td><td class="r mono" style="font-size:12px">${r[9]}</td><td>${st(r[10])}</td></tr>`).join("")}
+      </table>
+    </div>
+    <div class="notice"><span class="badge est" style="flex:none">Synthetic</span><span>All runs on this screen use synthetic demo businesses. Open a run to replay its live view and report with every source.</span></div>
+  </div>`
+}
+
+document.getElementById("app").innerHTML = { 1: live, 2: report, 3: questionnaire, 4: historyScreen }[screenNo]()
+</script>
+</body>
+</html>

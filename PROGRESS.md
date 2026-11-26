@@ -3,6 +3,62 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
+## Shift handover: Andrej -> Aleksa (26 Nov 2026, 15:05)
+**Done so far**
+- Plan step 1, sub-steps 1-5: skeleton, resilience (mock runner, retries, failure isolation), domain model with tests,
+  hard-flag cancellation spike, real Anthropic web search and web fetch check. Details under "Current state".
+- Listing site test on single listing pages: 4zida.rs is the main source, oglasi.rs and svenekretnine.com are extras;
+  halooglasi.com and nekretnine.rs are out (table below). `scripts/check-listing-fetch.ts` now uses the honest
+  User-Agent but was not re-run with it.
+- Two design concepts, 4 target screens each (live research, report, questionnaire, history), with the same synthetic
+  content in both so they compare fairly:
+  - `design/concepts/era/` (Era pack, deep green #1F5C45 as the only accent)
+  - `design/concepts/spade/` (Spade pack chosen by Aleksa, lime #B2EB76, 4px grid, no shadows)
+  - Source: `design/concepts/src/mock.html`; re-render with `node design/concepts/src/render.mjs` (needs Chrome or
+    Edge; loads free substitute fonts from Google Fonts). Mockups only, not app code.
+  - Shared status rules in both: red = hard flag, yellow = soft flag and "check before signing", grey with a dashed
+    border = estimate. Every number carries a source label (listing, profile, osm, calc, est).
+- 47 tests pass (`npm test`).
+
+**Not decided yet**
+- The design direction is NOT chosen (Era or Spade). `DESIGN.md` does not exist. Do not create it and do not style the
+  app for either direction until the team picks one.
+
+**Aleksa's next step: plan step 2 (thin slice in demo mode)**
+1. Before the Scout: read the terms of use of 4zida.rs, oglasi.rs and svenekretnine.com (see "Next step" below) and
+   write the verdict here.
+2. Scout: in demo mode it reads synthetic fixtures shaped like listings from the approved sites (plan section 11 says
+   "Scout (fixtures)"). The live search tool follows CLAUDE.md "Listing sources": `allowed_domains` = approved sites
+   only, honest User-Agent, at most 1 request per 2 s per site, respect robots.txt, skip blocked pages. It publishes
+   `candidate.found` one by one, so evaluation starts while the search continues.
+3. Finance analyst and Lease reader on 3 candidates, in parallel, in demo mode (MockRunner scripts). Finance calls the
+   calculator in `src/domain/lease-cost.ts` through tools; it never computes numbers itself. Every finding goes through
+   `SuiteSpotState.addFinding`, which rejects a value without a source.
+4. Events to the first live research screen: a Fastify SSE endpoint that streams bus events (loop events plus our
+   domain events `candidate.found`, `candidate.rejected`, `candidate.flag_recorded`, `agent.halted` and findings).
+   Build the screen FUNCTIONAL with a neutral style (plain Tailwind, greys): agent lanes, candidate cards with status,
+   and the findings and flags stream. Structure can follow the concept images; the look comes after the pick.
+5. One keyless end-to-end demo test that must pass before every push.
+
+**Watch out for**
+- Mozaik 6.0.0 rules (all in CLAUDE.md): never `await` `runLoop` or `sendMessage` inside a processor; one fresh context
+  per loop (use `rt.startLoop`); only the first tool call of an inference runs, so every instruction says "one tool per
+  turn" and tools take batches; never return `idle` from interception; wrap every handler in `safeHandler`;
+  `sendEvent` needs a real participant id as producer.
+- Use `structuredOutput` wherever code consumes an agent's answer, and validate it before it changes state.
+- Cancellation already exists: wrap per-candidate tools in `cancellableTool`, pass `CandidateCancellation` to each
+  evaluator loop, and reject only through `rejectCandidate`.
+- Gross margin is optional: break-even and payback return `MissingData`; show "missing data", never a number.
+- Data: synthetic or public only; never store phone numbers, emails or agent names from listings.
+- Show "Not financial advice" on the report; never a legal verdict on permitted use, only "check before signing".
+- No long dashes anywhere. Never print or commit `.env` or keys. Update this file and run `npm test` before every push.
+
+**Open questions**
+- Era or Spade (team decision). Then DESIGN.md and the Uizze design pass (needs Andrej's Uizze MCP).
+- Terms of use of the three listing sites are not read yet.
+- The honest User-Agent may be blocked more often than in the earlier test; re-run `npm run check:listings`.
+- Railway datacenter IPs may be blocked by listing sites; test live mode from the deployed service.
+
 ## Current state
 - Step 1 (skeleton) done: one root `package.json`, `@mozaik-ai/core` pinned to 6.0.0, Fastify server
   (`src/adapters/server/`, `/api/health`, serves `web/dist` in production), Vite + React + Tailwind 4 web app in `web/`,
@@ -54,7 +110,7 @@ No long dashes in this file; use a plain hyphen.
   for it.
 
 ## Next step
-- Andrej: design pass (Uizze) next. Plan step 2 (thin slice in demo mode) is left for Aleksa.
+- Aleksa: plan step 2 (see the shift handover at the top). Design direction still open (Era or Spade).
 - **Aleksa, before building the Scout (rules also in CLAUDE.md, "Listing sources"):**
   1. Read the terms of use of 4zida.rs, oglasi.rs and svenekretnine.com. If a site forbids automated reading, drop
      it. Write the result here (site, terms URL, date, verdict).
@@ -93,9 +149,10 @@ No long dashes in this file; use a plain hyphen.
   OpenStreetMap for area data; Supabase for history; Railway for deploy; Stripe and Solana not used.
 
 ## For Andrej (needs the Uizze MCP)
-- None yet.
+- After the team picks Era or Spade: write DESIGN.md from the chosen pack and run the Uizze design pass.
 
 ## Session log
+- 2026-11-26 15:05 (Andrej): two design concepts (Era, Spade) in design/concepts; shift handover to Aleksa.
 - 2026-11-26 14:35 (Andrej): added listing source rules (terms of use, honest UA, rate limit, allowed_domains). Next: design.
 - 2026-11-26 14:25 (Andrej): listing fetch test, CLAUDE.md Mozaik notes, optional gross margin; pushed. Stopping here.
 - 2026-11-26 14:05 (Andrej): step 5 Anthropic web search + fetch check done and pushed. Steps 1-5 of plan step 1 complete.
