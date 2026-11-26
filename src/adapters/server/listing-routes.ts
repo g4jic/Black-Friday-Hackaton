@@ -65,7 +65,7 @@ export function registerListingRoutes(app: FastifyInstance, options: ListingRout
   const landlord = async (req: FastifyRequest, reply: FastifyReply): Promise<ListingActor | null> => {
     const actor = await resolveActor(req)
     if (!actor) {
-      await reply.code(401).send({ error: "Sign in as a landlord to manage listings" })
+      await reply.code(401).send({ error: "Sign in to continue" })
       return null
     }
     return actor
@@ -92,10 +92,56 @@ export function registerListingRoutes(app: FastifyInstance, options: ListingRout
     return reply.header("Cache-Control", "no-store").send(revealedContact(contact, listing.props.isDemo))
   })
 
+  /** Counts one opening of a listing page. Best effort: a failed count never breaks the page. */
+  app.post("/api/listings/:id/view", async (req, reply) => {
+    try {
+      await store.recordView((req.params as { id: string }).id)
+    } catch (error) {
+      req.log.warn({ err: error }, "could not count a listing view")
+    }
+    return reply.code(204).send()
+  })
+
   app.get("/api/me/listings", async (req, reply) => {
     const actor = await landlord(req, reply)
     if (!actor) return reply
-    return { listings: (await store.listByOwner(actor)).map(publicListing) }
+    const [listings, views] = await Promise.all([store.listByOwner(actor), store.viewCounts(actor).catch(() => ({}) as Record<string, number>)])
+    return { listings: listings.map((l) => ({ ...publicListing(l), views: views[l.id] ?? 0 })) }
+  })
+
+  /** My spaces: the saved listings that are still published. */
+  app.get("/api/me/saved", async (req, reply) => {
+    const actor = await landlord(req, reply)
+    if (!actor) return reply
+    try {
+      const ids = await store.savedIds(actor)
+      const listings = await Promise.all(ids.map((id) => store.get(id)))
+      return { listings: listings.filter((l): l is SpaceListing => Boolean(l?.props.published)).map(publicListing) }
+    } catch (error) {
+      return send(reply, error, req)
+    }
+  })
+
+  app.put("/api/me/saved/:id", async (req, reply) => {
+    const actor = await landlord(req, reply)
+    if (!actor) return reply
+    try {
+      await store.save(actor, (req.params as { id: string }).id)
+      return reply.code(204).send()
+    } catch (error) {
+      return send(reply, error, req)
+    }
+  })
+
+  app.delete("/api/me/saved/:id", async (req, reply) => {
+    const actor = await landlord(req, reply)
+    if (!actor) return reply
+    try {
+      await store.unsave(actor, (req.params as { id: string }).id)
+      return reply.code(204).send()
+    } catch (error) {
+      return send(reply, error, req)
+    }
   })
 
   app.get("/api/me/listings/:id", async (req, reply) => {

@@ -5,7 +5,7 @@ import { setAuthHeaders } from "../listings/listings-api"
 /**
  * Landlord accounts. A tenant never needs one (Guest). When the server has Supabase configured, a landlord signs
  * up or logs in with email and password (Supabase Auth); every listing request then carries the access token.
- * Without Supabase the server has no accounts: everyone who publishes is the Local demo landlord.
+ * Without Supabase the server has no accounts: everyone who publishes is the Local demo account.
  */
 export type Landlord = { readonly id: string; readonly email: string; readonly displayName: string }
 export type AuthState = { readonly status: "loading" | "ready"; readonly enabled: boolean; readonly landlord: Landlord | null }

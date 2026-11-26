@@ -29,4 +29,12 @@ export interface ListingStore {
   revealContact(id: string): Promise<ListingContact | null>
   /** The owner's own contact for the edit form. */
   ownContact(actor: ListingActor, id: string): Promise<ListingContact | null>
+  /** Counts one opening of a published listing page (no personal data is stored). */
+  recordView(id: string): Promise<void>
+  /** View counts of the actor's own listings, by listing id. */
+  viewCounts(actor: ListingActor): Promise<Record<string, number>>
+  /** My spaces: the ids the actor saved, newest first. */
+  savedIds(actor: ListingActor): Promise<string[]>
+  save(actor: ListingActor, id: string): Promise<void>
+  unsave(actor: ListingActor, id: string): Promise<void>
 }

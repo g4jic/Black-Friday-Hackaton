@@ -27,12 +27,12 @@ describe("landlord accounts (Supabase Auth)", () => {
     expect(supabaseAuthConfig({ SUPABASE_URL: CONFIG.url, SUPABASE_ANON_KEY: CONFIG.anonKey } as NodeJS.ProcessEnv)).toEqual(CONFIG)
   })
 
-  it("without Supabase: no accounts, everyone publishes as the Local demo landlord", async () => {
+  it("without Supabase: no accounts, everyone publishes as the Local demo account", async () => {
     const app = await buildServer({ auth: null, listingStore: new LocalListingStore({ seed: seedCatalogue(), file: null }) })
     expect((await app.inject({ method: "GET", url: "/api/auth-config" })).json()).toEqual({ enabled: false })
     const session = (await app.inject({ method: "GET", url: "/api/session" })).json() as { backend: string; landlord: { displayName: string } }
     expect(session.backend).toBe("local")
-    expect(session.landlord.displayName).toBe("Local demo landlord")
+    expect(session.landlord.displayName).toBe("Local demo account")
     await app.close()
   })
 

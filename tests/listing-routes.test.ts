@@ -80,3 +80,32 @@ describe("listing routes", () => {
     await app.close()
   })
 })
+
+describe("My spaces and listing views", () => {
+  it("a signed-in user saves a space once, sees it in My spaces and can remove it; a guest cannot save", async () => {
+    const { app, as } = await server({ id: "user-1", displayName: "User One", kind: "local" })
+    expect((await app.inject({ method: "PUT", url: "/api/me/saved/listing-ns001" })).statusCode).toBe(204)
+    expect((await app.inject({ method: "PUT", url: "/api/me/saved/listing-ns001" })).statusCode).toBe(204) // twice changes nothing
+    const saved = (await app.inject({ method: "GET", url: "/api/me/saved" })).json() as { listings: { id: string }[] }
+    expect(saved.listings.map((l) => l.id)).toEqual(["listing-ns001"])
+    expect((await app.inject({ method: "PUT", url: "/api/me/saved/listing-nope" })).statusCode).toBeGreaterThanOrEqual(400)
+    as({ id: "user-2", displayName: "User Two", kind: "local" })
+    expect(((await app.inject({ method: "GET", url: "/api/me/saved" })).json() as { listings: unknown[] }).listings).toHaveLength(0)
+    as({ id: "user-1", displayName: "User One", kind: "local" })
+    expect((await app.inject({ method: "DELETE", url: "/api/me/saved/listing-ns001" })).statusCode).toBe(204)
+    expect(((await app.inject({ method: "GET", url: "/api/me/saved" })).json() as { listings: unknown[] }).listings).toHaveLength(0)
+    as(null)
+    expect((await app.inject({ method: "PUT", url: "/api/me/saved/listing-ns001" })).statusCode).toBe(401)
+  })
+
+  it("opening a listing page counts a view, and the owner sees the count in My listings", async () => {
+    const { app, as } = await server()
+    const created = (await app.inject({ method: "POST", url: "/api/me/listings", payload: { listing, contact } })).json() as { id: string }
+    as(null)
+    for (let i = 0; i < 3; i++) expect((await app.inject({ method: "POST", url: `/api/listings/${created.id}/view` })).statusCode).toBe(204)
+    expect((await app.inject({ method: "POST", url: "/api/listings/listing-nope/view" })).statusCode).toBe(204) // best effort, never an error
+    as({ id: "landlord-1", displayName: "Test Landlord", kind: "local" })
+    const mine = (await app.inject({ method: "GET", url: "/api/me/listings" })).json() as { listings: { id: string; views: number }[] }
+    expect(mine.listings.find((l) => l.id === created.id)?.views).toBe(3)
+  })
+})

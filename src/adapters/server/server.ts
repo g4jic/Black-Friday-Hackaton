@@ -36,7 +36,7 @@ export async function buildServer(options: ServerOptions = {}): Promise<FastifyI
   app.get("/api/health", async () => ({ status: "ok", mode: runMode() }))
   // The API key stays in this process: no route returns it, and every outgoing event is scrubbed of it.
   // With SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY: listings live in Supabase.
-  // Without them: the local store, and every caller acts as the one Local demo landlord (clearly labelled).
+  // Without them: the local store, and every caller acts as the one Local demo account (clearly labelled).
   const storeConfig = supabaseStoreConfig()
   const listingStore = options.listingStore ?? (storeConfig ? new SupabaseListingStore(storeConfig) : new LocalListingStore({ seed: seedCatalogue(), file: LOCAL_LISTINGS_FILE }))
   // With SUPABASE_URL and SUPABASE_ANON_KEY: landlord accounts (Supabase Auth). The anon key is public by design;

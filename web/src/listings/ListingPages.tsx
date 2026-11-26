@@ -1,5 +1,6 @@
 import { Building2, Eye, Mail, MapPin, Pencil, Phone, Play, Plus, Trash2 } from "lucide-react"
-import { useMemo, useState } from "react"
+import { SaveButton } from "./SaveButton"
+import { useEffect, useMemo, useState } from "react"
 import { Link, navigate, paths } from "../app/router"
 import { BUSINESS_TYPE_LABELS } from "../app/settings"
 import { Card, EmptyState } from "../app/Shell"
@@ -96,8 +97,17 @@ function ListingCard({ listing: l }: { listing: PublicListing }) {
 }
 
 /** The public page of one listing. The contact appears only after "Show contact". */
+/** Listing ids whose view was already counted in this page load. */
+const countedViews = new Set<string>()
+
 export function ListingDetailPage({ id }: { id: string }) {
   const { data: l, error } = useLoad(`listing:${id}`, () => listingsApi.get(id))
+  // One view per opening of the page (StrictMode runs effects twice in development, so guard per id).
+  useEffect(() => {
+    if (countedViews.has(id)) return
+    countedViews.add(id)
+    void listingsApi.recordView(id)
+  }, [id])
   const [contact, setContact] = useState<RevealedContact | null>(null)
   const [contactError, setContactError] = useState<string | null>(null)
   const [showLease, setShowLease] = useState(false)
@@ -163,6 +173,7 @@ export function ListingDetailPage({ id }: { id: string }) {
           <button type="button" onClick={() => navigate(`${paths.newResearch()}?mode=evaluate&listing=${encodeURIComponent(l.id)}`)} className={cx(PRIMARY, "mt-5 w-full justify-center")}>
             <Play size={16} aria-hidden /> Evaluate for my business
           </button>
+          <SaveButton listingId={l.id} className="mt-3" />
           <div className="mt-3">
             {contact ? (
               <ContactBox contact={contact} />
@@ -231,9 +242,9 @@ export function MyListingsPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-ink-2">Listings you published. Tenants see them under Listings and can evaluate them for their business.</p>
+        <p className="text-sm text-ink-2">Spaces you list. Everyone sees them under Listings and can evaluate them for their business.</p>
         <Link to={paths.newListing()} className={PRIMARY}>
-          <Plus size={16} aria-hidden /> New listing
+          <Plus size={16} aria-hidden /> List a space
         </Link>
       </div>
       {actionError && (
@@ -242,7 +253,7 @@ export function MyListingsPage() {
         </p>
       )}
       {!data && <p className="text-sm text-ink-2">Loading...</p>}
-      {data && data.length === 0 && <EmptyState text="You have not published a listing yet." action={<Link to={paths.newListing()} className={PRIMARY}>Publish your first listing</Link>} />}
+      {data && data.length === 0 && <EmptyState text="You have not listed a space yet." action={<Link to={paths.newListing()} className={PRIMARY}>List a space</Link>} />}
       <ul className="flex flex-col gap-2.5">
         {data?.map((l) => (
           <li key={l.id} className="glass flex flex-wrap items-center gap-4 rounded-[24px] p-4">
@@ -253,6 +264,9 @@ export function MyListingsPage() {
                 {l.district}, {l.city} · {l.areaM2} m² · {money(l.rentMonthly)} / month
               </span>
             </Link>
+            <span className="tnum inline-flex items-center gap-1.5 text-[13px] text-ink-2" title="How often the listing page was opened">
+              <Eye size={16} aria-hidden /> {l.views} {l.views === 1 ? "view" : "views"}
+            </span>
             <Link to={paths.editListing(l.id)} className={SECONDARY}>
               <Pencil size={16} aria-hidden /> Edit
             </Link>
@@ -260,6 +274,20 @@ export function MyListingsPage() {
           </li>
         ))}
       </ul>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card title="Offers">
+          <p>No offers yet. When someone sends an offer for one of your spaces, it appears here.</p>
+          <Link to={paths.newListing()} className={cx(PRIMARY, "mt-4")}>
+            List a space
+          </Link>
+        </Card>
+        <Card title="Rented out">
+          <p>No rented spaces yet. Spaces you rent out through SuiteSpot appear here.</p>
+          <Link to={paths.newListing()} className={cx(PRIMARY, "mt-4")}>
+            List a space
+          </Link>
+        </Card>
+      </div>
     </div>
   )
 }

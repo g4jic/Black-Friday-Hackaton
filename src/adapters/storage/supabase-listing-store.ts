@@ -215,6 +215,30 @@ export class SupabaseListingStore implements ListingStore {
     return row ? rowToContact(row as ContactRow) : null
   }
 
+  async recordView(id: string): Promise<void> {
+    check(await this.service.rpc("record_listing_view", { p_listing_id: id }), "count a view")
+  }
+
+  async viewCounts(actor: ListingActor): Promise<Record<string, number>> {
+    const rows = check(await this.as(actor).from("listing_views").select("listing_id,views"), "read view counts") as { listing_id: string; views: number | string }[]
+    return Object.fromEntries(rows.map((r) => [r.listing_id, Number(r.views)]))
+  }
+
+  async savedIds(actor: ListingActor): Promise<string[]> {
+    const rows = check(await this.as(actor).from("saved_listings").select("listing_id").order("created_at", { ascending: false }), "read saved spaces") as { listing_id: string }[]
+    return rows.map((r) => r.listing_id)
+  }
+
+  async save(actor: ListingActor, id: string): Promise<void> {
+    if (!(await this.get(id))) throw new DomainError("listing_not_found", `No listing "${id}"`)
+    // Saving twice changes nothing (primary key user + listing).
+    check(await this.as(actor).from("saved_listings").upsert({ user_id: actor.id, listing_id: id }, { onConflict: "user_id,listing_id", ignoreDuplicates: true }), "save the space")
+  }
+
+  async unsave(actor: ListingActor, id: string): Promise<void> {
+    check(await this.as(actor).from("saved_listings").delete().eq("user_id", actor.id).eq("listing_id", id), "remove the saved space")
+  }
+
   /** Read as the landlord, so an own unpublished listing is found too. */
   private async requireOwn(db: SupabaseClient, id: string): Promise<SpaceListing> {
     const row = check(await db.from("listings").select(LISTING_COLUMNS).eq("id", id).maybeSingle(), "read the listing")

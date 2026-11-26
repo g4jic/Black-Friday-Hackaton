@@ -67,11 +67,16 @@ export const listingsApi = {
   list: () => call<{ listings: PublicListing[] }>("GET", "/api/listings").then((r) => r.listings),
   get: (id: string) => call<PublicListing>("GET", `/api/listings/${encodeURIComponent(id)}`),
   revealContact: (id: string) => call<RevealedContact>("POST", `/api/listings/${encodeURIComponent(id)}/contact`),
-  mine: () => call<{ listings: PublicListing[] }>("GET", "/api/me/listings").then((r) => r.listings),
+  mine: () => call<{ listings: (PublicListing & { views: number })[] }>("GET", "/api/me/listings").then((r) => r.listings),
   mineOne: (id: string) => call<{ listing: PublicListing; contact: { phone: string | null; email: string | null } | null }>("GET", `/api/me/listings/${encodeURIComponent(id)}`),
   create: (listing: ListingInput, contact: ContactInput) => call<PublicListing>("POST", "/api/me/listings", { listing, contact }),
   update: (id: string, listing: ListingInput, contact: ContactInput) => call<PublicListing>("PUT", `/api/me/listings/${encodeURIComponent(id)}`, { listing, contact }),
   remove: (id: string) => call<void>("DELETE", `/api/me/listings/${encodeURIComponent(id)}`),
+  saved: () => call<{ listings: PublicListing[] }>("GET", "/api/me/saved").then((r) => r.listings),
+  save: (id: string) => call<void>("PUT", `/api/me/saved/${encodeURIComponent(id)}`),
+  unsave: (id: string) => call<void>("DELETE", `/api/me/saved/${encodeURIComponent(id)}`),
+  /** Counts one opening of a listing page; a failure is ignored (it never breaks the page). */
+  recordView: (id: string) => call<void>("POST", `/api/listings/${encodeURIComponent(id)}/view`).catch(() => undefined),
 }
 
 /** Loads once per key; error is the message to show. */

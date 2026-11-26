@@ -16,7 +16,7 @@ import {
 export const LOCAL_LISTINGS_FILE = "data/local-listings.json"
 
 /** The one local account when Supabase is not configured: no password, clearly labelled in the UI. */
-export const LOCAL_LANDLORD: ListingActor = Object.freeze({ id: "local-demo-landlord", displayName: "Local demo landlord", kind: "local" })
+export const LOCAL_LANDLORD: ListingActor = Object.freeze({ id: "local-demo-landlord", displayName: "Local demo account", kind: "local" })
 
 type LocalFile = { listings: SpaceListingProps[]; contacts: ListingContact[] }
 
@@ -69,7 +69,7 @@ export class LocalListingStore implements ListingStore {
     const contact = createListingContact(id, actor.displayName, contactInput)
     this.own.set(id, listing)
     this.ownContacts.set(id, contact)
-    this.save()
+    this.persist()
     return listing
   }
 
@@ -80,7 +80,7 @@ export class LocalListingStore implements ListingStore {
     if (!this.own.has(id)) throw new DomainError("not_listing_owner", "Demo listings cannot be changed")
     this.own.set(id, updated)
     this.ownContacts.set(id, contact)
-    this.save()
+    this.persist()
     return updated
   }
 
@@ -90,7 +90,7 @@ export class LocalListingStore implements ListingStore {
     if (!this.own.has(id)) throw new DomainError("not_listing_owner", "Demo listings cannot be deleted")
     this.own.delete(id)
     this.ownContacts.delete(id) // the contact goes with the listing
-    this.save()
+    this.persist()
   }
 
   async revealContact(id: string): Promise<ListingContact | null> {
@@ -105,6 +105,33 @@ export class LocalListingStore implements ListingStore {
     return this.ownContacts.get(id) ?? this.seedContacts.get(id) ?? null
   }
 
+  private readonly views = new Map<string, number>()
+  private readonly saved = new Map<string, string[]>()
+
+  async recordView(id: string): Promise<void> {
+    const listing = await this.get(id)
+    if (listing?.props.published) this.views.set(id, (this.views.get(id) ?? 0) + 1)
+  }
+
+  async viewCounts(actor: ListingActor): Promise<Record<string, number>> {
+    return Object.fromEntries((await this.listByOwner(actor)).map((l) => [l.id, this.views.get(l.id) ?? 0]))
+  }
+
+  async savedIds(actor: ListingActor): Promise<string[]> {
+    return [...(this.saved.get(actor.id) ?? [])]
+  }
+
+  async save(actor: ListingActor, id: string): Promise<void> {
+    const listing = await this.get(id)
+    if (!listing || !listing.props.published) throw new DomainError("listing_not_found", `No listing "${id}"`)
+    const ids = this.saved.get(actor.id) ?? []
+    if (!ids.includes(id)) this.saved.set(actor.id, [id, ...ids]) // saving twice changes nothing
+  }
+
+  async unsave(actor: ListingActor, id: string): Promise<void> {
+    this.saved.set(actor.id, (this.saved.get(actor.id) ?? []).filter((x) => x !== id))
+  }
+
   private all(): SpaceListing[] {
     return [...this.own.values(), ...this.seedListings.values()].sort((a, b) => b.props.createdAt.localeCompare(a.props.createdAt) || a.id.localeCompare(b.id))
   }
@@ -116,7 +143,7 @@ export class LocalListingStore implements ListingStore {
   }
 
   /** Write to a temporary file, then rename: a crash mid-write never leaves a half-written file. */
-  private save(): void {
+  private persist(): void {
     if (!this.file) return
     const data: LocalFile = { listings: [...this.own.values()].map((l) => l.toJSON()), contacts: [...this.ownContacts.values()] }
     mkdirSync(dirname(this.file), { recursive: true })

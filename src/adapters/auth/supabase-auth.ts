@@ -9,7 +9,7 @@ import type { ListingActor } from "../../application/listings/listing-store.js"
  */
 export type SupabaseAuthConfig = { readonly url: string; readonly anonKey: string }
 
-/** Both values set, or null (then there are no accounts and everyone is the Local demo landlord). */
+/** Both values set, or null (then there are no accounts and everyone is the Local demo account). */
 export function supabaseAuthConfig(env: NodeJS.ProcessEnv = process.env): SupabaseAuthConfig | null {
   const url = env.SUPABASE_URL?.trim()
   const anonKey = env.SUPABASE_ANON_KEY?.trim()

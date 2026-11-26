@@ -17,7 +17,7 @@ function useNext(): string {
 function AccountsOff() {
   return (
     <Card title="Accounts">
-      <p>Accounts are off on this server (no Supabase configured). You can still publish listings: they are saved locally as the Local demo landlord.</p>
+      <p>Accounts are off on this server (no Supabase configured). You can still list a space: it is saved locally under a shared local account.</p>
       <Link to={paths.myListings()} className="mt-4 inline-block font-medium text-ink underline">
         Go to My listings
       </Link>
@@ -29,7 +29,7 @@ function AuthFrame({ title, children }: { title: string; children: ReactNode }) 
   return (
     <div className="mx-auto flex w-full max-w-[460px] flex-col gap-4">
       <Card title={title}>
-        <p className="mb-4">Only landlords need an account, to publish listings. Tenants search and evaluate as a guest.</p>
+        <p className="mb-4">One account to save spaces and to list your own. Searching and evaluating works without an account.</p>
         {children}
       </Card>
     </div>
@@ -46,9 +46,9 @@ export function LoginPage() {
   if (auth.status === "ready" && !auth.enabled) return <AccountsOff />
   if (auth.landlord) {
     return (
-      <AuthFrame title="Log in">
+      <AuthFrame title="Sign in">
         <p>
-          You are logged in as <span className="font-semibold text-ink">{auth.landlord.displayName}</span>.
+          You are signed in as <span className="font-semibold text-ink">{auth.landlord.displayName}</span>.
         </p>
         <Link to={next} className="mt-4 inline-block font-medium text-ink underline">
           Continue
@@ -69,7 +69,7 @@ export function LoginPage() {
     }
   }
   return (
-    <AuthFrame title="Log in">
+    <AuthFrame title="Sign in">
       <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-3">
         <label>
           <span className={LABEL}>Email</span>
@@ -86,7 +86,7 @@ export function LoginPage() {
         )}
         <div className="mt-1 flex flex-wrap items-center gap-3">
           <button type="submit" disabled={busy || auth.status !== "ready"} className={PRIMARY}>
-            <LogIn size={16} aria-hidden /> {busy ? "Logging in..." : "Log in"}
+            <LogIn size={16} aria-hidden /> {busy ? "Signing in..." : "Sign in"}
           </button>
           <span className="text-[13px]">
             No account?{" "}
@@ -132,7 +132,7 @@ export function SignupPage() {
   if (confirmSent) {
     return (
       <AuthFrame title="Sign up">
-        <p>Check your email to confirm the account, then log in.</p>
+        <p>Check your email to confirm the account, then sign in.</p>
       </AuthFrame>
     )
   }
@@ -164,9 +164,7 @@ export function SignupPage() {
           </button>
           <span className="text-[13px]">
             Have an account?{" "}
-            <Link to={`${paths.login()}?next=${encodeURIComponent(next)}`} className="font-medium text-ink underline">
-              Log in
-            </Link>
+            <Link to={`${paths.login()}?next=${encodeURIComponent(next)}`} className="font-medium text-ink underline">Sign in</Link>
           </span>
         </div>
       </form>
@@ -174,7 +172,7 @@ export function SignupPage() {
   )
 }
 
-/** Landlord pages: with accounts on, ask a guest to log in first; without accounts, everyone is the local landlord. */
+/** Pages that need an account: with accounts on, ask a guest to sign in first; without accounts, everyone shares the local account. */
 export function RequireLandlord({ children }: { children: ReactNode }) {
   const auth = useAuth()
   const { pathname, search } = useLocation()
@@ -182,11 +180,11 @@ export function RequireLandlord({ children }: { children: ReactNode }) {
   if (auth.enabled && !auth.landlord) {
     const next = encodeURIComponent(pathname + (search.toString() ? `?${search}` : ""))
     return (
-      <Card title="Landlords only">
-        <p>Log in to publish and manage listings. Tenants do not need an account.</p>
+      <Card title="Sign in to continue">
+        <p>This page needs an account: sign in or sign up. Searching and evaluating spaces works without one.</p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Link to={`${paths.login()}?next=${next}`} className={PRIMARY}>
-            <LogIn size={16} aria-hidden /> Log in
+            <LogIn size={16} aria-hidden /> Sign in
           </Link>
           <Link to={`${paths.signup()}?next=${next}`} className="inline-flex h-10 items-center gap-2 rounded-full glass-strong px-[18px] text-sm font-medium text-ink hover:bg-white">
             <UserPlus size={16} aria-hidden /> Sign up
