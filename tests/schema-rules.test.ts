@@ -26,6 +26,7 @@ describe("structured output schemas follow Anthropic's rules", () => {
       "finance-analyst.ts:CALCULATE_TOOL_SCHEMA",
       "finance-analyst.ts:FINANCE_EXPLANATION_SCHEMA",
       "lease-reader.ts:LEASE_EXTRACTION_SCHEMA",
+      "report-writer.ts:REPORT_SCHEMA",
       "scout.ts:LISTING_EXTRACTION_SCHEMA",
     ])
     for (const [name, schema] of schemas) expect({ name, problems: structuredOutputProblems(schema) }).toEqual({ name, problems: [] })

@@ -12,10 +12,21 @@ import {
   type ListingText,
   type ListingTextInput,
   type RankedCandidate,
+  type Fact,
+  type ReportDraft,
+  type ReportSection,
   type Requirement,
 } from "../domain/index.js"
 
 export type FailedListing = { readonly listingId: string; readonly reason: string; readonly attempts: number }
+
+export type FinalSentence = { readonly text: string; readonly facts: readonly string[]; readonly status: "ok" | "removed"; readonly note?: string }
+export type FinalReport = {
+  readonly recommended: readonly string[]
+  readonly sections: Record<ReportSection, readonly FinalSentence[]>
+  readonly audit: { readonly checked: number; readonly corrected: number; readonly removed: number; readonly attempts: number }
+  readonly failed?: string
+}
 
 export type ResearchMode = "A" | "B"
 
@@ -38,6 +49,11 @@ export class SuiteSpotState extends RuntimeState {
   readonly leaseTexts = new Map<string, LeaseText>()
   readonly leaseClauses = new Map<string, LeaseClauses>()
   private readonly leaseWaiters = new Map<string, { promise: Promise<LeaseClauses | null>; resolve: (c: LeaseClauses | null) => void }>()
+
+  /** The report: facts written by code, the Report writer's drafts, and the audited final report. */
+  reportFacts: Fact[] = []
+  readonly reportDrafts: { attempt: number; draft: ReportDraft | null; error?: string; providerError?: boolean }[] = []
+  report: FinalReport | null = null
 
   /** The Ranker's result per candidate (rejected candidates are never ranked). */
   readonly rankings = new Map<string, RankedCandidate>()

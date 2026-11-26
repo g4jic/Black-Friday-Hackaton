@@ -1,4 +1,4 @@
-import type { CandidateDTO, Metrics, WireEvent } from "./types"
+import type { CandidateDTO, Metrics, ReportDTO, WireEvent } from "./types"
 
 /** One agent loop as seen from the events (nothing here is invented: every field comes from a wire event). */
 export type LoopView = {
@@ -28,6 +28,9 @@ export type ResearchState = {
   done: boolean
   metrics: Metrics | null
   submitted: string[]
+  report: ReportDTO | null
+  /** Plain-code work with a start and an end (the Auditor), drawn on the Timeline like a loop. */
+  spans: Record<string, LoopView>
 }
 
 export const initialResearch = (id: string | null): ResearchState => ({
@@ -43,6 +46,8 @@ export const initialResearch = (id: string | null): ResearchState => ({
   done: false,
   metrics: null,
   submitted: [],
+  report: null,
+  spans: {},
 })
 
 /** Pure reducer: the whole screen is a function of the event stream. */
@@ -92,6 +97,20 @@ export function applyEvent(s: ResearchState, e: WireEvent): ResearchState {
         next.candidates = { ...s.candidates, [c.id]: c }
         if (!s.order.includes(c.id)) next.order = [...s.order, c.id]
       }
+      break
+    }
+    case "report.snapshot":
+      next.report = (e.data?.report as ReportDTO) ?? null
+      break
+    case "audit.started": {
+      const key = `audit:all:${String(e.data?.attempt ?? 1)}`
+      next.spans = { ...s.spans, [key]: { key, agent: e.agent ?? "Auditor", start: e.at, stopped: false, tools: [] } }
+      break
+    }
+    case "audit.done": {
+      const key = `audit:all:${String(e.data?.attempt ?? 1)}`
+      const span = s.spans[key]
+      if (span) next.spans = { ...s.spans, [key]: { ...span, end: e.at } }
       break
     }
     case "research.done":

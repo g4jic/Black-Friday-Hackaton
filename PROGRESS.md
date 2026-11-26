@@ -3,6 +3,116 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
+## HANDOFF: Aleksa -> Andrej (26 Nov 2026, evening)
+Aleksa stops for today; Andrej continues with his own agent. Read this section first, then CLAUDE.md, then the plan.
+
+### State in one paragraph
+The full keyless pipeline works end to end in demo mode: 8 SYNTHETIC listings -> Scout (AI, 8 loops in parallel) ->
+Finance analyst (AI + calculator tool) and Lease reader (AI) in parallel per candidate -> a hard flag in a lease cuts
+the running Finance loop -> Ranker (code, worst-case score ranges) -> Report writer (AI) -> Auditor (code) -> web UI
+(Live research: Table / Cards / Timeline, Reports, Assumptions, New research) over SSE. 102 tests pass (11 files),
+typecheck clean. One live run of the whole demo with claude-haiku-4-5 passed (34.1 s, about $0.10, see below).
+
+### What works
+- Demo mode, keyless and deterministic: `npm run dev`, open http://localhost:5173, "Run demo" (about 7 s).
+- Agents: Scout, Finance analyst, Lease reader, Report writer (AI); Ranker, Auditor, loop tracker, wire tap (code).
+- Hard flags decided by code: budget (Finance tool), lease locked in without exit, unlimited rent increase. A hard
+  flag rejects the candidate and stops other loops on it at their next breakpoint (interception) or mid tool call.
+- Every number carries a source (listing quote, lease clause, calc, profile, assumption); values without a source are
+  rejected by code. Missing data stays missing (never a guess).
+- Live mode (key on the server only): pasted listings (1 to 8) and the demo; cost guard (max 8 listings, 1 live run at a
+  time, live only with SUITESPOT_MODE=live).
+- Live check, 26 Nov 2026 15:59 UTC, whole demo, claude-haiku-4-5: 34.1 s, 22 loops, peak 11 in parallel, 13
+  calculator calls, 69,477 input + 6,918 output tokens, about $0.104; 2 rejected, 1 loop cancelled; audit: 12 claims
+  checked, 1 corrected on the first draft, 0 removed; recommended demo-01, demo-06, demo-05. Files:
+  `design/screenshots/report-live.md`, `live-run-report.png`, `live-run-table-end.png`, `live-run-timeline-end.png`.
+
+### What does not work yet / not built
+- Not built: Interviewer (a fixed questionnaire `fixtures/requirements/demo.json` is used, also for pasted listings),
+  Location analyst (OSM), Premises inspector, History (screen is a placeholder; runs live in memory, last 20 only),
+  Supabase, Railway deploy, README (only a short "Known limitations" stub).
+- Live mode B (web search for listings) is off by decision (terms of use, option D); no site has given permission.
+- Mozaik Cloud tracing is not paired on this machine ("no API key - telemetry disabled" in the logs).
+
+### Known bugs and limits
+- The quote part separator " ... " breaks when a listing or lease text itself contains "..." (a valid quote may then be
+  rejected and the field becomes unverified MissingData).
+- When a hard flag lands during a model call, that call finishes and is paid for; its answer is replaced ("stopped").
+- Agents' names in pasted text are not removed by code (phones and emails are); the Scout never extracts names.
+- Premises are not scored, so cheap listings without a lease (demo-06, demo-05) rank right behind demo-01.
+- The Auditor is code only: it checks numbers, candidates and "never recommend a rejected one" exactly; it does not
+  check wording (decision below). The report's 1 correction in the live run shows the loop working.
+- Live runs vary: in the live run one extraction was sent back once (partial acceptance kept the verified fields).
+- `scripts/check-listing-fetch.ts` (`npm run check:listings`) fetches listing pages: do NOT run it (decision D).
+- Git prints "LF will be replaced by CRLF" warnings on Windows; harmless (quote checks ignore line endings).
+- The scores in the Table are sorted by rank inside each section, so rank #1 can sit in "Scored" and #2 in "Check before
+  signing".
+
+### Decisions made today (details in the Decisions log below)
+1. Listing sources: option D. No automated reading of listing sites; the user pastes 1 to 8 listing texts (mode A);
+   demo mode uses synthetic listings of the same shape; live search only for a site that gives written permission.
+2. Partial acceptance: the Scout and the Lease reader get one retry with the validator's feedback; on the last attempt
+   verified fields are kept and a failing field becomes unverified MissingData ("check before signing"). Only invalid
+   JSON or a provider error fails the whole item.
+3. Amounts as months of rent ("jedna kirija"): the model answers `monthsOfRent`; code computes the amount from the
+   sourced rent (source calc with both quotes). The model never computes.
+4. Quotes may have up to 3 parts joined with " ... "; code checks every part verbatim (normalised spaces).
+5. Anthropic structured output rules (from the docs + our own 400s), enforced by `tests/schema-rules.test.ts` on every
+   agent schema: no enum next to a type array, max 16 union parameters and 24 optional per request, objects need
+   additionalProperties false, no oneOf / length limits. Quote fields are strings, not arrays (arrays made "The
+   compiled grammar is too large").
+6. Ranker: unknown parts give a score RANGE (low end = unknown as 0, high end = unknown as full); the rank uses the low
+   end (worst case); no rent = never first; confidence says what is missing and how many points it carries.
+7. Report: the Report writer writes only from FACTS written by code from the state and cites them per sentence; the
+   Auditor (code) checks every sentence; problems go back once; on the second draft failing sentences are removed and
+   marked. No AI part in the Auditor (see `src/application/agents/auditor.ts` for the reasoning).
+8. Look (DESIGN.md is the source of truth): coral #F25C54 brand with black text (white fails AA), lilac #C19BE9 with
+   black text, hard flag dark red #9F1B12 always with the octagon icon and the words "Hard flag", glass cards, warm
+   gradient, Hanken Grotesk (checked loaded), 200 ms transitions off under reduced motion.
+
+### Next steps for Andrej (in priority order)
+1. **README that works from zero** (it is scored). Quick start with `npm install` (not `npm ci`), Node 22+, keyless demo
+   (`npm run dev`, "Run demo"), optional live mode with a key (.env + SUITESPOT_MODE=live), `npm test` (102 tests).
+   Use the screenshots in `design/screenshots/`, the "How the agents run concurrently" table (Scout x8, Finance +
+   Lease per candidate, interception, Ranker / Report writer / Auditor on events), Mermaid diagram, real-vs-mocked
+   table, limitations, credits (Mozaik 6.0.0, Hanken Grotesk OFL 1.1, lucide ISC). Test it on a fresh clone.
+2. **Deploy on Railway**: one service, `npm run build` then `npm start` (serves web/dist and the API on PORT), demo
+   mode by default (no key on the public deploy, or keep SUITESPOT_MODE unset).
+3. **Demo video script** (2-3 min): the problem; Run demo; Timeline showing Finance on demo-07 start, wait for the lease,
+   get cut ("Hard flag: demo-07 rejected"); Table with ranks and score ranges (#1 demo-01 80, #2 demo-06 74-94); the
+   Rejected row with the cancelled Finance loop; Reports with "Audited: N claims checked, M corrected" and source labels.
+4. **Location analyst** only if time is left (OSM, Nominatim + Overpass, 1 request per second). Normalise the address
+   before geocoding: listings give declined forms ("grbavici" -> "Grbavica", "na Detelinari" -> "Detelinara").
+5. **Open questions**: fixed questionnaire instead of an Interviewer agent (keep or build?); the " ... " quote separator
+   limit; a Premises inspector (would fix demo-06 / demo-05 ranking above better premises).
+
+### How to run (PowerShell)
+```powershell
+npm install
+npm test
+npm run dev
+```
+- Open http://localhost:5173 and click "Run demo" (keyless). API on :3000, web on :5173.
+- CLI demos: `npm run demo:scout`, `npm run demo:evaluate` (keyless); add `-- --live` to use the real model.
+- Live mode in the browser (costs about $0.10 per full demo run): put `ANTHROPIC_API_KEY=...` in `.env`, then
+  `$env:SUITESPOT_MODE = "live"; npm run dev`. Never commit `.env`.
+- Production: `npm run build` then `npm start` (one process serves the web app and the API).
+- Screenshots: with `npm run dev` running, `npm run screenshots` (uses the installed Edge, writes design/screenshots).
+
+### How to verify
+- `npm test`: 11 test files, 102 tests pass. `npm run typecheck`: no errors.
+- In the browser after "Run demo" (about 7 s):
+  - Timeline: Scout lanes for demo-01..08 start at 0 s; the Finance lane "demo-07 cut" turns red and ends with a red x
+    near 4.3 s at the dashed line "Hard flag: demo-07 rejected"; "peak 11 loops in parallel".
+  - Table at the end: Check before signing (5), Scored (1), Rejected (2). #1 demo-01 80 high, #2 demo-06 74-94 medium,
+    #3 demo-05 68-88, #4 demo-04 60, #5 demo-03 60-100 low, #6 demo-08 32-97 low ("Cannot rank first"). Rejected rows:
+    demo-02 (over budget, by Finance analyst) and demo-07 (locked in, by Lease reader, Finance cancelled mid tool call).
+  - Metrics strip: done in about 6.5 s, 19+ loops, 2 rejected, 1 loop cancelled, keyless $0.
+  - Reports: "Audited: 13 claims checked, 0 corrected", recommended 1. demo-01, 2. demo-06, 3. demo-05; every sentence
+    has source labels; "Not financial or legal advice" at the top and the bottom.
+  - Assumptions: weights 45 / 20 / 20 / 15 and "Unknown parts count as worst case for ranking."
+
+
 ## Listing sites: terms of use and robots.txt (read 26 Nov 2026, ~15:00, Aleksa + Claude)
 Only the terms pages, robots.txt, llms.txt / AI info pages and the home page (to find the terms link) were read. No
 listings were downloaded. Read with `User-Agent: SuiteSpot/0.1 (hackathon; +repo URL)`, 2 s between requests.
@@ -93,6 +203,20 @@ photos, or be replaced by synthetic data.
 - Railway datacenter IPs may be blocked by listing sites; test live mode from the deployed service.
 
 ## Current state
+- **Report writer + Auditor + Reports screen (26 Nov), committed and pushed.** 102 tests pass. See the HANDOFF section.
+  - Domain `src/domain/report.ts` (facts, `parseReportDraft`, `auditReport`), application `agents/report-writer.ts`
+    (AI, `REPORT_SCHEMA`, `buildFacts`), `agents/auditor.ts` (code), events `report.drafted`, `audit.started`,
+    `audit.done`, `report.audit_failed`, `report.ready`; `GET /api/research/:id/report`; `web/src/Reports.tsx`;
+    the Timeline shows the Report writer loop and the Auditor's audits. Score column widened (range on one line).
+- **Visual revision to match the reference (26 Nov), committed and pushed.** 98 tests pass at that point,
+  typecheck clean. DESIGN.md sections 0-4, 6.5, 6.10, 8 and 10 rewritten.
+  - Colours: brand coral `#F25C54` (black text on it: white fails AA at 3.26; white icons are fine), lilac `#C19BE9`
+    with black text, hard flag dark red `#9F1B12`, always with the octagon icon and "Hard flag" text.
+  - Glass: `.glass` (white 56%, blur 28 px + saturate 170%, light border, inner highlight) and `.glass-strong`, in
+    `@layer components`. Warmer gradient with soft blobs (coral bottom left, peach top left, lilac top right, white
+    haze in the middle). Larger radii, tighter heading tracking, 200 ms transitions (off with reduced motion).
+  - Hanken Grotesk verified in the browser (`document.fonts.check` true). Side-by-side comparisons with the reference
+    were rendered in the scratchpad only (the reference shows another product's name and people's photos).
 - **Ranker done (26 Nov), 98 tests pass, typecheck clean, committed and pushed.**
   - Change after Aleksa's review: a re-weighted 100 for a candidate without area and lease was misleading. Now
     unknown parts give a score RANGE (low end = unknown as 0, high end = unknown as full; one number when nothing is
@@ -287,30 +411,21 @@ photos, or be replaced by synthetic data.
   for it.
 
 ## Next step
-- Aleksa: plan step 2 (see the shift handover at the top). Design direction chosen: see DESIGN.md (Era and Spade
-  concepts are superseded).
-- **Aleksa, before building the Scout (rules also in CLAUDE.md, "Listing sources"):**
-  1. Read the terms of use of 4zida.rs, oglasi.rs and svenekretnine.com. If a site forbids automated reading, drop
-     it. Write the result here (site, terms URL, date, verdict).
-  2. Plain HTTP reads use an honest `User-Agent: SuiteSpot/0.1 (hackathon)` with the repo URL, never a browser or
-     search engine identity; at most one request per 2 seconds per site; respect robots.txt; skip blocked pages.
-     `scripts/check-listing-fetch.ts` now sends the honest User-Agent (not re-run yet). An honest UA may be blocked
-     more often than the earlier browser UA; re-run the test before relying on the old numbers.
-  3. `web_search` always with `allowed_domains` = the approved sites.
-  - Then: plain HTTP GET first, Anthropic web_fetch only as fallback; check the page is the listing we asked for.
+- See "Next steps for Andrej" in the HANDOFF section at the top.
 
 ## Open problems
-- Web search returns INDEX pages; the Scout needs a second hop (index page -> listing URLs -> each listing).
-- Terms of use of 4zida.rs / oglasi.rs / svenekretnine.com read on 26 Nov (table at the top). 4zida.rs forbids
-  automated use by the letter of its terms; the other two are unclear. Option D chosen: no automated reading of
-  listing sites unless a site gives written permission.
-- Fetch was tested from a home connection. Railway runs on datacenter IPs and may be blocked more often; test live
-  mode from the deployed service.
-- A model call already in flight cannot be aborted (InferenceRunner has no signal); we pay for it and replace its
-  answer. At most one call per stopped loop.
-- Mozaik sends no `disable_parallel_tool_use`; add the custom AnthropicMessages mapper in live mode (see CLAUDE.md).
+- See "Known bugs and limits" in the HANDOFF section at the top. Resolved since: the terms of use are read (option D),
+  live mode no longer fetches listing pages, and `src/adapters/inference/live-runner.ts` sends
+  `disable_parallel_tool_use` for Anthropic models.
 
 ## Decisions log
+- 2026-11-26: Report and Auditor. The Report writer (AI) writes only from facts written by code and cites them per
+  sentence; the Auditor is plain code (numbers, candidate ids, rejected never recommended, top 3 only); one retry with
+  feedback, then failing sentences are removed and marked. No AI Auditor: it would add cost and a new way to be
+  wrong without catching more invented numbers; source labels next to every sentence let a reader check the wording.
+- 2026-11-26: visual revision to match the reference: coral #F25C54 with black text, lilac #C19BE9 with black text, hard
+  flag #9F1B12 always with icon and "Hard flag", glass cards, warmer gradient (DESIGN.md updated).
+- 2026-11-26: Ranker uses worst-case score ranges (Aleksa's review: a re-weighted 100 was misleading).
 - 2026-11-26: Design direction chosen: see DESIGN.md (Era and Spade concepts are superseded). Aleksa picked the style
   and layout of a soft project-management UI from reference shots (style only: no name, logo or people photos).
   Hanken Grotesk (OFL 1.1), purple #6A3FD3 as brand, ink #0B0B0F, pink-to-lilac gradient; red only for hard flags,
@@ -352,6 +467,8 @@ photos, or be replaced by synthetic data.
   OpenStreetMap for area data; Supabase for history; Railway for deploy; Stripe and Solana not used.
 
 ## Session log
+- 2026-11-26 17:15 (Aleksa): Report writer + Auditor + Reports screen, live run of the whole demo ($0.104, 34.1 s),
+  handoff to Andrej written. 102 tests pass. Committed and pushed.
 - 2026-11-26 18:40 (Aleksa): partial acceptance, months of rent, quote parts, "lease not verified"; live demo-07 3/3 cut. 85 tests pass. Not committed.
 - 2026-11-26 18:00 (Aleksa): step 2.3 Finance analyst + Lease reader built, 79 tests pass, mock demo OK; live run
   on demo-07 found the partial-extraction problem. Not committed.

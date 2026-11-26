@@ -17,6 +17,8 @@ considering (mode A) or asks SuiteSpot to find candidates (mode B). Mozaik agent
 same time from different angles and answer one question: **"Is this lease a good financial decision for my business?"**
 The full build plan is **`2026-11-26-plan-lease-decision.md`**. Work state is in **`PROGRESS.md`** (read it at the start
 of every session, update it before every push). If the plan and this file disagree, ask the user.
+**Current state (26 Nov evening): read the HANDOFF section at the top of `PROGRESS.md` first** (what works, what does
+not, known limits, today's decisions, next steps, how to run and verify).
 - Repo: https://github.com/g4jic/Black-Friday-Hackaton. Local path (Andrej): `C:\Users\Lenovo LOQ\Desktop\SuiteSpot`.
 - Two people work in relay through Claude Code CLI in PowerShell: one works, pushes, the other continues.
 - Data (decided 26 Nov after reading the listing sites' terms of use, see `PROGRESS.md`): in mode A the user pastes
@@ -24,7 +26,8 @@ of every session, update it before every push). If the plan and this file disagr
   area data, estimates with method and sources, a labelled synthetic demo dataset in the same shape as pasted
   listings. Live web search (Anthropic `web_search` through our own function tool) only for a site that gives written
   permission. A recorded real run, if any, keeps only links and extracted facts, never listing text or photos.
-- History of research runs in Supabase (live) or a local JSON file (demo mode). Deploy on Railway.
+- History of research runs in Supabase (live) or a local JSON file (demo mode): NOT built yet (runs live in memory).
+  Deploy on Railway: not done yet.
 - Stripe and Solana are not used (no natural fit).
 - Never give a legal verdict on permitted use; report "check before signing: <what>".
 - **Writing rule:** no long dashes anywhere (UI, docs, comments, commits). Use a plain hyphen `-`.
@@ -326,7 +329,14 @@ sendMessage("Hello", human.getId())
   FunctionCallOutputItem), `model.answer` (payload `{ answer }`), `interception.started`, `interception.finished`
   (payload = the transition). There is NO `context_update.*` event (older docs used that name). `inference.output` is
   internal to streaming runners, not a bus event. Our own domain events go through `sendEvent`, and their producer
-  must be a real participant id: `candidate.found`, `candidate.rejected`, `candidate.flag_recorded`, `agent.halted`.
+  must be a real participant id: `candidate.found`, `candidate.rejected`, `candidate.flag_recorded`, `agent.halted`,
+  and since 26 Nov also `listings.submitted`, `listing.extraction_*`, `lease.*`, `finance.*`, `loop.cancelled`,
+  `candidate.scored`, `ranking.done`, `report.drafted`, `audit.started`, `audit.done`, `report.audit_failed`,
+  `report.ready`. The browser gets a whitelisted projection of them (`src/application/research/research-session.ts`).
+- **Structured output schemas:** every agent schema must pass `src/application/agents/schema-rules.ts` (checked in
+  `tests/schema-rules.test.ts`): no enum next to a type array, max 16 union parameters and 24 optional per request,
+  `additionalProperties: false`, no oneOf or length limits, and keep arrays small (quotes as arrays made "The compiled
+  grammar is too large").
 - **Only the FIRST tool call of an inference is executed.** If the model returns several `tool_use` blocks in one
   answer, Mozaik runs the first and silently drops the rest (they never reach the context, so the model only sees the
   first result and has to ask again). Mozaik 6.0.0 sends no `tool_choice` and no `disable_parallel_tool_use`. Rules:
@@ -334,7 +344,7 @@ sendMessage("Hello", human.getId())
   2. Design tools to take a batch when an agent needs several of the same lookup (for example `osm_lookup` takes a
      list of queries, `fetch_listing` takes one URL but the Scout publishes candidates one by one), instead of
      relying on parallel calls.
-  3. In live mode, pass a custom `AnthropicMessages` endpoint (its constructor takes an `endpointMapper`) whose
+  3. (Done in `src/adapters/inference/live-runner.ts`.) In live mode, pass a custom `AnthropicMessages` endpoint (its constructor takes an `endpointMapper`) whose
      mapper adds `tool_choice: { type: "auto", disable_parallel_tool_use: true }`, wired through
      `initializeRuntime({ inferenceRunnerConfig: { supportedModels } })`. Then the API itself returns at most one
      tool call. Mock scripts already return one call at a time.

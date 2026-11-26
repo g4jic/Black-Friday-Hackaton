@@ -161,14 +161,15 @@ model calls, default 4), `searchBudget`, `trace`.
 | Participant | Kind | Wakes on | Does |
 |---|---|---|---|
 | User | human | - | Answers questions, picks the mode, reads the report. |
-| Interviewer | AI | `profile.submitted` | Asks 2 to 4 follow-up questions that depend on the business, then writes the requirements list. |
+| Interviewer | AI | `profile.submitted` | NOT BUILT (26 Nov): a fixed questionnaire `fixtures/requirements/demo.json` is used instead. Plan: asks 2 to 4 follow-up questions that depend on the business, then writes the requirements list. |
 | Scout | AI (structured output) | `listings.submitted` (runs in parallel with the Interviewer; extraction does not need the requirements) | Mode A and demo: one loop per pasted (or synthetic) listing, in parallel; reads the text, extracts the fields with `pasted-<n>` + line as source, publishes `candidate.found` **as soon as each listing is read**, so evaluation of the first candidates starts while the others are still being read. Mode B (only for a site with written permission): uses `search_listings`, publishes candidates one by one in the same way. |
 | Finance analyst | AI + tools | `candidate.found` | Answers the core question with the calculator tools. Explains; never computes numbers itself. |
 | Lease reader | AI | `candidate.found` | Per candidate: with a pasted lease draft, clause analysis with citations; without one, questions to ask the landlord. |
-| Location analyst | AI + tools | `candidate.found` | Goal: can this location produce the revenue the rent requires? Uses OSM tools and the location requirements. |
-| Premises inspector | AI | `candidate.found` | Listing text: floor, storefront, condition, technical fit, previous use (existing installations lower fit-out cost), signs of frequent tenant changes. Checks premises requirements. |
-| Auditor | AI + code | `finding.added` | Code checks the source exists and the value matches; AI checks the claim follows from the cited text. Also flags **contradictions inside a listing** (tested: title says private parking, feature list says shared parking; floor count conflicts with the description) as "check before signing". Rejected findings go back to the author. |
-| Ranker | code | all candidates done | Scores with `weights.json`, ranks, writes the report and saves the run to history. |
+| Location analyst | AI + tools | `candidate.found` | NOT BUILT yet (optional; normalise addresses like "grbavici" before Nominatim). Goal: can this location produce the revenue the rent requires? Uses OSM tools and the location requirements. |
+| Premises inspector | AI | `candidate.found` | NOT BUILT yet. Listing text: floor, storefront, condition, technical fit, previous use (existing installations lower fit-out cost), signs of frequent tenant changes. Checks premises requirements. |
+| Ranker | code | every listing read and no loop running | Scores with `RANKING_ASSUMPTIONS` (src/domain/ranking.ts): worst-case score ranges, confidence, 2-3 sourced reasons; ranks every candidate that was not rejected; publishes `candidate.scored` and `ranking.done`. |
+| Report writer | AI | `ranking.done` | Writes the report (top 3 with reasons, check before signing, why rejected, unknowns) only from facts written by code, citing them per sentence; rewrites once on `report.audit_failed`. |
+| Auditor | code (no AI, decided 26 Nov) | `report.drafted` | Checks every sentence of the report against the facts it cites (numbers, candidate ids, rejected never recommended, top 3 only); sends problems back once, then removes and marks failing sentences. The planned in-listing contradiction check (private vs shared parking) is NOT built yet. Every finding is already rejected without a source by `SuiteSpotState.addFinding`. |
 
 Each evaluator runs one `runLoop` per candidate (for example 8 candidates x 4 evaluators = 32 loops, bounded by the
 semaphore). Findings use `structuredOutput` and are validated by the domain before entering state.
@@ -195,6 +196,10 @@ processor, last-resort process handlers, idempotent `reject`, search and OSM fai
 end-to-end test where one evaluator fails and the others still finish.
 
 ## 11. Build order (targets)
+Status 26 Nov evening: steps 1-3 done except Location analyst, Premises inspector and history; from step 4 the live
+mode, mode A, the report screen, the Ranker, the Report writer and the Auditor are done; Interviewer, Railway and the
+README are open (see PROGRESS.md HANDOFF).
+
 1. **Thu 13:00-15:00:** repo skeleton (server + web), `@mozaik-ai/core@6.0.0`, mock runner, resilience helpers, domain
    model with tests. Spike the cancellation interception. Check web search and web fetch support for the model with one
    real call (needs `ANTHROPIC_API_KEY` in `.env`).

@@ -32,8 +32,9 @@ export const DEMO_PACE: DemoLatency = {
   scout: (id) => 600 + ((Number(id.replace(/\D/g, "")) * 370) % 1800),
   leaseReader: 2600,
   financeStep: 1100,
+  reportWriter: 1500,
 }
-export const FAST_PACE: DemoLatency = { scout: () => 10, leaseReader: 60, financeStep: 20 }
+export const FAST_PACE: DemoLatency = { scout: () => 10, leaseReader: 60, financeStep: 20, reportWriter: 20 }
 
 export type ResearchRoutesOptions = {
   /** Whether live mode may be used (SUITESPOT_MODE=live and a key on the server). */
@@ -128,6 +129,14 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
       if (status === 500) req.log.error(error)
       return reply.code(status).send({ error: message })
     }
+  })
+
+  app.get("/api/research/:id/report", async (req, reply) => {
+    const session = sessions.get((req.params as { id: string }).id)
+    if (!session) return reply.code(404).send({ error: "Unknown research" })
+    const report = session.report()
+    if (!report) return reply.code(404).send({ error: "The report is not ready yet" })
+    return report
   })
 
   app.get("/api/research/:id", async (req, reply) => {

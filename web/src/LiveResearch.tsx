@@ -132,7 +132,7 @@ function Score({ c, group }: { c: CandidateDTO; group: Group }) {
   const title = r.components.map((x) => `${x.name} (weight ${x.weight}): ${x.value === null ? `unknown, 0 to ${x.weight} points` : x.value}`).join("\n")
   const range = r.scoreHigh > r.score
   return (
-    <span className="inline-flex flex-wrap items-center gap-1.5 whitespace-nowrap" title={`Score parts:\n${title}${range ? "\nThe rank uses the low end (unknown parts count as worst case)." : ""}`}>
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap" title={`Score parts:\n${title}${range ? "\nThe rank uses the low end (unknown parts count as worst case)." : ""}`}>
       <span className="tnum inline-flex h-6 items-center rounded-full bg-ink px-2 text-xs font-semibold text-white">#{r.rank}</span>
       <span className="tnum text-sm font-semibold">{range ? `${r.score}-${r.scoreHigh}` : r.score}</span>
       <Pill variant={CONFIDENCE_PILL[r.confidence]} icon={false} title="Confidence: how much of the input data is known">
@@ -145,7 +145,7 @@ function Score({ c, group }: { c: CandidateDTO; group: Group }) {
 /** The Ranker's 2 or 3 reasons, each with its source label. */
 export function Reasons({ c }: { c: CandidateDTO }) {
   if (!c.ranking) return null
-  const mark = { plus: "text-green-700", minus: "text-red-700", confidence: "text-amber-800", order: "text-amber-800" } as const
+  const mark = { plus: "text-green-700", minus: "text-hard", confidence: "text-amber-800", order: "text-amber-800" } as const
   const sign = { plus: "+", minus: "-", confidence: "?", order: "!" } as const
   return (
     <ul className="flex flex-wrap gap-x-5 gap-y-1 text-[13px] text-ink-2">
@@ -174,7 +174,7 @@ export function RejectionDetail({ s, c }: { s: ResearchState; c: CandidateDTO })
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] text-ink-2">
       <span className="inline-flex flex-wrap items-center gap-1.5">
         <Pill variant="hard" title={c.rejection.reason}>
-          {c.rejection.reason}
+          Hard flag: {c.rejection.reason}
         </Pill>
         <SourceLabel source={c.rejection.source} />
         <span>by {c.rejection.raisedBy}</span>
@@ -205,7 +205,7 @@ export function RejectionDetail({ s, c }: { s: ResearchState; c: CandidateDTO })
 function SectionCard({ group, count, total, children }: { group: Group; count: number; total: number; children: React.ReactNode }) {
   const [open, setOpen] = useState(true) // every section starts open, Rejected included (DESIGN.md 7.3)
   return (
-    <section className="surface rounded-[24px] px-6 pt-4 pb-5" aria-label={group}>
+    <section className="glass rounded-[28px] px-7 pt-5 pb-6" aria-label={group}>
       <div className="flex items-center gap-3">
         <button
           type="button"
@@ -216,7 +216,7 @@ function SectionCard({ group, count, total, children }: { group: Group; count: n
         >
           <ChevronRight size={18} className={cx("transition-transform duration-200", open && "rotate-90")} />
         </button>
-        <span className="inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-lg leading-6 font-semibold shadow-[var(--shadow-soft)]">
+        <span className="inline-flex items-center gap-2 title-pill rounded-full glass-strong px-3.5 py-1.5 text-lg leading-6 font-semibold">
           {group}
           <CountCircle n={count} tone={GROUP_TONE[group]} />
         </span>
@@ -240,7 +240,7 @@ export function CandidateSections({ s, view, filter }: { s: ResearchState; view:
   for (const rows of byGroup.values()) rows.sort(byRank) // ranked candidates in rank order; the rest keep arrival order
   const waiting = s.submitted.length - all.length
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       {waiting > 0 && (
         <div className="surface flex items-center gap-3 rounded-[24px] px-6 py-4 text-sm text-ink-2">
           <AgentChip name="Scout" state="busy" />
@@ -265,13 +265,13 @@ function Table({ s, rows, group }: { s: ResearchState; rows: CandidateDTO[]; gro
       <table className="w-full min-w-[980px] table-fixed border-collapse">
         {/* Same column widths in every section, so the numbers line up from one section to the next. */}
         <colgroup>
-          <col className="w-[26%]" />
+          <col className="w-[25%]" />
           <col className="w-[12%]" />
           <col className="w-[11%]" />
           <col className="w-[15%]" />
-          <col className="w-[20%]" />
+          <col className="w-[18%]" />
           <col className="w-[7%]" />
-          <col className="w-[9%]" />
+          <col className="w-[12%]" />
         </colgroup>
         <thead>
           <tr>
@@ -298,7 +298,7 @@ function RowGroup({ s, c, group }: { s: ResearchState; c: CandidateDTO; group: G
   const rejected = group === "Rejected"
   return (
     <>
-      <tr className={cx("h-[52px] transition-colors hover:bg-white/50", rejected && "bg-red-50/70")}>
+      <tr className={cx("h-[56px] hover:bg-white/45", rejected && "bg-hard-50/70")}>
         <td className={TD}>
           <CandidateName c={c} />
         </td>
@@ -317,7 +317,7 @@ function RowGroup({ s, c, group }: { s: ResearchState; c: CandidateDTO; group: G
         <td className={TD}>
           <Agents s={s} c={c} />
         </td>
-        <td className={TD}>{rejected ? <Pill variant="solid-hard" icon={false}>Rejected</Pill> : <Score c={c} group={group} />}</td>
+        <td className={TD}>{rejected ? <Pill variant="solid-hard" title="Rejected by a hard flag">Rejected</Pill> : <Score c={c} group={group} />}</td>
       </tr>
       {c.ranking && (
         <tr>
@@ -327,7 +327,7 @@ function RowGroup({ s, c, group }: { s: ResearchState; c: CandidateDTO; group: G
         </tr>
       )}
       {rejected && (
-        <tr className="bg-red-50/70">
+        <tr className="bg-hard-50/70">
           <td colSpan={7} className="px-4 pb-3">
             <RejectionDetail s={s} c={c} />
           </td>
@@ -341,7 +341,7 @@ function Cards({ s, rows, group }: { s: ResearchState; rows: CandidateDTO[]; gro
   return (
     <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))" }}>
       {rows.map((c) => (
-        <article key={c.id} className={cx("rounded-[20px] bg-white/80 p-5", group === "Rejected" && "ring-1 ring-red-600/20")}>
+        <article key={c.id} className={cx("glass-strong rounded-[24px] p-5", group === "Rejected" && "ring-1 ring-hard/20")}>
           <div className="flex items-start justify-between gap-3">
             <CandidateName c={c} />
             <Agents s={s} c={c} />

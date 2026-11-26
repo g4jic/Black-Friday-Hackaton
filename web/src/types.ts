@@ -80,4 +80,13 @@ export type Metrics = {
   timedOut: boolean
 }
 
+export type ReportFactDTO = { id: string; text: string; candidateId: string; source: SourceDTO }
+export type ReportSentenceDTO = { text: string; status: "ok" | "removed"; note?: string; facts: ReportFactDTO[] }
+export type ReportDTO = {
+  recommended: string[]
+  sections: Record<"recommendation" | "checkBeforeSigning" | "rejected" | "unknowns", ReportSentenceDTO[]>
+  audit: { checked: number; corrected: number; removed: number; attempts: number }
+  failed: string | null
+}
+
 export type Config = { liveAvailable: boolean; maxListings: number; liveModel: string }

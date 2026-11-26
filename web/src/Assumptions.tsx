@@ -104,8 +104,8 @@ export function AssumptionsScreen() {
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="surface rounded-[24px] p-6 text-sm leading-5 text-ink-2">
-      <h2 className="mb-4 inline-flex rounded-full bg-white px-3.5 py-1.5 text-lg leading-6 font-semibold text-ink shadow-[var(--shadow-soft)]">{title}</h2>
+    <section className="glass rounded-[28px] p-6 text-sm leading-5 text-ink-2">
+      <h2 className="mb-4 inline-flex title-pill rounded-full glass-strong px-3.5 py-1.5 text-lg leading-6 font-semibold text-ink">{title}</h2>
       {children}
     </section>
   )

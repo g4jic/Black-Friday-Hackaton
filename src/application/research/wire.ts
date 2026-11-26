@@ -130,6 +130,38 @@ function findingDTO(f: Finding): FindingDTO {
 
 const LISTING_KEYS = ["title", "kind", "city", "address", "rentMonthly", "area", "deposit", "serviceChargeMonthly", "floor", "heating", "parking"] as const
 
+export type ReportDTO = {
+  recommended: string[]
+  sections: Record<string, { text: string; status: string; note?: string; facts: { id: string; text: string; candidateId: string; source: SourceDTO }[] }[]>
+  audit: { checked: number; corrected: number; removed: number; attempts: number }
+  failed: string | null
+}
+
+/** The audited report with every cited fact and its source (the source labels next to each sentence). */
+export function reportDTO(state: SuiteSpotState): ReportDTO {
+  const r = state.report!
+  const facts = new Map(state.reportFacts.map((f) => [f.id, f]))
+  return {
+    recommended: [...r.recommended],
+    sections: Object.fromEntries(
+      Object.entries(r.sections).map(([k, list]) => [
+        k,
+        list.map((s) => ({
+          text: s.text,
+          status: s.status,
+          ...(s.note ? { note: s.note } : {}),
+          facts: s.facts.flatMap((id) => {
+            const f = facts.get(id)
+            return f ? [{ id: f.id, text: f.text, candidateId: f.candidateId, source: sourceDTO(f.source) }] : []
+          }),
+        })),
+      ]),
+    ),
+    audit: { ...r.audit },
+    failed: r.failed ?? null,
+  }
+}
+
 export function candidateDTO(c: Candidate, state: SuiteSpotState): CandidateDTO {
   const listing = c.listing as unknown as Record<string, unknown>
   return {

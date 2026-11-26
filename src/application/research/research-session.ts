@@ -3,10 +3,12 @@ import type { BusinessProfile, LeaseText, ListingTextInput, Requirement } from "
 import { createFinanceAnalyst } from "../agents/finance-analyst.js"
 import { createLeaseReader } from "../agents/lease-reader.js"
 import { createRanker } from "../agents/ranker.js"
+import { createAuditor } from "../agents/auditor.js"
+import { createReportWriter } from "../agents/report-writer.js"
 import { createScout, submitListings } from "../agents/scout.js"
 import { safeHandler } from "../resilience/safe-handler.js"
 import { createAppRuntime, type AppRuntime } from "../runtime.js"
-import { candidateDTO, sourceDTO, type WireEvent } from "./wire.js"
+import { candidateDTO, reportDTO, sourceDTO, type WireEvent } from "./wire.js"
 
 export type ResearchMode = "demo" | "live"
 
@@ -76,6 +78,11 @@ const PASS_THROUGH: Record<string, readonly string[]> = {
   "agent.halted": ["loopKey", "candidateId", "reason"],
   "candidate.scored": ["candidateId", "rank", "score", "scoreHigh", "confidence"],
   "ranking.done": ["order", "excluded"],
+  "report.drafted": ["attempt", "ok"],
+  "audit.started": ["attempt"],
+  "audit.done": ["attempt", "checked", "problems"],
+  "report.audit_failed": ["attempt", "problems"],
+  "report.ready": ["audit", "recommended", "failed"],
 }
 
 /**
@@ -93,6 +100,7 @@ export class ResearchSession {
   private readonly snapshots = new Map<string, string>()
   private readonly tokens = { input: 0, output: 0 }
   private rankingDone = false
+  private reportDone = false
   private busy = 0
   private peak = 0
   private stableSince = 0
@@ -111,7 +119,7 @@ export class ResearchSession {
       handlers: [safeHandler({ specification: new Everything(), processor: { apply: ({ event }) => this.onBus(event, names) } })],
     })
     const user = createHuman({ name: "User", capabilities: [], handlers: [] })
-    const agents = [createScout(this.rt, { model: input.model }), createFinanceAnalyst(this.rt, { model: input.model }), createLeaseReader(this.rt, { model: input.model }), createRanker(this.rt)]
+    const agents = [createScout(this.rt, { model: input.model }), createFinanceAnalyst(this.rt, { model: input.model }), createLeaseReader(this.rt, { model: input.model }), createRanker(this.rt), createReportWriter(this.rt, { model: input.model }), createAuditor(this.rt)]
     for (const p of [tap, user, ...agents]) {
       names.set(p.getId(), p.getManifest().name)
       this.rt.join(p)
@@ -128,6 +136,11 @@ export class ResearchSession {
 
   get mode(): ResearchMode {
     return this.input.mode
+  }
+
+  /** The audited report as sent to the browser (null until report.ready). */
+  report() {
+    return this.rt.state.report ? reportDTO(this.rt.state) : null
   }
 
   subscribe(listener: (e: WireEvent) => void): () => void {
@@ -179,6 +192,7 @@ export class ResearchSession {
       }
     }
     if (event.type === "ranking.done") this.rankingDone = true
+    if (event.type === "report.ready") this.reportDone = true
     const allowed = PASS_THROUGH[event.type]
     if (!allowed) return
     const data: Record<string, unknown> = Object.fromEntries(allowed.filter((k) => p[k] !== undefined).map((k) => [k, p[k]]))
@@ -186,6 +200,7 @@ export class ResearchSession {
     const candidateId = (p.candidateId as string | undefined) ?? loop?.candidateId
     this.emit(event.type, { ...(agent ? { agent } : {}), ...(p.loopKey ? { loopKey: p.loopKey } : {}), ...(candidateId ? { candidateId } : {}), data })
     this.snapshot(candidateId)
+    if (event.type === "report.ready" && this.rt.state.report) this.emit("report.snapshot", { data: { report: reportDTO(this.rt.state) } })
   }
 
   /** Publishes the candidate's current state when it changed (listing fields, status, flags, findings). */
@@ -207,7 +222,8 @@ export class ResearchSession {
       state.candidates.size + state.failedListings.length >= this.input.listings.length &&
       this.rt.loops().length > 0 &&
       this.rt.loops().every((l) => l.status === "done") &&
-      (this.rankingDone || state.candidates.size === 0)
+      (this.rankingDone || state.candidates.size === 0) &&
+      (this.reportDone || !this.rankingDone)
     const timedOut = Date.now() - this.started > (this.input.timeoutMs ?? 120_000)
     if (settled) this.stableSince ||= Date.now()
     else this.stableSince = 0

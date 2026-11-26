@@ -6,15 +6,18 @@ first, then the code. Decided 26 Nov 2026 by Aleksa (Era and Spade concepts in `
 **Writing rule:** no long dashes anywhere (UI text, docs, comments). Use a plain hyphen `-` or rewrite the sentence.
 
 ## 0. Where the style comes from
-Aleksa supplied reference shots of a soft, airy project-management UI (not stored in the repo). We take its **style and
-layout only**: floating white sidebar with round icon buttons, soft warm-to-lilac gradient, pill tabs, collapsible
-translucent section cards with a white title pill and a count circle, a quiet table inside each section, small colored
-pills, lots of white space. We do **not** take its name, logo, people photos, copy or its coral brand color.
+Aleksa supplied reference shots of a soft, airy project-management UI (not stored in the repo). We take its **style,
+layout and colours** (revised 26 Nov after a side-by-side comparison): a floating white glass sidebar with round icon
+buttons, a warm coral-pink to lilac gradient with soft colour blobs, pill tabs, frosted-glass section cards with a
+white title pill and a count circle, a quiet table inside each section, small coloured pills, lots of air. We do
+**not** take its name, logo, people photos or copy. Changes from the reference, on purpose: the orange is pushed
+towards coral red, and text on coral or lilac is black (white text there fails WCAG AA, see 3.2).
 
 ## 1. Principles
-1. **Calm, finance-grade.** Soft surfaces, few colors, lots of air. The data is the loudest thing on the screen.
-2. **Color means something.** Purple = brand and "active". Red = hard flag and danger only. Amber = soft flag and
-   "check before signing" only. Grey with a dashed border = estimate only. Never use these colors for decoration.
+1. **Calm, finance-grade, iOS-soft.** Glass surfaces, few colours, lots of air. The data is the loudest thing.
+2. **Colour means something.** Coral = brand and "active". Lilac = demo data and agent work in progress. Dark red =
+   hard flag only, always with an icon and the words "Hard flag", never colour alone. Amber = soft flag and "check
+   before signing" only. Grey with a dashed border = estimate only.
 3. **Every number shows where it came from.** A number without a source label is a bug.
 4. **Parallel work is visible.** Agent icons appear on the candidate they are working on, live.
 5. **Light mode only** for the hackathon. One theme done well.
@@ -23,87 +26,81 @@ pills, lots of white space. We do **not** take its name, logo, people photos, co
 - **Font: Hanken Grotesk** (Google Fonts), free substitute for HK Grotesk by the same designer, Alfredo Marco Pradil
   (Hanken Design Co.). **License: SIL Open Font License 1.1** (free to use, embed and ship; credit it in the README).
   Load weights 400, 500, 600, 700. Fallback: `ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif`.
+  Checked in the browser on 26 Nov: `document.fonts.check("600 28px Hanken Grotesk")` is true, so the real font is
+  used, not the fallback.
 - Numbers in tables and money: `font-variant-numeric: tabular-nums` so columns line up.
 
-| Token | Size / line height | Weight | Use |
-|---|---|---|---|
-| `text-display` | 28 / 34 px | 600 | Page title ("Live research") |
-| `text-title` | 18 / 24 px | 600 | Section title inside the white pill, report headings |
-| `text-body` | 14 / 20 px | 400 | Table cells, body text |
-| `text-body-strong` | 14 / 20 px | 500 | Candidate name in the first column, button labels |
-| `text-small` | 13 / 18 px | 400 | Breadcrumb, secondary lines (address under a name) |
-| `text-label` | 12 / 16 px | 500 | Table column headers, pills, count circle |
-| `text-micro` | 11 / 14 px | 500 | Source labels (`listing`, `calc`, ...) |
+| Token | Size / line height | Weight | Letter spacing | Use |
+|---|---|---|---|---|
+| `text-display` | 28 / 34 px | 600 | -0.025em | Page title ("Live research") |
+| `text-title` | 18 / 24 px | 600 | -0.015em | Section title inside the white pill (`.title-pill`) |
+| `text-body` | 14 / 20 px | 400 | 0 | Table cells, body text |
+| `text-body-strong` | 14 / 20 px | 500 | 0 | Candidate name, button labels |
+| `text-small` | 13 / 18 px | 400 | 0 | Breadcrumb, secondary lines |
+| `text-label` | 12 / 16 px | 500 | 0 | Table column headers, pills, count circle |
+| `text-micro` | 11 / 14 px | 500 | 0 | Source labels (`listing`, `calc`, ...) |
 
-Letter spacing: 0 everywhere, `-0.01em` on `text-display`. Sentence case everywhere, no ALL CAPS.
+Sentence case everywhere, no ALL CAPS.
 
 ## 3. Color
 ### 3.1 Tokens
-| Token | Hex | Use |
+| Token | Value | Use |
 |---|---|---|
-| `ink` | `#0B0B0F` | Main text, primary button fill, icons |
-| `ink-2` | `#52525E` | Secondary text, breadcrumb, source labels |
-| `ink-3` | `#6B6B78` | Table column headers, placeholder text. **Only on cards or white, never on the raw gradient** (3.94:1 there) |
-| `line` | `#E7E3EE` | Hairlines, table row dividers (optional), input borders |
-| `white` | `#FFFFFF` | Sidebar, pills, round buttons, inputs |
-| `surface` | `rgba(255,255,255,0.60)` | Section cards (translucent over the gradient, 60% minimum) |
-| `bg-from` | `#FCE3DC` | Page gradient, top left (soft pink-red) |
-| `bg-to` | `#E6DAFA` | Page gradient, bottom right (soft lilac) |
-| `purple-600` | `#6A3FD3` | **Brand.** Active tab fill, active sidebar button, count circle, links, focus ring |
-| `purple-700` | `#5629B8` | Text on purple tint, hover on purple fills |
-| `purple-100` | `#EFE6FD` | Purple tint pills, selected row background |
-| `lavender` | `#C19BE9` | Decorative only (gradient accents, illustrations). Never behind text |
-| `red-600` | `#C8281C` | **Hard flag and danger only.** Fill with white text |
-| `red-700` | `#A51C12` | Hard flag text on tint |
-| `red-50` | `#FDE9E7` | Hard flag pill background, rejected row tint |
-| `amber-400` | `#F5A524` | **Soft flag only.** Fill with ink text (count circle of "Check before signing") |
-| `amber-800` | `#8A3B07` | Soft flag text on tint |
-| `amber-50` | `#FEF1D6` | Soft flag and "check before signing" pill background |
-| `est-text` | `#4A4A55` | Estimate value text |
-| `est-bg` | `#F3F3F5` | Estimate chip background |
-| `est-border` | `#84848F` | Estimate chip border, **1px dashed** |
-| `green-700` | `#0B6B3A` | Positive verdict text only ("within budget", "passes") |
-| `green-50` | `#E3F7EA` | Positive verdict pill background |
+| `ink` | `#0B0B0F` | Main text, primary button fill, text on coral and lilac |
+| `ink-2` | `#4A4A56` | Secondary text, breadcrumb |
+| `ink-3` | `#5A5A66` | Table column headers, placeholders. On glass only |
+| `line` | `rgba(11,11,15,0.08)` | Hairlines, input borders |
+| `white` | `#FFFFFF` | Text on black and on dark red, icons on coral |
+| `brand` | `#F25C54` | **Brand coral.** Active tab, active sidebar button, count circles, tool dots, busy ring. Text on it is `ink` |
+| `brand-600` | `#E5483F` | Hover on brand fills |
+| `brand-50` | `#FDE7E3` | Brand tint |
+| `lilac` | `#C19BE9` | "Demo data" pill, running bars on the Timeline. Text on it is `ink` |
+| `lilac-600` | `#8F5FD0` | Left edge of a running Timeline bar |
+| `lilac-100` | `#EEE3FB` | Lilac tint |
+| `hard` | `#9F1B12` | **Hard flag only**, darker than the brand. Fill with white text, or text on `hard-50`; always with the octagon icon |
+| `hard-50` | `#FDE4E1` | Hard flag pill background, rejected row tint |
+| `amber-400` | `#F5A524` | Soft flag fill (count circle of "Check before signing"), ink text |
+| `amber-800` / `amber-50` | `#8A3B07` / `#FEF1D6` | Soft flag pill text / background |
+| `green-700` / `green-50` | `#0B6B3A` / `#E3F7EA` | Positive (high confidence, within budget) |
+| `est-text` / `est-bg` / `est-border` | `#4A4A55` / `#F3F3F5` / `#84848F` | Estimates, 1 px dashed border |
 
-Page background: `linear-gradient(135deg, #FCE3DC 0%, #F3DEEC 45%, #E6DAFA 100%)`, fixed to the viewport
-(`background-attachment: fixed`) so cards scroll over it.
+**Page background** (on `html`, fixed, so the cards scroll over it): a linear gradient `to top right` from coral
+pink `#F7A48C` through `#F7C3C0` and `#F1D2E4` to lilac `#D9BFF4`, with soft radial blobs: coral `#F67B56` at the
+bottom left (62%), a coral band on the left edge, a light peach glow at the top left (`#FBD6C8`), lilac `#C19BE9` at
+the top right (95%), a pink-lilac glow at the centre right, and a white haze in the middle so the cards stay calm.
 
 ### 3.2 Contrast check (WCAG 2.1 AA, computed 26 Nov 2026)
-Text needs 4.5:1 (3:1 for 18 px+ or 14 px bold); UI parts such as borders and focus rings need 3:1. Translucent cards
-were checked as white 60% over each gradient end: `#FEF4F1` (warm side) and `#F5F0FD` (lilac side, the worse one).
+Text needs 4.5:1, UI graphics (icons, borders) 3:1. Glass was checked as white 50% over the coral, pink and lilac
+areas of the gradient (`#FBD2C7`, `#FAE1E7`, `#ECDFFA`).
 
 | Pair | Ratio | Result |
 |---|---|---|
-| `ink` on gradient (both ends) | 16.05 / 14.76 | AA |
-| `ink-2` on card (lilac side) / on raw gradient | 6.88 / 5.78 | AA |
-| `ink-3` on card (lilac side) | 4.69 | AA |
-| `ink-3` on raw gradient | 3.94 | **Fails for small text: do not use there** |
-| white on `ink` (primary button) | 19.64 | AA |
-| white on `purple-600` (active tab, count circle) | 6.43 | AA |
-| `purple-700` on `purple-100` (purple pill) | 7.24 | AA |
-| `purple-600` on card / on raw gradient (links) | 5.75 / 4.83 | AA |
-| white on `lavender` | 2.30 | **Fails: lavender is decorative only** |
-| white on `red-600` (hard flag fill) | 5.56 | AA |
-| `red-700` on `red-50` (hard flag pill) | 6.48 | AA |
-| `ink` on `amber-400` (soft flag fill) | 9.63 | AA |
-| `amber-800` on `amber-50` (soft flag pill) | 6.93 | AA |
-| `est-text` on `est-bg` (estimate) | 7.89 | AA |
-| `green-700` on `green-50` | 5.90 | AA |
-| `est-border` on `est-bg` / on card (UI, 3:1) | 3.34 / 3.30 | AA |
-| `purple-600` focus ring on card (UI, 3:1) | 5.75 | AA |
+| white on `brand` `#F25C54` | 3.26 | **Fails for text**, passes for icons (3:1): the active sidebar icon may be white, tab text may not |
+| `ink` on `brand` | 6.02 | AA: active tab text and count circle digits are black |
+| white on the reference orange `#F67B56` | 2.66 | Fails: one more reason to change it |
+| `ink` on `lilac` `#C19BE9` | 8.54 | AA |
+| white on `hard` `#9F1B12` | 7.96 | AA |
+| `hard` on `hard-50` | 6.58 | AA |
+| `ink-2` on glass (coral / pink / lilac areas) | 5.91 / 6.63 / 6.44 | AA |
+| `ink-3` on glass (coral / pink / lilac areas) | 4.90 / 5.50 / 5.34 | AA |
+| `ink-2` on the raw saturated coral `#F7A58E` | 4.19 | Fails: text never sits there; the top left (breadcrumb, title) is light peach |
+| `amber-800` on `amber-50`, `green-700` on `green-50`, `est-text` on `est-bg` | 6.93 / 5.90 / 7.89 | AA |
 
-Color is never the only signal: every flag pill also has an icon and a word ("Hard flag", "Check before signing").
+Colour is never the only signal: every flag pill also has an icon and a word ("Hard flag", "Check before signing").
 
-## 4. Shape, spacing, elevation
-- **Spacing scale (4 px base):** 4, 8, 12, 16, 20, 24, 32, 40, 48. Default gap inside a card: 16. Between section
-  cards: 12. Page padding: 24 (16 on narrow screens).
-- **Radii:** sidebar 28 px; section card 24 px; candidate card (Cards view) 20 px; inputs and search 9999 (pill);
-  buttons, tabs, pills and count circles 9999; round icon buttons are circles.
-- **Elevation:** almost flat. Only white controls lift a little.
-  - `shadow-soft`: `0 1px 2px rgba(11,11,15,0.04), 0 4px 12px rgba(11,11,15,0.05)` on the sidebar, round buttons,
-    pills, search.
-  - Section cards: no shadow, `1px solid rgba(255,255,255,0.7)` border, `backdrop-filter: blur(16px)`.
-  - Menus and popovers: `0 12px 32px rgba(11,11,15,0.12)`, white, radius 16.
+## 4. Shape, spacing, glass
+- **Spacing scale (4 px base):** 4, 8, 12, 16, 20, 24, 28, 32, 40, 48. Between section cards: 16. Section padding:
+  20 top, 28 sides, 24 bottom. Table rows 56 px. Page padding 24.
+- **Radii (iOS feel, larger):** sidebar 32 px; section card 28 px; candidate card and listing card 24 px; textareas
+  18 px; buttons, tabs, pills, count circles and the search field are full pills; round icon buttons are circles.
+- **Glass** (`.glass`, section cards): `rgba(255,255,255,0.56)`, `backdrop-filter: blur(28px) saturate(170%)`,
+  `1px solid rgba(255,255,255,0.62)`, an inner top highlight `inset 0 1px 0 rgba(255,255,255,0.8)`, a 1 px inner
+  glow, and almost no shadow (`0 1px 2px rgba(11,11,15,0.03)`). The gradient must stay visible through it.
+- **Strong glass** (`.glass-strong`: sidebar, pills, title pills, search, round buttons, candidate cards):
+  `rgba(255,255,255,0.78)`, `blur(24px) saturate(160%)`, `1px solid rgba(255,255,255,0.85)`, inner top highlight,
+  a whisper of shadow.
+- Both live in `@layer components` so Tailwind utilities (for example `hover:bg-white`) can override them.
+- Menus and popovers: white, radius 16, `0 12px 32px rgba(11,11,15,0.12)`.
 - **Hit targets:** 40 px minimum (round icon buttons 44 px).
 
 ## 5. App shell
@@ -122,8 +119,8 @@ Color is never the only signal: every flag pill also has an icon and a word ("Ha
 +--------+--------------------------------------------------------------+
 ```
 - **Sidebar:** floating white panel, 88 px wide, radius 28, 16 px from the window edges, full height, `shadow-soft`.
-  Top: the SuiteSpot mark (a simple purple monogram "S" in a 48 px circle, our own, no photo). Then the nav buttons,
-  44 px white circles with an ink icon, 16 px apart. **Active:** filled `purple-600`, white icon. Hover: `purple-100`.
+  Top: the SuiteSpot mark (a simple coral monogram "S" in a 48 px circle, our own, no photo). Then the nav buttons,
+  44 px strong-glass circles with an ink icon, 16 px apart. **Active:** filled `brand`, white icon (an icon, 3:1 is enough). Hover: white.
   Each button has a tooltip and an `aria-label` with its name. Bottom: a round "collapse" chevron button.
 - **Header (top left):** breadcrumb in `text-small`, `ink-2`, with a `>` chevron; under it the page title in
   `text-display`.
@@ -136,22 +133,22 @@ Color is never the only signal: every flag pill also has an icon and a word ("Ha
 ### 6.1 Buttons
 - **Primary:** `ink` fill, white text `text-body-strong`, height 40, padding 0 18, radius pill, leading icon 16 px.
   Hover: `#26262E`. One primary button per screen.
-- **Secondary:** white fill, ink text, `shadow-soft`, same size. Hover: `purple-100` fill.
+- **Secondary:** strong glass, ink text, same size. Hover: white.
 - **Round icon button:** 40 px (44 in the sidebar) white circle, ink icon 18 px, `shadow-soft`.
-- **Danger action** (rare, for example "Reject candidate" by a human): white fill, `red-700` text and icon; only the
-  confirm step uses the `red-600` fill.
-- Focus: 2 px `purple-600` ring with 2 px offset on every interactive element.
+- **Danger action** (rare, for example "Reject candidate" by a human): strong glass, `hard` text and icon; only the
+  confirm step uses the `hard` fill.
+- Focus: 2 px `ink` outline with 2 px offset on every interactive element.
 
 ### 6.2 Tabs (pill)
 Height 36, padding 0 16, radius pill, icon 16 px + label `text-body-strong`, 8 px apart.
-Inactive: white fill, ink text, `shadow-soft`. **Active: `purple-600` fill, white text and icon.**
+Inactive: strong glass, ink text. **Active: `brand` fill, ink text and icon** (white text on coral fails AA).
 Our tabs: **Cards** (grid icon), **Table** (list icon), **Timeline** (chart-line icon).
 
 ### 6.3 Section card (collapsible group)
 - Translucent `surface` card, radius 24, padding 16 24 24.
 - Header row: chevron button (rotates 90 degrees when collapsed), then the **title pill**: white, radius pill,
   padding 6 14, `text-title`, `shadow-soft`, followed inside the pill by the **count circle**: 20 px circle,
-  `text-label`, white text on `purple-600` (or the status color, see 7.3).
+  `text-label`, ink text on `brand` (or the status colour, see 7.3).
 - Right side of the header: optional summary in `text-small` `ink-2` (for example "2 of 8 candidates"), no "+" button.
 - Collapsed: only the header row shows, card height 56. Collapse and expand animate height in 200 ms.
 
@@ -159,7 +156,7 @@ Our tabs: **Cards** (grid icon), **Table** (list icon), **Timeline** (chart-line
 - No outer border, no zebra stripes, no vertical lines. Column headers in `text-label`, `ink-3`, 12 px below the
   section header. Rows 52 px high, cells `text-body`, vertical center, 16 px horizontal padding.
 - Optional 1 px `line` divider between rows only when a table has more than 6 rows.
-- Row hover: white at 50%. Selected row: `purple-100`.
+- Row hover: white at 50%. Selected row: `lilac-100`.
 - First column: candidate name in `text-body-strong`, a second line in `text-small` `ink-2` (area, m2, floor).
 - Last column: a "more" button (three dots), opens a menu.
 - Money and percentages right aligned, tabular numbers, each followed by its source label (6.6).
@@ -168,12 +165,12 @@ Our tabs: **Cards** (grid icon), **Table** (list icon), **Timeline** (chart-line
 Height 24, padding 0 10, radius pill, `text-label`. Variants:
 | Variant | Fill / text | Use |
 |---|---|---|
-| neutral | white / `ink` with `shadow-soft` | business type, aspect ("Finance", "Location") |
-| brand | `purple-100` / `purple-700` | status "Evaluating", selected filters |
-| hard | `red-50` / `red-700`, alert-octagon icon | "Hard flag: over budget" |
-| soft | `amber-50` / `amber-800`, alert-triangle icon | "Check before signing: power supply" |
-| positive | `green-50` / `green-700`, check icon | "Within budget" |
-| solid hard | `red-600` / white | the one "Rejected" badge on a candidate |
+| neutral | strong glass / `ink` | "no rent stated", counts, metrics |
+| brand | `lilac` / `ink` | "Demo data", peak loops |
+| hard | `hard-50` / `hard`, octagon icon, text starts with "Hard flag" | "Hard flag: monthly cost over budget" |
+| soft | `amber-50` / `amber-800`, triangle icon | "Check before signing: personal guarantee" |
+| positive | `green-50` / `green-700`, check icon | high confidence |
+| solid hard | `hard` / white, octagon icon | the "Rejected" badge on a candidate |
 
 ### 6.6 Source label (on every number)
 - A tiny pill right after the value: `text-micro`, `ink-2`, white 80% fill, 1 px `line` border, radius pill,
@@ -194,7 +191,7 @@ Height 24, padding 0 10, radius pill, `text-label`. Variants:
 - Every participant has one icon (lucide, see 9): Interviewer `message-circle-question`, Scout `search`, Finance
   analyst `calculator`, Lease reader `file-text`, Location analyst `map-pin`, Premises inspector `building-2`, Auditor
   `shield-check`, Ranker `list-ordered`.
-- Icon chip: 32 px white circle, ink icon 16 px, `shadow-soft`. **Busy:** 2 px `purple-600` ring and a slow pulse
+- Icon chip: 32 px white circle, ink icon 16 px, strong glass. **Busy:** 2 px `brand` ring and a slow pulse
   (1.6 s). **Idle:** icon in `ink-3`, no ring. **Halted (agent error):** `ink-3` icon with a small grey "x" dot.
 - **"Agents" column** in the table: overlapping chips (minus 8 px overlap) of the agents working on that candidate
   right now. This shows live parallel work. Chips enter and leave with a 150 ms fade.
@@ -205,7 +202,7 @@ Height 24, padding 0 10, radius pill, `text-label`. Variants:
   value seen in this run. Before the first event the pill shows "0 busy". The same rule applies to "peak N loops in
   parallel" on the Timeline and to every run metric on the report.
 - **Reduced motion:** with `prefers-reduced-motion: reduce` the busy ring does not pulse; it stays a static 2 px
-  `purple-600` ring, so "busy" is still visible.
+  `brand` ring, so "busy" is still visible.
 
 ### 6.9 Cards view
 A responsive grid (min 300 px columns, gap 16) of candidate cards inside each section card: white 80%, radius 20,
@@ -214,21 +211,24 @@ months), flag pills, the agent chips and the score.
 
 ### 6.10 Timeline view (agent lanes over time)
 - One lane per agent loop, grouped by agent, 28 px high, label column 200 px (agent icon + candidate name).
-- Bars: radius pill, `purple-100` fill with `purple-600` 2 px left edge while the loop runs; tool calls as small
-  `purple-600` dots on the bar; a stopped loop ends with a red-600 "x" marker at the cancellation time.
+- Running bars: radius pill, `lilac` 60% fill with a 2 px `lilac-600` left edge and a small pulsing coral dot at the
+  growing end. Tool calls: coral dots, the waiting time as a coral 35% segment. A cut loop: `hard` 25% fill with a
+  `hard` edge and a dark red "x" marker at the cancellation time.
+- Rejections: a dashed `hard` line plus a label "Hard flag: demo-07 rejected" with the octagon icon, in its own row
+  above the time axis (it never covers the axis).
 - Time axis in `text-label` `ink-3`, seconds since start. A vertical `ink` hairline marks "now" during a live run.
-- Above the lanes, a pill with "peak N loops in parallel".
+- Above the lanes, a lilac pill with "peak N loops in parallel".
 
 ### 6.11 Notices
 - **Not financial or legal advice:** a white pill banner with an info icon at the top of every report, plus the same
   line in the report footer. Text: "Not financial or legal advice. SuiteSpot shows numbers with their sources; the
   decision is yours."
-- **Demo data:** a `purple-100` / `purple-700` pill "Demo data" next to the page title whenever synthetic records are
+- **Demo data:** a `lilac` / `ink` pill "Demo data" next to the page title whenever synthetic records are
   shown.
 
 ### 6.12 Inputs (questionnaire, listing paste)
 White fill, radius 16 (textareas) or pill (single-line inputs), 1 px `line` border, height 44, `text-body`. Focus:
-`purple-600` border plus focus ring. Labels above in `text-label` `ink`. Errors: `red-700` text under the field with
+`brand` border plus focus outline. Labels above in `text-label` `ink`. Errors: `hard` text under the field with
 an icon. The listing paste screen shows 1 to 8 white cards, each with a textarea for the listing text and an optional
 "Add lease draft" textarea.
 
@@ -251,14 +251,14 @@ Order and count-circle color:
 | Section | Count circle | Default | Contains |
 |---|---|---|---|
 | Pending | `ink-3` fill, white text | expanded | Candidates found, not yet evaluated |
-| Evaluating | `purple-600` | expanded | At least one evaluator loop running |
+| Evaluating | `brand`, ink digits | expanded | At least one evaluator loop running |
 | Check before signing | `amber-400`, ink text | expanded | Scored, but with one or more soft flags |
-| Scored | `purple-600` | expanded | Scored, no open soft flags |
-| Rejected | `red-600` | **expanded** | A hard flag cancelled the candidate |
+| Scored | `brand`, ink digits | expanded | Scored, no open soft flags |
+| Rejected | `hard`, white digits | **expanded** | A hard flag cancelled the candidate |
 
 **Rejected is expanded by default: it is the key moment of the demo.** Every rejected row shows the hard flag reason
 (the hard pill with the claim, its source label and "by <agent>") and the agents whose loops were cancelled on that
-candidate: their icon chips in `ink-3` with a small `red-600` "x" dot and the word "cancelled", plus the time from
+candidate: their icon chips in `ink-3` with a small `hard` "x" dot and the word "cancelled", plus the time from
 the flag to the stop (for example "stopped 2 loops in 31 ms").
 
 Note: "Check before signing" is a **view group**, not a domain status. The domain statuses stay
@@ -269,51 +269,20 @@ Candidate (name + area, m2, floor) / Monthly cost / Rent share of revenue / Exit
 Agents (live chips) / Score / more. Reports drop the Agents column and add Rank.
 
 ## 8. Motion
-- Durations: 150 ms (hover, chips), 200 ms (collapse, tabs), 300 ms (a candidate moving to another section, with a
-  layout animation so the eye follows it).
-- Easing: `cubic-bezier(0.2, 0, 0, 1)`.
-- `prefers-reduced-motion: reduce`: the agent ring pulse is off (static ring instead), no layout animation,
-  instant changes.
+- Every interactive element (buttons, links, inputs, tabs) transitions background, colour, border, shadow, opacity and
+  transform in **200 ms** with the iOS ease `cubic-bezier(0.2, 0, 0, 1)`; buttons scale to 0.97 while pressed.
+- Agent chips fade and scale in (200 ms); the busy ring pulses coral (1.6 s).
+- `prefers-reduced-motion: reduce`: all transitions off, no pulse (a static ring instead), no press scale.
 
 ## 9. Assets and libraries
-- Icons: **lucide** (`lucide-react`, ISC license), 1.75 px stroke. Not installed yet; add it when the UI is built.
+- Icons: **lucide** (`lucide-react` 1.72.0, ISC license), 1.75 px stroke.
   Icon names in this file follow lucide.dev; a few were renamed between lucide versions, so check each name against
   the installed version and keep the closest match.
 - Font: Hanken Grotesk via Google Fonts (OFL 1.1).
 - No photos of people, no stock images. Agents are icons, the brand is a monogram.
 - Credit both in the README.
 
-## 10. Tokens for Tailwind 4 (`web/src/index.css`)
-To be pasted when the design pass starts (not applied yet):
-```css
-@import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap");
-@import "tailwindcss";
+## 10. Tokens for Tailwind 4
+The tokens, gradient, glass classes and motion rules are implemented in `web/src/index.css` (`@theme` block and
+`@layer components`). That file must match this document; change this document first.
 
-@theme {
-  --font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
-  --color-ink: #0B0B0F;
-  --color-ink-2: #52525E;
-  --color-ink-3: #6B6B78;
-  --color-line: #E7E3EE;
-  --color-bg-from: #FCE3DC;
-  --color-bg-to: #E6DAFA;
-  --color-purple-600: #6A3FD3;
-  --color-purple-700: #5629B8;
-  --color-purple-100: #EFE6FD;
-  --color-lavender: #C19BE9;
-  --color-red-600: #C8281C;
-  --color-red-700: #A51C12;
-  --color-red-50: #FDE9E7;
-  --color-amber-400: #F5A524;
-  --color-amber-800: #8A3B07;
-  --color-amber-50: #FEF1D6;
-  --color-est-text: #4A4A55;
-  --color-est-bg: #F3F3F5;
-  --color-est-border: #84848F;
-  --color-green-700: #0B6B3A;
-  --color-green-50: #E3F7EA;
-  --radius-card: 24px;
-  --radius-sidebar: 28px;
-  --shadow-soft: 0 1px 2px rgba(11, 11, 15, 0.04), 0 4px 12px rgba(11, 11, 15, 0.05);
-}
-```

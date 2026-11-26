@@ -1,4 +1,4 @@
-import { X } from "lucide-react"
+import { OctagonAlert, X } from "lucide-react"
 import type { LoopView, ResearchState } from "./research-state"
 import { AGENTS, Pill, agentIcon, cx } from "./ui"
 
@@ -11,7 +11,8 @@ const LABEL_W = 200
  * where loop.cancelled landed, and a dashed line where a candidate was rejected.
  */
 export function Timeline({ s, now }: { s: ResearchState; now: number }) {
-  const loops = Object.values(s.loops)
+  // Loops of AI agents, plus the Auditor's plain-code audits (a short span each).
+  const loops = [...Object.values(s.loops), ...Object.values(s.spans)]
   const end = s.done ? s.lastAt : Math.max(now, s.lastAt)
   const span = Math.max(4000, Math.ceil((end + 400) / 1000) * 1000)
   const x = (t: number) => `${(Math.min(t, span) / span) * 100}%`
@@ -22,9 +23,9 @@ export function Timeline({ s, now }: { s: ResearchState; now: number }) {
   const rejections = Object.values(s.rejections)
 
   return (
-    <section className="surface rounded-[24px] px-6 pt-5 pb-6" aria-label="Timeline: agent loops over time">
+    <section className="glass rounded-[28px] px-6 pt-5 pb-6" aria-label="Timeline: agent loops over time">
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center rounded-full bg-white px-3.5 py-1.5 text-lg leading-6 font-semibold shadow-[var(--shadow-soft)]">Agent loops over time</span>
+        <span className="inline-flex items-center title-pill rounded-full glass-strong px-3.5 py-1.5 text-lg leading-6 font-semibold">Agent loops over time</span>
         <Pill variant="brand" icon={false}>
           peak {s.peak} loops in parallel
         </Pill>
@@ -48,8 +49,8 @@ export function Timeline({ s, now }: { s: ResearchState; now: number }) {
           {/* rejection labels get their own row, so they never cover the time axis */}
           <div className="relative mb-1 h-6" style={{ marginLeft: LABEL_W }}>
             {rejections.map((r) => (
-              <span key={r.candidateId} className="absolute top-0 -translate-x-1/2 rounded-full bg-red-600 px-2 py-0.5 text-[11px] font-medium whitespace-nowrap text-white" style={{ left: x(r.at) }}>
-                {r.candidateId} rejected
+              <span key={r.candidateId} className="absolute top-0 inline-flex -translate-x-1/2 items-center gap-1 rounded-full bg-hard px-2 py-0.5 text-[11px] font-medium whitespace-nowrap text-white" style={{ left: x(r.at) }}>
+                <OctagonAlert size={12} strokeWidth={2} aria-hidden /> Hard flag: {r.candidateId} rejected
               </span>
             ))}
           </div>
@@ -68,7 +69,7 @@ export function Timeline({ s, now }: { s: ResearchState; now: number }) {
                 <span key={t} className="absolute inset-y-0 w-px bg-ink/5" style={{ left: x(t) }} />
               ))}
               {rejections.map((r) => (
-                <span key={r.candidateId} className="absolute inset-y-0 z-10 border-l border-dashed border-red-600" style={{ left: x(r.at) }} />
+                <span key={r.candidateId} className="absolute inset-y-0 z-10 border-l border-dashed border-hard" style={{ left: x(r.at) }} />
               ))}
               {!s.done && <span className="absolute inset-y-0 z-10 w-px bg-ink" style={{ left: x(now) }} aria-label="now" />}
             </div>
@@ -102,34 +103,34 @@ function Lane({ l, now, x, w }: { l: LoopView; now: number; x: (t: number) => st
       <div className="flex shrink-0 items-center gap-1.5 truncate pr-3 text-[13px] text-ink" style={{ width: LABEL_W }} title={l.key}>
         <span className="tnum">{candidate}</span>
         {attempt && attempt !== "1" && <span className="text-ink-3">try {attempt}</span>}
-        {cut && <span className="text-xs font-medium text-red-700">cut</span>}
+        {cut && <span className="text-xs font-medium text-hard">cut</span>}
       </div>
       <div className="relative h-full flex-1">
         <div
           className={cx(
             "absolute top-1/2 h-4 -translate-y-1/2 rounded-full border-l-2",
-            cut ? "border-red-600 bg-red-50" : "border-purple-600 bg-purple-100",
+            cut ? "border-hard bg-hard/25" : "border-lilac-600 bg-lilac/60",
           )}
-          style={{ left: x(l.start), width: w(l.start, stop) }}
+          style={{ left: x(l.start), width: w(l.start, stop), minWidth: 8 }}
           title={`${l.agent} on ${candidate}: ${l.start} ms to ${l.end ?? "now"}${cut ? `, cancelled ${l.cancelWhere} at ${l.cancelledAt} ms` : ""}`}
         />
         {l.end === undefined && (
           // still running: a small pulsing dot at the growing end of the bar
-          <span className="ring-busy absolute top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-600" style={{ left: x(stop) }} />
+          <span className="ring-busy absolute top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand" style={{ left: x(stop) }} />
         )}
         {l.tools.map((t, i) => (
           <span key={i}>
             <span
-              className="absolute top-1/2 h-2 -translate-y-1/2 rounded-full bg-purple-600/30"
+              className="absolute top-1/2 h-2 -translate-y-1/2 rounded-full bg-brand/35"
               style={{ left: x(t.at), width: w(t.at, t.end ?? stop) }}
               title={`${t.name}: ${t.at} ms to ${t.end ?? "now"}`}
             />
-            <span className="absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-purple-600" style={{ left: x(t.at) }} />
+            <span className="absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-brand" style={{ left: x(t.at) }} />
           </span>
         ))}
         {cut && (
           <span
-            className="absolute top-1/2 z-20 flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-red-600 text-white shadow-[var(--shadow-soft)]"
+            className="absolute top-1/2 z-20 flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-hard text-white shadow-[var(--shadow-soft)]"
             style={{ left: x(l.cancelledAt!) }}
             title={`Cancelled ${l.cancelWhere} at ${l.cancelledAt} ms`}
           >
@@ -142,13 +143,13 @@ function Lane({ l, now, x, w }: { l: LoopView; now: number; x: (t: number) => st
 }
 
 function Legend({ kind }: { kind: "bar" | "tool" | "cut" | "reject" }) {
-  if (kind === "bar") return <span className="inline-block h-3 w-6 rounded-full border-l-2 border-purple-600 bg-purple-100" />
-  if (kind === "tool") return <span className="inline-block h-2.5 w-2.5 rounded-full bg-purple-600" />
+  if (kind === "bar") return <span className="inline-block h-3 w-6 rounded-full border-l-2 border-lilac-600 bg-lilac/60" />
+  if (kind === "tool") return <span className="inline-block h-2.5 w-2.5 rounded-full bg-brand" />
   if (kind === "cut")
     return (
-      <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-white">
+      <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-hard text-white">
         <X size={10} strokeWidth={3} />
       </span>
     )
-  return <span className="inline-block h-3 border-l border-dashed border-red-600" />
+  return <span className="inline-block h-3 border-l border-dashed border-hard" />
 }

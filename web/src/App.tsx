@@ -1,6 +1,7 @@
 import { Activity, ChartLine, FileChartColumn, History, Info, LayoutGrid, List, Plus, Search, SlidersHorizontal, type LucideIcon } from "lucide-react"
 import { useCallback, useEffect, useReducer, useRef, useState } from "react"
 import { AssumptionsScreen } from "./Assumptions"
+import { ReportsScreen } from "./Reports"
 import { CandidateSections, MetricsStrip, type View } from "./LiveResearch"
 import { NewResearch } from "./NewResearch"
 import { applyEvent, initialResearch, type ResearchState } from "./research-state"
@@ -64,9 +65,10 @@ export function App() {
   // ?autorun=demo starts the demo at once (used for the screenshots).
   const autorun = useRef(false)
   useEffect(() => {
-    if (!autorun.current && params.get("autorun") === "demo") {
+    const mode = params.get("autorun")
+    if (!autorun.current && (mode === "demo" || mode === "live")) {
       autorun.current = true
-      void start({ source: "demo" })
+      void start(mode === "live" ? { mode: "live", source: "demo" } : { source: "demo" })
     }
   }, [start])
 
@@ -116,7 +118,7 @@ export function App() {
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <AgentStack s={research} />
-            <label className="flex h-10 w-[240px] items-center gap-2 rounded-full bg-white px-4 shadow-[var(--shadow-soft)]">
+            <label className="flex h-10 w-[240px] items-center gap-2 rounded-full glass-strong px-4">
               <Search size={16} className="text-ink-2" aria-hidden />
               <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Search candidates..." aria-label="Search candidates" className="w-full bg-transparent text-sm outline-none placeholder:text-ink-3" />
             </label>
@@ -145,13 +147,13 @@ export function App() {
               )}
             </>
           )}
-          {screen === "reports" && <Empty text="Reports come in the next step: the ranked candidates with every figure and its source, ready to share." />}
+          {screen === "reports" && <ReportsScreen s={research} />}
           {screen === "history" && <Empty text="History of research runs comes in a later step (a local JSON file in demo mode)." />}
           {screen === "assumptions" && <AssumptionsScreen />}
         </main>
 
         <footer className="mt-6 flex justify-center">
-          <p className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-[13px] text-ink-2 shadow-[var(--shadow-soft)]">
+          <p className="inline-flex items-center gap-2 rounded-full glass-strong px-4 py-2 text-[13px] text-ink-2">
             <Info size={16} className="text-ink" aria-hidden />
             Not financial or legal advice. SuiteSpot shows numbers with their sources; the decision is yours.
           </p>
@@ -163,8 +165,8 @@ export function App() {
 
 function Sidebar({ screen, onSelect }: { screen: Screen; onSelect: (s: Screen) => void }) {
   return (
-    <aside className="fixed top-4 bottom-4 left-4 z-30 flex w-[88px] flex-col items-center gap-4 rounded-[28px] bg-white py-5 shadow-[var(--shadow-soft)]" aria-label="Main">
-      <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-purple-600 text-xl font-bold text-white" aria-label="SuiteSpot">
+    <aside className="fixed top-4 bottom-4 left-4 z-30 flex w-[88px] flex-col items-center gap-4 rounded-[32px] glass-strong py-6" aria-label="Main">
+      <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-brand text-xl font-bold text-white" aria-label="SuiteSpot">
         S
       </div>
       {NAV.map(({ id, label, icon: Icon }) => (
@@ -177,7 +179,7 @@ function Sidebar({ screen, onSelect }: { screen: Screen; onSelect: (s: Screen) =
           onClick={() => onSelect(id)}
           className={cx(
             "flex h-11 w-11 items-center justify-center rounded-full transition-colors duration-150",
-            screen === id ? "bg-purple-600 text-white" : "bg-white text-ink shadow-[var(--shadow-soft)] hover:bg-purple-100",
+            screen === id ? "bg-brand text-white" : "glass-strong text-ink hover:bg-white",
           )}
         >
           <Icon size={18} strokeWidth={1.75} />
@@ -204,7 +206,7 @@ function Tabs({ tab, onSelect }: { tab: Tab; onSelect: (t: Tab) => void }) {
           onClick={() => onSelect(id)}
           className={cx(
             "inline-flex h-9 items-center gap-2 rounded-full px-4 text-sm font-medium transition-colors duration-200",
-            tab === id ? "bg-purple-600 text-white" : "bg-white text-ink shadow-[var(--shadow-soft)] hover:bg-purple-100",
+            tab === id ? "bg-brand text-ink" : "glass-strong text-ink hover:bg-white",
           )}
         >
           <Icon size={16} strokeWidth={1.75} /> {label}
@@ -224,7 +226,7 @@ function AgentStack({ s }: { s: ResearchState }) {
           <AgentChip key={a.name} name={a.name} state={running.some((l) => l.agent === a.name) ? "busy" : "idle"} />
         ))}
       </div>
-      <span className="tnum inline-flex h-8 items-center rounded-full bg-white px-3 text-xs font-medium text-ink shadow-[var(--shadow-soft)]" aria-live="polite">
+      <span className="tnum inline-flex h-8 items-center rounded-full glass-strong px-3 text-xs font-medium text-ink" aria-live="polite">
         {s.busy} busy{s.peak > 0 ? `, peak ${s.peak}` : ""}
       </span>
     </div>
@@ -232,5 +234,5 @@ function AgentStack({ s }: { s: ResearchState }) {
 }
 
 function Empty({ text }: { text: string }) {
-  return <div className="surface rounded-[24px] px-6 py-10 text-center text-sm text-ink-2">{text}</div>
+  return <div className="glass rounded-[28px] px-6 py-10 text-center text-sm text-ink-2">{text}</div>
 }

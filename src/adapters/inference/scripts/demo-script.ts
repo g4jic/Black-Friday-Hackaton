@@ -4,7 +4,7 @@ import { scoutDemoScript } from "./scout-script.js"
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
-export type DemoLatency = { scout?: (listingId: string) => number; leaseReader?: number; financeStep?: number }
+export type DemoLatency = { scout?: (listingId: string) => number; leaseReader?: number; financeStep?: number; reportWriter?: number }
 
 /** Demo-mode "model" for the Lease reader: replays the scripted answer for the lease id in the message. */
 export function leaseReaderDemoScript(answers: Record<string, unknown>, latencyMs = 0): MockScript {
@@ -38,16 +38,41 @@ export function financeDemoScript(stepLatencyMs = 0): MockScript {
   }
 }
 
+/**
+ * Demo-mode "model" for the Report writer: builds the report only from the FACTS in its message (rank facts for the
+ * top 3, then checks, rejections and unknowns), copying the fact texts, so it passes the Auditor. It computes nothing.
+ */
+export function reportWriterDemoScript(latencyMs = 0): MockScript {
+  return async (input): Promise<MockReply> => {
+    if (latencyMs > 0) await sleep(latencyMs)
+    const facts = [...lastUserText(input).matchAll(/^(F\d+) \[(\w+)\] ((?:demo|pasted)-[a-z0-9]+)\b(.*)$/gm)].map((m) => ({ id: m[1]!, kind: m[2]!, candidateId: m[3]!, text: `${m[3]}${m[4]}` }))
+    const ranks = facts.filter((f) => f.kind === "rank").slice(0, 3)
+    const reasonOf = (id: string) => facts.find((f) => f.kind === "reason" && f.candidateId === id)
+    const sentence = (fs: { id: string; text: string }[]) => ({ text: fs.map((f) => f.text).join(" "), facts: fs.map((f) => f.id) })
+    return {
+      text: JSON.stringify({
+        recommended: ranks.map((f) => f.candidateId),
+        recommendation: ranks.map((r) => sentence([r, ...(reasonOf(r.candidateId) ? [reasonOf(r.candidateId)!] : [])])),
+        checkBeforeSigning: facts.filter((f) => f.kind === "check").slice(0, 4).map((f) => sentence([f])),
+        rejected: facts.filter((f) => f.kind === "rejected").map((f) => sentence([f])),
+        unknowns: facts.filter((f) => f.kind === "unknown").slice(0, 4).map((f) => sentence([f])),
+      }),
+    }
+  }
+}
+
 /** One MockScript for the whole demo room: routes each request to the scripted agent by its instruction. */
 export function demoRoomScript(answers: { scout: Record<string, unknown>; lease: Record<string, unknown> }, latency: DemoLatency = {}): MockScript {
   const scout = scoutDemoScript(answers.scout, { latencyMs: latency.scout })
   const lease = leaseReaderDemoScript(answers.lease, latency.leaseReader)
   const finance = financeDemoScript(latency.financeStep)
+  const report = reportWriterDemoScript(latency.reportWriter)
   return (input: InferenceInput) => {
     const role = developerText(input)
     if (role.startsWith("You are the Scout")) return scout(input)
     if (role.startsWith("You are the Lease reader")) return lease(input)
     if (role.startsWith("You are the Finance analyst")) return finance(input)
+    if (role.startsWith("You are the Report writer")) return report(input)
     return { text: "mock answer" }
   }
 }

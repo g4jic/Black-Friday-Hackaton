@@ -1,4 +1,4 @@
-import { Calculator, FileText, ListOrdered, Search, OctagonAlert, TriangleAlert, Check, Info, type LucideIcon } from "lucide-react"
+import { Calculator, FileText, ListOrdered, PenLine, Search, ShieldCheck, OctagonAlert, TriangleAlert, Check, Info, type LucideIcon } from "lucide-react"
 import type { ReactNode } from "react"
 import type { FieldDTO, SourceDTO, ValueDTO } from "./types"
 
@@ -8,6 +8,8 @@ export const AGENTS: { name: string; short: string; icon: LucideIcon }[] = [
   { name: "Finance analyst", short: "Finance", icon: Calculator },
   { name: "Lease reader", short: "Lease", icon: FileText },
   { name: "Ranker", short: "Ranker", icon: ListOrdered },
+  { name: "Report writer", short: "Report", icon: PenLine },
+  { name: "Auditor", short: "Auditor", icon: ShieldCheck },
 ]
 export const agentIcon = (name: string): LucideIcon => AGENTS.find((a) => a.name === name)?.icon ?? Info
 
@@ -102,14 +104,15 @@ export function Sourced({ field, render }: { field: FieldDTO | undefined; render
 
 type PillVariant = "neutral" | "brand" | "hard" | "soft" | "positive" | "solid-hard"
 const PILL: Record<PillVariant, string> = {
-  neutral: "bg-white text-ink shadow-[var(--shadow-soft)]",
-  brand: "bg-purple-100 text-purple-700",
-  hard: "bg-red-50 text-red-700",
+  neutral: "glass-strong text-ink",
+  brand: "bg-lilac text-ink",
+  hard: "bg-hard-50 text-hard",
   soft: "bg-amber-50 text-amber-800",
   positive: "bg-green-50 text-green-700",
-  "solid-hard": "bg-red-600 text-white",
+  "solid-hard": "bg-hard text-white",
 }
-const PILL_ICON: Partial<Record<PillVariant, LucideIcon>> = { hard: OctagonAlert, soft: TriangleAlert, positive: Check }
+/** Hard flags always carry an icon (never colour alone); the text says "Hard flag" where the flag is named. */
+const PILL_ICON: Partial<Record<PillVariant, LucideIcon>> = { hard: OctagonAlert, "solid-hard": OctagonAlert, soft: TriangleAlert, positive: Check }
 
 export function Pill({ variant = "neutral", children, title, icon = true }: { variant?: PillVariant; children: ReactNode; title?: string; icon?: boolean }) {
   const Icon = icon ? PILL_ICON[variant] : undefined
@@ -129,18 +132,18 @@ export function AgentChip({ name, state, size = 32 }: { name: string; state: "bu
       title={`${name}${state === "busy" ? " (working)" : state === "cancelled" ? " (cancelled)" : ""}`}
       aria-label={`${name} ${state}`}
       className={cx(
-        "fade-in relative inline-flex shrink-0 items-center justify-center rounded-full bg-white shadow-[var(--shadow-soft)]",
+        "fade-in relative inline-flex shrink-0 items-center justify-center rounded-full glass-strong",
         state === "busy" && "ring-busy",
       )}
       style={{ width: size, height: size }}
     >
       <Icon size={size / 2} strokeWidth={1.75} className={state === "busy" ? "text-ink" : "text-ink-3"} />
-      {state === "cancelled" && <span className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-red-600" />}
+      {state === "cancelled" && <span className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-hard" />}
     </span>
   )
 }
 
 export function CountCircle({ n, tone }: { n: number; tone: "ink3" | "purple" | "amber" | "red" }) {
-  const cls = { ink3: "bg-ink-3 text-white", purple: "bg-purple-600 text-white", amber: "bg-amber-400 text-ink", red: "bg-red-600 text-white" }[tone]
+  const cls = { ink3: "bg-ink-3 text-white", purple: "bg-brand text-ink", amber: "bg-amber-400 text-ink", red: "bg-hard text-white" }[tone]
   return <span className={cx("tnum inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-medium", cls)}>{n}</span>
 }
