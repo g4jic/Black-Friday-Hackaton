@@ -12,8 +12,8 @@ plain hyphen `-` or rewrite the sentence.
 - We work in **Claude Code CLI in PowerShell** (Windows). Give PowerShell commands.
 
 ## 1. The product in one sentence
-A small business fills in a questionnaire and either submits a commercial space it is considering (mode A) or asks
-SuiteSpot to find candidates (mode B). A team of Mozaik agents evaluates every candidate **at the same time** from
+A small business fills in a questionnaire and either pastes the text of 1 to 8 listings it is considering (mode A) or
+asks SuiteSpot to find candidates (mode B). A team of Mozaik agents evaluates every candidate **at the same time** from
 different angles and answers one question: **"Is this lease a good financial decision for my business?"** Every number
 points to its source or is clearly marked as an estimate with its method. The output always says it is not financial
 or legal advice.
@@ -26,30 +26,56 @@ The finance analysis is the core of the result; location and premises findings c
 - Today they compare listings by asking rent only. They miss hidden costs (service charges, VAT on rent, deposit,
   agency fee, indexation over the term, utilities, fit-out), risky lease clauses (personal guarantee, long notice,
   tenant pays structural repairs) and whether the location can generate the revenue the rent requires.
-- Mode A is mode B with one candidate. **Build one pipeline, not two.**
+- **Mode A takes 1 to 8 listings at once** (decided 26 Nov). The user pastes the text of each listing they are
+  considering, and each one becomes a candidate. So real data also has volume: candidates are evaluated in parallel, a
+  hard flag cancels a candidate mid-run, and the Ranker compares them. One listing is just the special case.
+- The user pastes **text, not a link**. Our server never opens pages of listing sites.
+- Mode B (SuiteSpot finds candidates) feeds the same pipeline. It runs on synthetic listings in demo mode and goes live
+  only for a site that gives us written permission (section 4.1). **Build one pipeline, not two.**
 
 ## 3. Scope
 
 **Must have (the demo depends on it)**
-- Web app (English), designed from the start (look defined in `DESIGN.md`): questionnaire, mode choice, follow-up
-  questions, live research view (agents working in parallel, candidates appearing, flags, cancellations), ranked report
-  with sources, research history.
-- Live research: web search for listings, OpenStreetMap data for the area, estimates with method and sources.
+- Web app (English), designed from the start (look defined in `DESIGN.md`): questionnaire, mode choice, listing paste
+  (1 to 8 listings, each with an optional lease draft), follow-up questions, live research view (agents working in
+  parallel, candidates appearing, flags, cancellations), ranked report with sources, research history.
+- Real research in mode A: 1 to 8 pasted listings, OpenStreetMap data for the area, estimates with method and sources.
+  Live web search for listings (mode B) only for a site that gave written permission (section 4.1).
 - Candidate pipeline with parallel evaluators, hard and soft flags, cancellation on hard flag, auditor, scoring.
-- **Demo mode (keyless, deterministic):** a labelled synthetic dataset plus one recorded real research run, replayed
-  without any API key. One command. This is also what the judges run.
+- **Demo mode (keyless, deterministic):** a labelled synthetic dataset (optionally plus one recorded real run that
+  keeps only links and extracted facts, section 4.5), replayed without any API key. One command. This is also what
+  the judges run.
 - History of research runs: Supabase in live mode, a local JSON file in demo mode.
 - Mozaik Cloud tracing (automatic when paired) and our own JSONL trace.
 - Unit tests for the domain rules; one end-to-end demo-mode run as `npm test`.
 - Deployed live link (Railway) running demo mode by default.
 
 **Out of scope (say so in the README)**
-- Scraping listing portals beyond what web search returns and public listing pages. Photo analysis. Legal verdicts on
-  permitted use. Stripe and Solana (no natural fit for this problem).
+- Automated reading of listing portals without the site's written permission (we read their terms of use, see
+  section 4.1). Photo analysis. Legal verdicts on permitted use. Stripe and Solana (no natural fit for this problem).
 
-## 4. Data: live, on demand, nothing stored except results
+## 4. Data: real when the user brings it, synthetic in demo, nothing stored except results
 
-### 4.1 Listings (mode B): live web search
+### 4.1 Listings
+**Decision (26 Nov, after reading the terms of use, see `PROGRESS.md`):** 4zida.rs forbids automated use by the letter
+of its terms; oglasi.rs and svenekretnine.com are unclear and restrict copying. So we do not read listing sites
+automatically.
+
+**Mode A: pasted listings (real data, 1 to 8 per run)**
+- The user pastes the text of each listing. Each paste becomes one candidate; there is no URL and nothing is fetched.
+- The Scout reads each pasted text and fills the listing fields, one loop per pasted listing (section 7). Every
+  value's source is the pasted text: `{ kind: "listing", ref: "pasted-<n>", field, line }`. Values the text does not
+  state stay `null`.
+- **Personal data:** code removes phone numbers, emails and agents' names from the pasted text before it enters state.
+- The same noise filter as below runs on pasted listings (for sale, apartments, placeholder prices, wrong city or
+  size), but in mode A it produces a visible finding instead of silently dropping the user's listing.
+
+**Demo mode (what the judges run):** synthetic listings in exactly the same shape as pasted ones, every record
+`"synthetic": true`, the UI shows a "Demo data" badge.
+
+**Mode B: live web search, OFF by default.** Enabled only for a site that gives us written permission (permission
+emails drafted on 26 Nov, Aleksa sends them), and only for that site through `allowed_domains`. Until then mode B
+runs on synthetic listings. The design below stays for that case.
 - Mozaik only sends our own function tools to the model, so Anthropic's server-side `web_search` tool cannot pass
   through Mozaik directly. Implement a Mozaik `FunctionTool` named `search_listings` whose `invoke` calls the Anthropic
   Messages API directly (`@anthropic-ai/sdk`, already a dependency of `@mozaik-ai/core`) with the server tool
@@ -86,15 +112,20 @@ The finance analysis is the core of the result; location and premises findings c
 - Estimates are computed by code, never by the model, and the UI marks them visually as estimates.
 
 ### 4.4 Lease
-- Mode A: the user uploads or pastes the lease draft. The Lease reader analyses it clause by clause.
-- Mode B: live listings have no lease. The Lease reader produces "questions to ask the landlord before signing",
-  based on the business and the listing.
+- Per candidate, not per run. In mode A the user can paste a lease draft next to any of the 1 to 8 listings (optional).
+- Candidate with a pasted lease draft: the Lease reader analyses it clause by clause, citing the clause.
+- Candidate without a lease (every mode B candidate, and mode A listings without a draft): the Lease reader produces
+  "questions to ask the landlord before signing", based on the business and the listing.
+- Demo mode includes at least one synthetic lease with a risky clause.
 
 ### 4.5 Demo mode data (synthetic, labelled)
 - `data/demo/` holds a synthetic city scenario that shows the app at its best (several candidates, one hard-flag
-  cancellation, one fair-price estimate, a lease with a risky clause) and one **recorded real research run**
-  (search results and OSM responses saved as fixtures).
+  cancellation, one fair-price estimate, a lease with a risky clause). Synthetic listings have exactly the shape of
+  pasted listings (section 4.1), so demo and mode A run the same code.
 - Every synthetic record has `"synthetic": true`, and the UI shows a "Demo data" badge.
+- **Recorded real run (optional):** it never enters the public repo with listing text or photos. If we make one, it
+  keeps only links and the extracted facts (price, m2, floor, with their field names) plus OSM responses; otherwise
+  it is replaced by synthetic data.
 
 ### 4.6 Our assumptions (labelled, user can change)
 `config/weights.json`: aspect weights per business type and the rent-to-revenue thresholds. Shown in the UI as
@@ -131,9 +162,9 @@ model calls, default 4), `searchBudget`, `trace`.
 |---|---|---|---|
 | User | human | - | Answers questions, picks the mode, reads the report. |
 | Interviewer | AI | `profile.submitted` | Asks 2 to 4 follow-up questions that depend on the business, then writes the requirements list. |
-| Scout | AI + tools | `requirements.ready` (mode B) | Uses `search_listings` to find listings matching the profile, extracts fields with URLs, publishes `candidate.found` **one by one**, so evaluation starts while the search continues. |
+| Scout | AI + tools | `requirements.ready` | Mode A and demo: one loop per pasted (or synthetic) listing, in parallel; reads the text, extracts the fields with `pasted-<n>` + line as source, publishes `candidate.found` **as soon as each listing is read**, so evaluation of the first candidates starts while the others are still being read. Mode B (only for a site with written permission): uses `search_listings`, publishes candidates one by one in the same way. |
 | Finance analyst | AI + tools | `candidate.found` | Answers the core question with the calculator tools. Explains; never computes numbers itself. |
-| Lease reader | AI | `candidate.found` | Mode A: clause analysis with citations. Mode B: questions to ask the landlord. |
+| Lease reader | AI | `candidate.found` | Per candidate: with a pasted lease draft, clause analysis with citations; without one, questions to ask the landlord. |
 | Location analyst | AI + tools | `candidate.found` | Goal: can this location produce the revenue the rent requires? Uses OSM tools and the location requirements. |
 | Premises inspector | AI | `candidate.found` | Listing text: floor, storefront, condition, technical fit, previous use (existing installations lower fit-out cost), signs of frequent tenant changes. Checks premises requirements. |
 | Auditor | AI + code | `finding.added` | Code checks the source exists and the value matches; AI checks the claim follows from the cited text. Also flags **contradictions inside a listing** (tested: title says private parking, feature list says shared parking; floor count conflicts with the description) as "check before signing". Rejected findings go back to the author. |
@@ -151,8 +182,9 @@ receives "Candidate rejected by <aspect>: <reason>. Stop and answer 'stopped'." 
 ## 9. Web app
 - Stack: Vite + React + TypeScript + Tailwind for the frontend; a small Node server (Fastify) that runs the Mozaik
   runtime and streams events to the browser with Server-Sent Events. One service, deployed on Railway.
-- Screens: questionnaire, mode choice, follow-up questions, live research (agent lanes over time, candidates as cards
-  that update, flags and cancellations visible), report (ranked candidates, every figure with a source link or an
+- Screens: questionnaire, mode choice, listing paste (1 to 8 listing texts, each with an optional lease draft),
+  follow-up questions, live research (agent lanes over time, candidates as cards that update, flags and
+  cancellations visible), report (ranked candidates, every figure with a source link or an
   estimate badge, "not financial or legal advice"), history list and history detail.
 - The look follows `DESIGN.md`. Clean, calm, finance-grade. The live research view is the hero of the demo.
 - Run metrics on the report: candidates, loops, peak loops in parallel, flags, cancellations, duration, tokens, cost.
@@ -170,8 +202,9 @@ end-to-end test where one evaluator fails and the others still finish.
    events streamed to a first live research screen.
 3. **Thu 18:00-22:00:** Location analyst (OSM), Premises inspector, Auditor, Ranker, hard-flag cancellation, history.
    Design pass on the questionnaire and live research screens.
-4. **Fri 09:00-13:00:** live mode end to end (real search, OSM, `claude-haiku-4-5`), Interviewer, mode A, record one
-   real run as a fixture, report screen.
+4. **Fri 09:00-13:00:** live mode end to end with mode A (1 to 8 pasted listings, OSM, `claude-haiku-4-5`),
+   Interviewer, report screen. Real search in mode B only for a site that gave written permission. A recorded real run
+   is optional and keeps only links and extracted facts (section 4.5).
 5. **Fri 13:00-16:00:** Railway deploy, design polish, metrics, fixes. Feature freeze at 16:00.
 6. **Fri 16:00-17:00:** rehearse the demo, record the video. **17:00-19:00:** demo.
 7. **Fri 19:00-22:00:** README (it is scored, make it excellent), screenshots, fresh-clone test, submit.
@@ -193,10 +226,13 @@ A real listing page gave: rent, deposit, m² per floor, shop windows, parking, h
 activities, condition, update date. Missing: agency fee, VAT, service charges, power, ventilation, lease terms,
 history. Expected coverage per aspect: finance core yes (gaps flagged), premises yes, location partly (OSM still to be
 tested), lease only as questions to the landlord, history mostly no. The report must show this honestly per candidate
-("what we know, what we estimated, what to check").
+("what we know, what we estimated, what to check"). This check fetched a page before we read the terms of use; we no
+longer fetch listing pages, the same fields now come from pasted text (section 4.1).
 
 ## 13. Known holes (state them in the README)
-- Live listings depend on what web search finds; coverage varies by city.
+- Real listings come only from what the user pastes (1 to 8 per run). SuiteSpot does not search listing sites,
+  because their terms of use forbid or restrict it; mode B search goes live only for a site that gives written
+  permission. Pasted text can be incomplete; missing values stay "missing data", never a guess.
 - OSM data can be incomplete; missing data becomes "check before signing", not a guess.
 - Synthetic demo data and our weights are labelled as such.
 - No zoning or legal verification; the decision stays with the human.

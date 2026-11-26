@@ -12,15 +12,18 @@
 - Push back directly when an idea is weak, and propose something better.
 
 ## Chosen project: SuiteSpot (decided Thu 26 Nov) - read this first
-**SuiteSpot:** a small business fills in a questionnaire and either submits a commercial space it is considering
-(mode A) or asks SuiteSpot to find candidates (mode B). Mozaik agents evaluate every candidate at the same time from
-different angles and answer one question: **"Is this lease a good financial decision for my business?"**
+**SuiteSpot:** a small business fills in a questionnaire and either pastes the text of 1 to 8 listings it is
+considering (mode A) or asks SuiteSpot to find candidates (mode B). Mozaik agents evaluate every candidate at the
+same time from different angles and answer one question: **"Is this lease a good financial decision for my business?"**
 The full build plan is **`2026-11-26-plan-lease-decision.md`**. Work state is in **`PROGRESS.md`** (read it at the start
 of every session, update it before every push). If the plan and this file disagree, ask the user.
 - Repo: https://github.com/g4jic/Black-Friday-Hackaton. Local path (Andrej): `C:\Users\Lenovo LOQ\Desktop\SuiteSpot`.
 - Two people work in relay through Claude Code CLI in PowerShell: one works, pushes, the other continues.
-- Data: live web search (Anthropic `web_search` through our own function tool, same `ANTHROPIC_API_KEY`), OpenStreetMap
-  for area data, estimates with method and sources, a labelled synthetic demo dataset plus one recorded real run.
+- Data (decided 26 Nov after reading the listing sites' terms of use, see `PROGRESS.md`): in mode A the user pastes
+  the text of 1 to 8 listings, and each becomes a candidate; our server never opens listing sites. OpenStreetMap for
+  area data, estimates with method and sources, a labelled synthetic demo dataset in the same shape as pasted
+  listings. Live web search (Anthropic `web_search` through our own function tool) only for a site that gives written
+  permission. A recorded real run, if any, keeps only links and extracted facts, never listing text or photos.
 - History of research runs in Supabase (live) or a local JSON file (demo mode). Deploy on Railway.
 - Stripe and Solana are not used (no natural fit).
 - Never give a legal verdict on permitted use; report "check before signing: <what>".
@@ -530,10 +533,14 @@ He is a QA Automation Engineer. Judging from what he shares on LinkedIn:
   with Server-Sent Events. One service on Railway. History in Supabase (live) or a local JSON file (demo mode).
 - Area data: OpenStreetMap (Nominatim + Overpass), free, no key; real `User-Agent`, max 1 request per second.
 - **Listing sources (rules for the Scout, agreed 26 Nov 2026):**
-  1. Candidate sites: 4zida.rs, oglasi.rs, svenekretnine.com. **Before building the Scout, read each site's terms of
-     use** and check they do not forbid automated reading. A site that forbids it is dropped. Record the outcome
-     (site, terms URL, date read, verdict) in `PROGRESS.md`. halooglasi.com is out (its robots.txt blocks Anthropic
-     crawlers and allows no AI input); nekretnine.rs is out (blocks all automated access). Never work around a block.
+  0. **Decision (26 Nov):** terms of use read (table in `PROGRESS.md`). 4zida.rs forbids automated use by the letter
+     of its terms; oglasi.rs and svenekretnine.com are unclear and restrict copying. So **no automated reading of any
+     listing site** unless that site gives written permission (emails drafted 26 Nov, Aleksa sends them). Real
+     listings come from text the user pastes (mode A, 1 to 8 listings). Rules 2 and 3 below apply only to a site that
+     gave permission.
+  1. Candidate sites: 4zida.rs, oglasi.rs, svenekretnine.com, each only after written permission. halooglasi.com is
+     out (its robots.txt blocks Anthropic crawlers and allows no AI input); nekretnine.rs is out (blocks all automated
+     access). Never work around a block. oglasi.rs robots.txt also disallows its own search URLs (`/oglasi?q=*`).
   2. Plain HTTP reads identify themselves honestly: `User-Agent: SuiteSpot/0.1 (hackathon)` plus a contact URL (the
      repo). Never pretend to be a browser or a search engine. **At most one request per 2 seconds per site.** Respect
      robots.txt. A 403 or a block page means skip that page (soft finding "listing page could not be read").

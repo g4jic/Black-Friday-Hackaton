@@ -3,6 +3,40 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
+## Listing sites: terms of use and robots.txt (read 26 Nov 2026, ~15:00, Aleksa + Claude)
+Only the terms pages, robots.txt, llms.txt / AI info pages and the home page (to find the terms link) were read. No
+listings were downloaded. Read with `User-Agent: SuiteSpot/0.1 (hackathon; +repo URL)`, 2 s between requests.
+This is our reading of the texts, not legal advice.
+
+| Site | Automated reading | Exact text (source) | robots.txt for listing pages |
+|---|---|---|---|
+| 4zida.rs | **Forbidden by the letter of the terms** (broad wording), but its llms.txt invites AI assistants to fetch live pages. Contradictory signals; the safe reading is "forbidden". | Terms 12.2 (prohibited activities): "bilo koje automatsko korišćenje sistema, kao što je, ali ne ograničavajući se na korišćenje skripti za slanje fotografija, ili video zapisa" and footer: "Sadržaj sajta je vlasništvo 4zida.rs. Zabranjeno je njegovo preuzimanje bez dozvole 4zida.rs, zarad komercijalne upotrebe ili u druge svrhe, osim za lične potrebe posetilaca sajta." Also 7.1: unauthorized copying of the service, incl. its databases, is an IP violation. Source: https://www.4zida.rs/pravila-i-uslovi-koriscenja (published 24.08.2026, in force 02.09.2026). Counter-signal: https://www.4zida.rs/llms.txt says "uvek preuzmi aktuelnu stranicu umesto keširane vrednosti" and documents the listing URL pattern. | Allowed for `*`. Disallowed: `*/favourites*`, `*/stampaj`, `*/replacement*`, `/agenti/*`, two calculators. No AI-specific rules. https://www.4zida.rs/robots.txt |
+| oglasi.rs | **Unclear.** No clause about bots or scraping. Copying content needs prior written approval. Its AI info page expects AI assistants to answer about specific listings. | Terms 4 "Kopiranje": "Kopiranje i/ili dopuna celog ili dela sadržaja, pogotovo u komercijalne ili reklamne svrhe, zahteva prethodno pismeno odobrenje". Source: https://www.oglasi.rs/pravila. AI page: https://www.oglasi.rs/llm-info (updated Aug 2026) tells assistants, for a specific listing, to separate the advertiser's claims from the site's and to check the current listing. | Allowed for `*`. Disallowed: `/oglasi?q=*` (site search), `/oglasi?o=*`, `/korisnici/moj-nalog*`. So the Scout must never use the site's own search URLs. https://www.oglasi.rs/robots.txt |
+| svenekretnine.com | **Unclear, closest to allowed for reading.** No clause about bots. It forbids unauthorized taking of listings, listing text or photos (written for users who repost ads; the stated sanction is removing the ad). The site is itself an aggregator. | "Svako neovlašćeno preuzimanje oglasa, teksta oglasa ili fotografija oglasa drugih korisnika portala, kao i bilo koje neovlašćeno oglašavanje nepokretnosti smatraće se kršenjem pravila korišćenja". Source: https://www.svenekretnine.com/uslovi-koriscenja | Allowed for `*`. Disallowed: `/visitcount/`, `/sacuvaj-oglas/`, `/phone-clicked/`, `/log-time-on-ad`. https://www.svenekretnine.com/robots.txt |
+
+**Side finding (affects the plan):** plan section 4.5 says we commit "one recorded real research run" as fixtures to the
+public repo. That republishes listing content, which all three sites restrict ("preuzimanje", "kopiranje"). If we
+keep a recorded run, it should hold only URLs and the few facts we extract (price, m2, floor), never listing text or
+photos, or be replaced by synthetic data.
+
+**Options (decided 26 Nov: option D with mode A taking 1 to 8 pasted listings, see "Decisions log")**
+- **A. Live search only on sites that do not forbid it** (oglasi.rs, svenekretnine.com; 4zida.rs dropped).
+  Pro: real listings in the demo, real "Useful" story. Con: we lose the site with the best data (4zida.rs); the other
+  two are "unclear", not "allowed"; copying clauses still apply to what we store.
+- **B. Live search only through Anthropic web_search results, no page fetch on forbidding sites.**
+  Pro: we never access a forbidding site ourselves. Con: breaks our own rule "always open the listing page, never the
+  snippet" (tested: snippet 1,800 EUR vs page 1,400 EUR), so numbers become unreliable; it reads like working around
+  the terms through a third party.
+- **C. Demo mode only (synthetic listings), no live search.**
+  Pro: zero terms risk, deterministic, it is what the judges run anyway. Con: no real data; "Useful" is weaker; the
+  "recorded real run" disappears.
+- **D. (Claude's proposal) C as the default + live mode A for the user's own listing + ask for permission.**
+  The user pastes the listing text or uploads it (mode A already exists in the plan), so no automated reading of any
+  site happens; the Scout runs on synthetic fixtures. In parallel, email the three sites for written permission for a
+  non-commercial hackathon demo; if one says yes, enable live search for that site only.
+  Pro: honest, safe, keeps a real-data path, a strong "we read the terms and respected them" point for the README.
+  Con: mode B is not live; a permission reply may not arrive before Fri midnight; the user does more work in mode A.
+
 ## Shift handover: Andrej -> Aleksa (26 Nov 2026, 15:05)
 **Done so far**
 - Plan step 1, sub-steps 1-5: skeleton, resilience (mock runner, retries, failure isolation), domain model with tests,
@@ -55,7 +89,8 @@ No long dashes in this file; use a plain hyphen.
 
 **Open questions**
 - Era or Spade (team decision). Then DESIGN.md and the design pass (Aleksa and Claude).
-- Terms of use of the three listing sites are not read yet.
+- Terms of use read; option D chosen (see "Decisions log"). Permission emails to the three sites: drafted, Aleksa
+  sends them. Waiting for replies.
 - The honest User-Agent may be blocked more often than in the earlier test; re-run `npm run check:listings`.
 - Railway datacenter IPs may be blocked by listing sites; test live mode from the deployed service.
 
@@ -123,7 +158,9 @@ No long dashes in this file; use a plain hyphen.
 
 ## Open problems
 - Web search returns INDEX pages; the Scout needs a second hop (index page -> listing URLs -> each listing).
-- Terms of use of 4zida.rs / oglasi.rs / svenekretnine.com not read yet (robots.txt only). Read them before live use.
+- Terms of use of 4zida.rs / oglasi.rs / svenekretnine.com read on 26 Nov (table at the top). 4zida.rs forbids
+  automated use by the letter of its terms; the other two are unclear. Option D chosen: no automated reading of
+  listing sites unless a site gives written permission.
 - Fetch was tested from a home connection. Railway runs on datacenter IPs and may be blocked more often; test live
   mode from the deployed service.
 - A model call already in flight cannot be aborted (InferenceRunner has no signal); we pay for it and replace its
@@ -131,6 +168,19 @@ No long dashes in this file; use a plain hyphen.
 - Mozaik sends no `disable_parallel_tool_use`; add the custom AnthropicMessages mapper in live mode (see CLAUDE.md).
 
 ## Decisions log
+- 2026-11-26: listing sources = option D with one change (Aleksa, after reading the terms of use, table at the top).
+  - Mode A takes 1 to 8 listings at once. The user pastes the TEXT of each listing they are considering; each one
+    becomes a candidate. So real data also has volume: candidates are evaluated in parallel, a hard flag cancels a
+    candidate mid-run, the Ranker compares them. One listing is just the special case.
+  - The user pastes text, not a link. Our server never opens pages of listing sites.
+  - Demo mode (what the judges run) uses synthetic listings in the same shape as pasted ones, labelled "Demo data".
+  - Live mode B (search) is off. It is enabled only for a site that gives us written permission, and only for that site.
+    Aleksa emails 4zida.rs, oglasi.rs and svenekretnine.com asking for permission for a non-commercial hackathon demo.
+  - A recorded real run never enters the public repo with listing text or photos: only links and extracted facts, or
+    it is replaced by synthetic data.
+  - Why: 4zida.rs forbids automated use by the letter of its terms; the other two are unclear and restrict copying.
+    Option B (search snippets only) would break our "never the snippet" rule. Respecting the terms is also a point for
+    the README.
 - 2026-11-26: mockup review (Aleksa). The Finance analyst is an AI agent that calls the lease cost calculator as a tool;
   only code computes numbers. The checking agent is called Auditor, never Verifier. Photo analysis is out of scope. The
   concept mockups in `design/concepts/` still show "Finance: plain code", "Verifier" and "photos + text"; they are not
@@ -155,6 +205,10 @@ No long dashes in this file; use a plain hyphen.
   OpenStreetMap for area data; Supabase for history; Railway for deploy; Stripe and Solana not used.
 
 ## Session log
+- 2026-11-26 15:20 (Aleksa): option D chosen (mode A = 1 to 8 pasted listings); plan sections 2, 4.1, 4.4 updated;
+  permission email drafted. Not committed.
+- 2026-11-26 15:00 (Aleksa): read terms of use and robots.txt of the three listing sites; options A-D written,
+  decision pending. Not committed.
 - 2026-11-26 15:05 (Andrej): two design concepts (Era, Spade) in design/concepts; shift handover to Aleksa.
 - 2026-11-26 14:35 (Andrej): added listing source rules (terms of use, honest UA, rate limit, allowed_domains). Next: design.
 - 2026-11-26 14:25 (Andrej): listing fetch test, CLAUDE.md Mozaik notes, optional gross margin; pushed. Stopping here.
