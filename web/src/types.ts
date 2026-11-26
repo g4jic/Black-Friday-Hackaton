@@ -1,0 +1,69 @@
+// Wire types sent by the server (mirror of src/application/research/wire.ts; kept separate so the web app never
+// imports server code).
+
+export type WireEvent = {
+  seq: number
+  at: number
+  type: string
+  agent?: string
+  loopKey?: string
+  candidateId?: string
+  data?: Record<string, unknown>
+}
+
+export type SourceDTO = { kind: string; ref: string; field?: string; clause?: string; quote?: string; inputs?: SourceDTO[] }
+
+export type ValueDTO =
+  | { kind: "money"; amount: number; currency: string }
+  | { kind: "area"; m2: number }
+  | { kind: "number"; value: number }
+  | { kind: "text"; value: string }
+  | { kind: "bool"; value: boolean }
+  | { kind: "rent_multiple"; months: number }
+  | { kind: "missing"; missing: string[]; unverified?: string }
+  | { kind: "none" }
+
+export type FieldDTO = { value: ValueDTO; source?: SourceDTO }
+
+export type FindingDTO = {
+  id: string
+  aspect: string
+  severity: "hard" | "soft" | "info"
+  claim: string
+  author: string
+  checkBeforeSigning?: string
+  value?: ValueDTO
+  source: SourceDTO
+}
+
+export type FlagDTO = { rule: string; reason: string; raisedBy: string; aspect: string; source: SourceDTO }
+
+export type CandidateDTO = {
+  id: string
+  synthetic: boolean
+  status: "pending" | "evaluating" | "rejected" | "scored"
+  hasLease: boolean
+  fields: Record<string, FieldDTO>
+  unverified: { field: string; reason: string }[]
+  rejection: FlagDTO | null
+  laterFlags: FlagDTO[]
+  findings: FindingDTO[]
+}
+
+export type Metrics = {
+  durationMs: number
+  loops: number
+  peakParallel: number
+  toolCalls: number
+  candidates: number
+  rejected: number
+  loopsCancelled: number
+  softFlags: number
+  rejectedExtractions: number
+  agentsHalted: number
+  tokens: { input: number; output: number }
+  costUsd: number | null
+  timedOut: boolean
+}
+
+export type Config = { liveAvailable: boolean; maxListings: number; liveModel: string }

@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "concurrently -n server,web -c blue,magenta \"npm:dev:server\" \"npm:dev:web\"",
-    "dev:server": "tsx watch src/adapters/server/main.ts",
+    "dev:server": "tsx watch src/adapters/server/main.ts --port 3000",
     "dev:web": "vite --config web/vite.config.ts",
     "build": "vite build --config web/vite.config.ts",
     "start": "tsx src/adapters/server/main.ts",
@@ -18,7 +18,8 @@
     "check:anthropic": "tsx scripts/check-anthropic-tools.ts",
     "check:listings": "tsx scripts/check-listing-fetch.ts",
     "demo:scout": "tsx scripts/demo-scout.ts",
-    "demo:evaluate": "tsx scripts/demo-evaluate.ts"
+    "demo:evaluate": "tsx scripts/demo-evaluate.ts",
+    "screenshots": "tsx scripts/screenshots.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.74.0",

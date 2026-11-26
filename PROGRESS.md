@@ -93,6 +93,41 @@ photos, or be replaced by synthetic data.
 - Railway datacenter IPs may be blocked by listing sites; test live mode from the deployed service.
 
 ## Current state
+- **Step 2.4 (SSE + Live research screen) done: server part (595a007) and web part committed and pushed.
+  Next: the Ranker (scores for the Scored group), then Reports.**
+  - Web (`web/src/`): `App.tsx` (sidebar, header with breadcrumb, Demo data pill only for synthetic runs, agent
+    stack + "N busy, peak M" from events, search, black "New research"; tabs; SSE client with reconnect-safe
+    reducer; `?autorun=demo&tab=timeline` for screenshots), `LiveResearch.tsx` (sections Pending / Evaluating /
+    Check before signing / Scored / Rejected with count circles, all open; table with fixed columns: candidate,
+    monthly cost, rent share, exit cost, flags, agents, score; cards view; Rejected rows with reason, source label,
+    raised by, cancelled agents and how long they worked; metrics strip from `research.done`), `Timeline.tsx` (lanes
+    per loop grouped by agent, calculator-call dots and waiting segments, red x where a loop was cut, dashed line
+    per rejection, now line, peak pill), `NewResearch.tsx` (Run demo; paste 1 to 8 listings with optional lease,
+    enabled only when the server is in live mode). Footer: "Not financial or legal advice".
+  - "Scored" shows "not scored yet" until the Ranker exists (next step). "Check before signing" also holds finished
+    candidates with missing rent or area, unverified fields, or no lease draft (terms unknown).
+  - Dev: `npm run dev` (API on :3000 via `--port 3000`, web on :5173). `npm run screenshots` (needs `npm run dev`
+    running; Edge via playwright-core) writes `design/screenshots/*.png`. `.claude/launch.json` starts the dev servers.
+  - Previous notes:
+  - DONE, tested (`tests/server.test.ts`, 4 tests pass): `src/application/research/wire.ts` (whitelisted DTOs, no
+    contexts or prompts), `src/application/research/research-session.ts` (one runtime per research, wire tap,
+    metrics from events, secrets scrubbed), `src/adapters/server/research-routes.ts`: `POST /api/research`
+    (`{source: "demo"}` = 8 fixture listings + 3 leases; `{mode: "live", source: "pasted", listings: [{text, lease?}]}`),
+    `GET /api/research/:id/events` (SSE, id = seq, Last-Event-ID resume, ends after `research.done`),
+    `GET /api/research/:id`, `GET /api/config`. Cost guard: 1 to 8 listings (domain), max 1 active live research
+    (429), live only when SUITESPOT_MODE=live (403 otherwise). Demo pacing `DEMO_PACE` (about 5 s per run).
+  - Installed pinned dev deps: `lucide-react@1.72.0`, `playwright-core@1.65.0` (use installed Edge, channel "msedge").
+  - Web, partly written: `web/src/index.css` (DESIGN.md tokens, gradient, busy ring with reduced motion),
+    `web/src/types.ts`, `web/src/research-state.ts` (reducer from wire events, groups, lease note), `web/src/ui.tsx`
+    (SourceLabel, Sourced, Pill, AgentChip, CountCircle). `web/src/App.tsx` is still the old placeholder.
+  - TODO next: `App.tsx` shell (sidebar: New research, Live research, Reports, History, Assumptions; header with
+    breadcrumb, Demo data pill, agent stack + "N busy, peak M" from `state.busy/peak`, black "New research");
+    tabs Cards / Table / Timeline; section cards per `groupOf` with count circles (Rejected open, with reason,
+    source, cancelled agent chips and "stopped N loops in X ms" from `rejections` + `loops[].cancelledAt`);
+    Timeline (lanes per loop grouped by agent, tool dots, red cancel marker, rejection line, now line, peak pill);
+    New research screen (Run demo + paste 1 to 8 texts, live only when `/api/config` says so); footer
+    "Not financial or legal advice"; then a Playwright script for screenshots (Table and Timeline, mid-run and end).
+  - Open UI decision: no Ranker yet, so the "Scored" group has no score; show "not scored yet".
 - Step 2.3 (Finance analyst + Lease reader in parallel) built on 26 Nov 2026, 85 tests pass, typecheck clean.
   Committed and pushed after Aleksa's OK.
   - Fixtures: `fixtures/requirements/demo.json` (fixed demo questionnaire: cafe, 50-90 m2, budget 1,500 EUR, revenue
