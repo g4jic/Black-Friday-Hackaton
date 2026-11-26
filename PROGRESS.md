@@ -54,9 +54,9 @@ photos, or be replaced by synthetic data.
     border = estimate. Every number carries a source label (listing, profile, osm, calc, est).
 - 47 tests pass (`npm test`).
 
-**Not decided yet**
-- The design direction is NOT chosen (Era or Spade). `DESIGN.md` does not exist. Do not create it and do not style the
-  app for either direction until the team picks one.
+**Design**
+- Design direction chosen: see DESIGN.md (Era and Spade concepts are superseded). `design/concepts/` stays in the
+  repo as history. The app is not styled yet; the design pass follows DESIGN.md.
 
 **Aleksa's next step: plan step 2 (thin slice in demo mode)**
 1. Before the Scout: read the terms of use of 4zida.rs, oglasi.rs and svenekretnine.com (see "Next step" below) and
@@ -88,7 +88,7 @@ photos, or be replaced by synthetic data.
 - No long dashes anywhere. Never print or commit `.env` or keys. Update this file and run `npm test` before every push.
 
 **Open questions**
-- Era or Spade (team decision). Then DESIGN.md and the design pass (Aleksa and Claude).
+- Design direction chosen: see DESIGN.md (Era and Spade concepts are superseded). Next: the design pass.
 - Terms of use read; option D chosen (see "Decisions log"). Permission emails to the three sites: drafted, Aleksa
   sends them. Waiting for replies.
 - The honest User-Agent may be blocked more often than in the earlier test; re-run `npm run check:listings`.
@@ -145,7 +145,8 @@ photos, or be replaced by synthetic data.
   for it.
 
 ## Next step
-- Aleksa: plan step 2 (see the shift handover at the top). Design direction still open (Era or Spade).
+- Aleksa: plan step 2 (see the shift handover at the top). Design direction chosen: see DESIGN.md (Era and Spade
+  concepts are superseded).
 - **Aleksa, before building the Scout (rules also in CLAUDE.md, "Listing sources"):**
   1. Read the terms of use of 4zida.rs, oglasi.rs and svenekretnine.com. If a site forbids automated reading, drop
      it. Write the result here (site, terms URL, date, verdict).
@@ -168,6 +169,10 @@ photos, or be replaced by synthetic data.
 - Mozaik sends no `disable_parallel_tool_use`; add the custom AnthropicMessages mapper in live mode (see CLAUDE.md).
 
 ## Decisions log
+- 2026-11-26: Design direction chosen: see DESIGN.md (Era and Spade concepts are superseded). Aleksa picked the style
+  and layout of a soft project-management UI from reference shots (style only: no name, logo or people photos).
+  Hanken Grotesk (OFL 1.1), purple #6A3FD3 as brand, ink #0B0B0F, pink-to-lilac gradient; red only for hard flags,
+  amber only for soft flags, dashed grey only for estimates. Contrast checked to WCAG AA. `design/concepts/` is kept.
 - 2026-11-26: listing sources = option D with one change (Aleksa, after reading the terms of use, table at the top).
   - Mode A takes 1 to 8 listings at once. The user pastes the TEXT of each listing they are considering; each one
     becomes a candidate. So real data also has volume: candidates are evaluated in parallel, a hard flag cancels a
@@ -205,6 +210,7 @@ photos, or be replaced by synthetic data.
   OpenStreetMap for area data; Supabase for history; Railway for deploy; Stripe and Solana not used.
 
 ## Session log
+- 2026-11-26 15:40 (Aleksa): DESIGN.md written; design direction chosen. App code not changed. Not committed.
 - 2026-11-26 15:20 (Aleksa): option D chosen (mode A = 1 to 8 pasted listings); plan sections 2, 4.1, 4.4 updated;
   permission email drafted. Not committed.
 - 2026-11-26 15:00 (Aleksa): read terms of use and robots.txt of the three listing sites; options A-D written,

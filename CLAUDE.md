@@ -29,7 +29,8 @@ of every session, update it before every push). If the plan and this file disagr
 - Never give a legal verdict on permitted use; report "check before signing: <what>".
 - **Writing rule:** no long dashes anywhere (UI, docs, comments, commits). Use a plain hyphen `-`.
 - UI is English and must look excellent. Design is done by Aleksa and Claude in Aleksa's sessions; `DESIGN.md` is the
-  single source of truth for the look. The README is written at the end and must be excellent, it is scored.
+  single source of truth for the look. Design direction chosen: see DESIGN.md (Era and Spade concepts are
+  superseded). The README is written at the end and must be excellent, it is scored.
 
 ## The event (facts, checked 25-26 Nov 2026)
 - **Black Friday AI Hackathon** by JigJoy. 26-27 Nov 2026. On site at Science Technology Park Belgrade, or online.
