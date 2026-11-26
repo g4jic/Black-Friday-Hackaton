@@ -40,20 +40,37 @@ No long dashes in this file; use a plain hyphen.
     put the city in the query instead.
   - Web fetch `web_fetch_20250910` (sent with beta header `web-fetch-2025-09-10`) WORKS on haiku-4-5.
 
+- Listing fetch test on SINGLE listing pages (`npm run check:listings -- <urls>`, 26 Nov 2026, about $0.12 total):
+  | Site | Anthropic web_fetch | Plain HTTP GET (Node fetch) | Notes |
+  |---|---|---|---|
+  | halooglasi.com | 0/3 (`url_not_accessible`) | 0/3 (403) | robots.txt DISALLOWS ClaudeBot and anthropic-ai; Content-Signal ai-train=no, no ai-input. Do not use, do not work around it. |
+  | nekretnine.rs | not testable | not testable | 403 for every automated client (index pages too), so no listing URLs could be collected. |
+  | 4zida.rs | 2/2 page read, but price/area only in the title (body rendered by JS) | 2/2 PASS | No AI rule in robots.txt. Best data via plain GET. |
+  | oglasi.rs | 1/2 PASS | 1/2 PASS | The other listing genuinely has no price on the page (stays null). No AI rule in robots.txt. |
+  | svenekretnine.com | 1/1 PASS | 1/1 PASS | Aggregator. No AI rule in robots.txt. |
+- Gross margin is optional: without it `breakEvenRevenue` and `paybackMonths` return `MissingData` ("missing data"),
+  never a number. 47 tests pass.
+- CLAUDE.md now has the exact Mozaik event names, the "only the first tool call runs" rule and how to design tools
+  for it.
+
 ## Next step
-- Plan step 2 (thin slice in demo mode): Scout (fixtures) + Finance analyst + Lease reader on 3 candidates, events
-  streamed over SSE to a first live research screen.
+- Andrej: design pass (Uizze) next. Plan step 2 (thin slice in demo mode) is left for Aleksa.
+- For the Scout (later): sources 4zida.rs, oglasi.rs, svenekretnine.com; plain HTTP GET first (free, no tokens,
+  full data), Anthropic web_fetch only as fallback; check the page is the listing we asked for; skip blocked sites.
 
 ## Open problems
-- Web search returns listing INDEX pages (search result lists), not single listings. The Scout needs a second hop:
-  fetch the index page, extract listing URLs, then fetch each listing.
-- nekretnine.rs index URL fetched through web_fetch came back as the site homepage (redirect or bot handling). Before
-  trusting a fetched page, check its title/URL matches what we asked for; otherwise mark "listing page could not be
-  read" (soft finding) and try a plain HTTP GET fallback. Test halooglasi.com next.
+- Web search returns INDEX pages; the Scout needs a second hop (index page -> listing URLs -> each listing).
+- Terms of use of 4zida.rs / oglasi.rs / svenekretnine.com not read yet (robots.txt only). Read them before live use.
+- Fetch was tested from a home connection. Railway runs on datacenter IPs and may be blocked more often; test live
+  mode from the deployed service.
 - A model call already in flight cannot be aborted (InferenceRunner has no signal); we pay for it and replace its
-  answer. Acceptable: at most one call per stopped loop.
+  answer. At most one call per stopped loop.
+- Mozaik sends no `disable_parallel_tool_use`; add the custom AnthropicMessages mapper in live mode (see CLAUDE.md).
 
 ## Decisions log
+- 2026-11-26: halooglasi.com is out: its robots.txt blocks Anthropic crawlers and does not allow AI input. We respect
+  that instead of imitating a browser. nekretnine.rs is out for now (blocks all automated access).
+- 2026-11-26: gross margin stays optional; missing margin = "missing data" for break-even and payback.
 - 2026-11-26: added source kind `assumption` (values from config/weights.json, labelled "SuiteSpot assumptions") and an
   optional `grossMarginRate` in the profile (needed for break-even and payback; asked in the questionnaire). The
   deposit is excluded from total cost over the term (refundable); fit-out is written off straight line over the term.
@@ -72,6 +89,7 @@ No long dashes in this file; use a plain hyphen.
 - None yet.
 
 ## Session log
+- 2026-11-26 14:25 (Andrej): listing fetch test, CLAUDE.md Mozaik notes, optional gross margin; pushed. Stopping here.
 - 2026-11-26 14:05 (Andrej): step 5 Anthropic web search + fetch check done and pushed. Steps 1-5 of plan step 1 complete.
 - 2026-11-26 13:55 (Andrej): step 4 cancellation spike done and pushed.
 - 2026-11-26 13:50 (Andrej): step 3 domain model done and pushed.

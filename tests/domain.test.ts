@@ -16,6 +16,7 @@ import {
   fairPriceCheck,
   hardRequirementNotMet,
   initialCosts,
+  isMissingData,
   monthlyCost,
   paybackMonths,
   rentPerM2,
@@ -232,12 +233,27 @@ describe("LeaseCostCalculator", () => {
     const revenue = sourced(eur(10000), profileSrc("expectedMonthlyRevenue"))
     const margin = sourced(0.6, profileSrc("grossMarginRate"))
     expect(costShareOfRevenue(monthly, revenue).value).toBeCloseTo(0.145)
-    expect(breakEvenRevenue(monthly, margin).value.amount).toBe(2416.67)
+    const breakEven = breakEvenRevenue(monthly, margin)
+    if (isMissingData(breakEven)) throw new Error("expected a value")
+    expect(breakEven.value.amount).toBe(2416.67)
     const initialNonRefundable = sourced(eur(10500), profileSrc("x"))
     // 10500 / (10000 x 0.6 - 1450) = 2.31 -> 3 months
-    expect(paybackMonths(initialNonRefundable, revenue, margin, monthly).value).toBe(3)
+    const payback = paybackMonths(initialNonRefundable, revenue, margin, monthly)
+    expect(!isMissingData(payback) && payback.value).toBe(3)
     const low = sourced(eur(2000), profileSrc("expectedMonthlyRevenue"))
-    expect(paybackMonths(initialNonRefundable, low, margin, monthly).value).toBeNull()
+    const never = paybackMonths(initialNonRefundable, low, margin, monthly)
+    expect(!isMissingData(never) && never.value).toBeNull()
+  })
+  it("without a gross margin, break-even and payback are 'missing data', never computed or guessed", () => {
+    const monthly = monthlyCost(terms).total
+    const revenue = sourced(eur(10000), profileSrc("expectedMonthlyRevenue"))
+    const profile = BusinessProfile.create({ ...profileInput, grossMarginRate: undefined })
+    expect(profile.grossMarginRate()).toBeNull()
+    const breakEven = breakEvenRevenue(monthly, profile.grossMarginRate())
+    const payback = paybackMonths(sourced(eur(10500), profileSrc("x")), revenue, profile.grossMarginRate(), monthly)
+    expect(isMissingData(breakEven)).toBe(true)
+    expect(isMissingData(payback)).toBe(true)
+    expect(isMissingData(payback) && payback.missing[0]).toContain("Gross margin")
   })
   it("rejects a zero revenue for the cost share", () => {
     expectDomainError(() => costShareOfRevenue(monthlyCost(terms).total, sourced(eur(0), profileSrc("expectedMonthlyRevenue"))), "invalid_input")

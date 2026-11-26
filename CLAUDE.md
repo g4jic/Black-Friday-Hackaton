@@ -308,15 +308,40 @@ sendMessage("Hello", human.getId())
 ```
 - **Never `await` `runLoop` or `sendMessage` inside a processor.** Both return at once while the runtime keeps
   delivering events. Awaiting turns concurrency into a sequence.
-- `runLoop(agentId, message, inferenceInput, interceptionHandler?)` is a state machine: `context_update` → `inference`
+- `runLoop(agentId, message, inferenceInput, interceptionHandler?)` is a state machine: `message_received` → `inference`
   → (`function_call` → `inference`)* → `model_message` → `idle`.
 - `InferenceInput`: `model` (required), `context` (required), `tools`, `maxOutputTokens`, `reasoningEffort`,
   `streaming`, `structuredOutput` (JSON Schema). **Use `structuredOutput`** whenever another participant or plain code
   consumes an agent's answer.
-- Events on the bus: `message.sent`, `participant.joined/left`, `context_update.started/completed`,
-  `inference.started/completed` (with `items` and `tokenUsage`), `inference.stream` (with `streaming: true`),
-  `function_call.started/completed`, `model.answer`, `interception.started`. Publish your own domain events with
-  `sendEvent`.
+- **Exact event names on the bus (read from the 6.0.0 bundle, 26 Nov 2026).** Runtime: `participant.joined`,
+  `participant.left`, `message.sent` (payload `{ message }`). Loop events (producer = the agent's id, every payload
+  carries `loopId`): `message_received.started` (payload `{ content, input: InferenceInput }`),
+  `message_received.completed` (payload = the InferenceInput), `inference.started` (payload = the InferenceInput),
+  `inference.stream` (only with `streaming: true`), `inference.completed` (payload `{ items, tokenUsage }`),
+  `function_call.started` (payload `{ call, inferenceInput }`), `function_call.completed` (payload = the
+  FunctionCallOutputItem), `model.answer` (payload `{ answer }`), `interception.started`, `interception.finished`
+  (payload = the transition). There is NO `context_update.*` event (older docs used that name). `inference.output` is
+  internal to streaming runners, not a bus event. Our own domain events go through `sendEvent`, and their producer
+  must be a real participant id: `candidate.found`, `candidate.rejected`, `candidate.flag_recorded`, `agent.halted`.
+- **Only the FIRST tool call of an inference is executed.** If the model returns several `tool_use` blocks in one
+  answer, Mozaik runs the first and silently drops the rest (they never reach the context, so the model only sees the
+  first result and has to ask again). Mozaik 6.0.0 sends no `tool_choice` and no `disable_parallel_tool_use`. Rules:
+  1. Every agent instruction says: "Call at most one tool per turn. Wait for its result before the next call."
+  2. Design tools to take a batch when an agent needs several of the same lookup (for example `osm_lookup` takes a
+     list of queries, `fetch_listing` takes one URL but the Scout publishes candidates one by one), instead of
+     relying on parallel calls.
+  3. In live mode, pass a custom `AnthropicMessages` endpoint (its constructor takes an `endpointMapper`) whose
+     mapper adds `tool_choice: { type: "auto", disable_parallel_tool_use: true }`, wired through
+     `initializeRuntime({ inferenceRunnerConfig: { supportedModels } })`. Then the API itself returns at most one
+     tool call. Mock scripts already return one call at a time.
+- **Interception runs before EVERY step**, including `message_received` and `model_message`. To stop a loop, return
+  `{ nextStateId: "model_message", input: { answer: ModelMessageItem.rehydrate({ text: "stopped: ..." }) } }`: no
+  extra model call, and the loop ends through the normal `model_message -> idle` path (see
+  `src/application/cancellation/`).
+- **`ModelContext` is mutated in place.** Parallel loops of the same agent must each get their own context
+  (`startLoop` in `src/application/runtime.ts` does this); never pass `agent.getMemory().getContext()` to several
+  loops.
+- Publish your own domain events with `sendEvent`.
 - **Tool:**
   `{ type: "function", name, description, parameters: <JSON Schema, additionalProperties: false>, strict: true, invoke: async (args) => result }`.
   The model only proposes a call. The loop runs `invoke` and appends the result to the context.

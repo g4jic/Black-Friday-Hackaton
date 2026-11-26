@@ -15,7 +15,8 @@
     "start": "tsx src/adapters/server/main.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p web/tsconfig.json",
     "test": "vitest run",
-    "check:anthropic": "tsx scripts/check-anthropic-tools.ts"
+    "check:anthropic": "tsx scripts/check-anthropic-tools.ts",
+    "check:listings": "tsx scripts/check-listing-fetch.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.74.0",

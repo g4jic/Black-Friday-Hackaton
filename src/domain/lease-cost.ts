@@ -123,22 +123,38 @@ export function costShareOfRevenue(monthlyTotal: Sourced<Money>, revenue: Source
   return calc(monthlyTotal.value.ratioTo(revenue.value), "monthly cost / expected monthly revenue", [monthlyTotal, revenue])
 }
 
-/** Monthly revenue needed just to cover the space: monthly cost / gross margin. */
-export function breakEvenRevenue(monthlyTotal: Sourced<Money>, grossMargin: Sourced<number>): Sourced<Money> {
+/**
+ * A figure we cannot compute because an input is missing. Shown as "missing data" in the report, never estimated.
+ */
+export type MissingData = { readonly status: "missing_data"; readonly missing: readonly string[] }
+
+export function isMissingData(x: unknown): x is MissingData {
+  return typeof x === "object" && x !== null && (x as MissingData).status === "missing_data"
+}
+
+const MISSING_MARGIN: MissingData = Object.freeze({ status: "missing_data", missing: Object.freeze(["Gross margin (optional in the questionnaire)"]) })
+
+/**
+ * Monthly revenue needed just to cover the space: monthly cost / gross margin.
+ * The gross margin is optional; without it this returns MissingData instead of a number.
+ */
+export function breakEvenRevenue(monthlyTotal: Sourced<Money>, grossMargin: Sourced<number> | null): Sourced<Money> | MissingData {
+  if (grossMargin === null) return MISSING_MARGIN
   if (!(grossMargin.value > 0)) throw new DomainError("invalid_input", "Gross margin must be positive")
   return calc(monthlyTotal.value.multiply(1 / grossMargin.value), "monthly cost / gross margin", [monthlyTotal, grossMargin])
 }
 
 /**
  * Months until the initial (non-refundable) costs are earned back: initial / (revenue x margin - monthly cost).
- * null value means it never pays back at the expected revenue.
+ * A null value means it never pays back at the expected revenue. Without a gross margin: MissingData.
  */
 export function paybackMonths(
   initialNonRefundable: Sourced<Money>,
   revenue: Sourced<Money>,
-  grossMargin: Sourced<number>,
+  grossMargin: Sourced<number> | null,
   monthlyTotal: Sourced<Money>,
-): Sourced<number | null> {
+): Sourced<number | null> | MissingData {
+  if (grossMargin === null) return MISSING_MARGIN
   const contribution = revenue.value.multiply(grossMargin.value).subtract(monthlyTotal.value)
   const inputs = [initialNonRefundable, revenue, grossMargin, monthlyTotal]
   if (contribution.cents <= 0) return calc(null, "never: revenue x margin does not cover the monthly cost", inputs)
