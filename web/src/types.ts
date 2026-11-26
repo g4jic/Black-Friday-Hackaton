@@ -62,6 +62,8 @@ export type RankingDTO = {
   tier: number
   reasons: ReasonDTO[]
   components: { name: string; weight: number; value: number | null }[]
+  /** Decided by code on the server (domain/verdict.ts). */
+  verdict: { verdict: Verdict; why: string }
 }
 
 export type Metrics = {
@@ -89,4 +91,24 @@ export type ReportDTO = {
   failed: string | null
 }
 
-export type Config = { liveAvailable: boolean; maxListings: number; liveModel: string }
+export type Config = { liveAvailable: boolean; liveNeedsAccessCode: boolean; maxListings: number; liveModel: string }
+
+export type Verdict = "good" | "check_before_signing" | "not_recommended"
+
+/** The questionnaire fields the server validates (domain BusinessProfileInput). */
+export type ProfileInput = {
+  businessType: "cafe_food" | "retail" | "office_studio" | "workshop"
+  description: string
+  headcount: number
+  areaMinM2: number
+  areaMaxM2: number
+  currency: "EUR" | "RSD" | "USD"
+  monthlyBudget: number
+  expectedMonthlyRevenue: number
+  grossMarginRate?: number
+  walkInCustomers: boolean
+  leaseMonths: number
+  city: string
+  fitOutBudget: number
+  equipmentBudget: number
+}

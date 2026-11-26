@@ -3,8 +3,8 @@ import { AssumptionsScreen } from "./Assumptions"
 import { startResearch, useResearch } from "./app/research-store"
 import { navigate, paths, useLocation, useRoute, type Route } from "./app/router"
 import { Shell } from "./app/Shell"
-import { NewResearch } from "./NewResearch"
 import { HistoryPage, ReportsPage } from "./pages/HistoryPages"
+import { NewResearchPage } from "./pages/NewResearchPage"
 import { ResearchPage } from "./pages/ResearchPage"
 import { SettingsPage } from "./pages/SettingsPage"
 import { DashboardPage, NotFoundPage } from "./pages/SimplePages"
@@ -85,30 +85,5 @@ function DemoDataPill({ researchId }: { researchId: string }) {
     <Pill variant="brand" icon={false} title="This run uses synthetic demo listings, not real ones">
       Demo data
     </Pill>
-  )
-}
-
-function NewResearchPage({ config }: { config: Config | null }) {
-  const [starting, setStarting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const start = async (request: Parameters<typeof startResearch>[0]) => {
-    setError(null)
-    setStarting(true)
-    try {
-      navigate(paths.run(await startResearch(request)))
-    } catch (failure) {
-      setError((failure as Error).message)
-    } finally {
-      setStarting(false)
-    }
-  }
-  return (
-    <NewResearch
-      config={config}
-      busy={starting}
-      error={error}
-      onRunDemo={() => void start({ source: "demo" })}
-      onRunPasted={(listings) => void start({ mode: "live", source: "pasted", listings })}
-    />
   )
 }

@@ -19,6 +19,7 @@ type Assumptions = {
     order: string[]
   }
   hardFlags: { budgetTolerance: number; maxTermWithoutExitMonths: number }
+  verdict: { good: string; checkBeforeSigning: string; notRecommended: string }
   leaseConcerns: { maxNoticeMonths: number; maxFixedIndexationPercent: number }
   demoQuestionnaire: { business: string; areaM2: [number, number]; monthlyBudget: number; expectedMonthlyRevenue: number; leaseMonths: number; currency: string; grossMarginRate: number | null }
 }
@@ -86,6 +87,13 @@ export function AssumptionsScreen() {
           <li>Hard flag: the landlord may raise the rent at will.</li>
           <li>Check before signing: notice longer than {a.leaseConcerns.maxNoticeMonths} months, a fixed rent increase above {a.leaseConcerns.maxFixedIndexationPercent}% a year, a personal guarantee, the tenant paying structural repairs, an early exit penalty, an unverified clause.</li>
           <li>A hard flag cancels the candidate: it is never ranked.</li>
+        </ul>
+      </Card>
+      <Card title="Verdict on the Decision card (plain code)">
+        <ul className="list-disc space-y-1.5 pl-5">
+          <li>{a.verdict.good}.</li>
+          <li>{a.verdict.checkBeforeSigning}.</li>
+          <li>{a.verdict.notRecommended}.</li>
         </ul>
       </Card>
       <Card title="Demo questionnaire (synthetic)">
