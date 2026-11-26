@@ -200,6 +200,12 @@ Height 24, padding 0 10, radius pill, `text-label`. Variants:
   right now. This shows live parallel work. Chips enter and leave with a 150 ms fade.
 - **Agent stack** top right: all participants in the room as overlapping chips plus a counter pill
   "4 busy, peak 6". Click opens the Timeline tab.
+- **The counter shows only real values from runtime events, never hand-written numbers.** "busy" = loops started
+  (`message_received.started`) minus loops finished or stopped, counted per `loopId`; "peak" = the highest "busy"
+  value seen in this run. Before the first event the pill shows "0 busy". The same rule applies to "peak N loops in
+  parallel" on the Timeline and to every run metric on the report.
+- **Reduced motion:** with `prefers-reduced-motion: reduce` the busy ring does not pulse; it stays a static 2 px
+  `purple-600` ring, so "busy" is still visible.
 
 ### 6.9 Cards view
 A responsive grid (min 300 px columns, gap 16) of candidate cards inside each section card: white 80%, radius 20,
@@ -248,7 +254,12 @@ Order and count-circle color:
 | Evaluating | `purple-600` | expanded | At least one evaluator loop running |
 | Check before signing | `amber-400`, ink text | expanded | Scored, but with one or more soft flags |
 | Scored | `purple-600` | expanded | Scored, no open soft flags |
-| Rejected | `red-600` | collapsed | A hard flag cancelled the candidate |
+| Rejected | `red-600` | **expanded** | A hard flag cancelled the candidate |
+
+**Rejected is expanded by default: it is the key moment of the demo.** Every rejected row shows the hard flag reason
+(the hard pill with the claim, its source label and "by <agent>") and the agents whose loops were cancelled on that
+candidate: their icon chips in `ink-3` with a small `red-600` "x" dot and the word "cancelled", plus the time from
+the flag to the stop (for example "stopped 2 loops in 31 ms").
 
 Note: "Check before signing" is a **view group**, not a domain status. The domain statuses stay
 `pending | evaluating | rejected | scored`; the UI puts a scored candidate with soft flags into this group.
@@ -261,7 +272,8 @@ Agents (live chips) / Score / more. Reports drop the Agents column and add Rank.
 - Durations: 150 ms (hover, chips), 200 ms (collapse, tabs), 300 ms (a candidate moving to another section, with a
   layout animation so the eye follows it).
 - Easing: `cubic-bezier(0.2, 0, 0, 1)`.
-- `prefers-reduced-motion`: no pulse, no layout animation, instant changes.
+- `prefers-reduced-motion: reduce`: the agent ring pulse is off (static ring instead), no layout animation,
+  instant changes.
 
 ## 9. Assets and libraries
 - Icons: **lucide** (`lucide-react`, ISC license), 1.75 px stroke. Not installed yet; add it when the UI is built.
