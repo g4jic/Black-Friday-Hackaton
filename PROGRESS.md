@@ -9,10 +9,16 @@ No long dashes in this file; use a plain hyphen.
   Vitest. Mode is `SUITESPOT_MODE` (default `demo`; `live` also needs `ANTHROPIC_API_KEY`).
 - Commands (PowerShell): `npm install`, `npm run dev` (server :3000 + web :5173), `npm test`, `npm run build`, `npm start`.
 
+- Step 2 (resilience) done: `MockRunner` (keyless, scripted, latency), `ResilientRunner` (retry with backoff, no retry on
+  4xx except 408/409/429, then answers "Inference failed: ..." and emits `agent.halted`), `Semaphore` (max parallel
+  model calls, records peak), `safeHandler` (guards specification and processor), `installProcessGuards`,
+  `createAppRuntime` + `startLoop` (one fresh context per loop, maps contexts and loopIds to agent and candidate),
+  `createRecorder` observer. Test `tests/resilience.test.ts` proves one broken agent and one throwing observer do not
+  stop the others, and that 3 loops of 200 ms finish together.
+
 ## Next step
-- Step 2: mock InferenceRunner, resilient runner, safe processors, process guards, failure-isolation test.
-- Then step 3 (domain model + tests), step 4 (cancellation spike, incl. hard flag mid tool call), step 5 (real
-  Anthropic call: web search + web fetch on `claude-haiku-4-5`).
+- Step 3: domain model + tests (plan section 5). Then step 4 (cancellation spike, incl. hard flag mid tool call),
+  step 5 (real Anthropic call: web search + web fetch on `claude-haiku-4-5`).
 
 ## Open problems
 - None yet.
@@ -33,5 +39,6 @@ No long dashes in this file; use a plain hyphen.
 - None yet.
 
 ## Session log
+- 2026-11-26 13:45 (Andrej): step 2 resilience done and pushed.
 - 2026-11-26 13:40 (Andrej): step 1 skeleton done and pushed.
 - 2026-11-26 13:00 (Andrej): planning done, files committed.
