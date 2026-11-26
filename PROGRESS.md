@@ -16,14 +16,24 @@ No long dashes in this file; use a plain hyphen.
   `createRecorder` observer. Test `tests/resilience.test.ts` proves one broken agent and one throwing observer do not
   stop the others, and that 3 loops of 200 ms finish together.
 
+- Step 3 (domain) done in `src/domain/` (no I/O, no Mozaik): `Money` (cents), `AreaM2`, `SourceRef`/`Sourced<T>`
+  (+ `validateSource`, `calc`), `BusinessProfile`, `Requirement`, `Finding` (no source -> `DomainError`),
+  `Candidate` (status machine, idempotent `reject`, `AbortSignal` fired on rejection), lease cost calculator
+  (monthly, initial, total over term with indexation, exit after 12 months, cost share, break-even, payback, fair price
+  with interquartile range and min 3 comparables), hard-flag rules. `SuiteSpotState` holds candidates and findings and
+  validates every write. 36 domain tests + 2 layering tests.
+
 ## Next step
-- Step 3: domain model + tests (plan section 5). Then step 4 (cancellation spike, incl. hard flag mid tool call),
-  step 5 (real Anthropic call: web search + web fetch on `claude-haiku-4-5`).
+- Step 4: cancellation spike (hard flag between steps AND mid tool call). Then step 5 (real Anthropic call: web search
+  + web fetch on `claude-haiku-4-5`).
 
 ## Open problems
 - None yet.
 
 ## Decisions log
+- 2026-11-26: added source kind `assumption` (values from config/weights.json, labelled "SuiteSpot assumptions") and an
+  optional `grossMarginRate` in the profile (needed for break-even and payback; asked in the questionnaire). The
+  deposit is excluded from total cost over the term (refundable); fit-out is written off straight line over the term.
 - 2026-11-26: one root package.json (server + web), Vitest for tests. Push after every step, only when `npm test` passes.
 - 2026-11-26: Mozaik 6.0.0 facts read from the bundle: interception runs before EVERY step (also `message_received`
   and `model_message`); `ModelContext` is mutated in place, so every loop needs its own context (never share
@@ -39,6 +49,7 @@ No long dashes in this file; use a plain hyphen.
 - None yet.
 
 ## Session log
+- 2026-11-26 13:50 (Andrej): step 3 domain model done and pushed.
 - 2026-11-26 13:45 (Andrej): step 2 resilience done and pushed.
 - 2026-11-26 13:40 (Andrej): step 1 skeleton done and pushed.
 - 2026-11-26 13:00 (Andrej): planning done, files committed.

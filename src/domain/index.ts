@@ -1,0 +1,11 @@
+// The SuiteSpot domain: plain TypeScript, no I/O, no LLM. Never imports from application or adapters.
+export * from "./errors.js"
+export * from "./money.js"
+export * from "./area.js"
+export * from "./source.js"
+export * from "./profile.js"
+export * from "./requirement.js"
+export * from "./finding.js"
+export * from "./candidate.js"
+export * from "./lease-cost.js"
+export * from "./hard-flags.js"
