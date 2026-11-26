@@ -8,6 +8,8 @@ import { NewResearchPage } from "./pages/NewResearchPage"
 import { ResearchPage } from "./pages/ResearchPage"
 import { SettingsPage } from "./pages/SettingsPage"
 import { RunView } from "./run/RunView"
+import { ListingFormPage } from "./listings/ListingFormPage"
+import { BrowseListingsPage, ListingDetailPage, MyListingsPage } from "./listings/ListingPages"
 import { CandidatePage } from "./results/CandidatePage"
 import { DashboardPage, NotFoundPage } from "./pages/SimplePages"
 import type { Config } from "./types"
@@ -23,6 +25,11 @@ const TITLES: Record<Route["name"], string> = {
   reports: "Reports",
   assumptions: "Assumptions",
   settings: "Settings",
+  listings: "Listings",
+  listing: "Listing",
+  newListing: "New listing",
+  editListing: "Edit listing",
+  myListings: "My listings",
   notFound: "Page not found",
 }
 
@@ -79,6 +86,16 @@ function Page({ route, config }: { route: Route; config: Config | null }) {
       return <AssumptionsScreen />
     case "settings":
       return <SettingsPage />
+    case "listings":
+      return <BrowseListingsPage />
+    case "listing":
+      return <ListingDetailPage key={route.listingId} id={route.listingId} />
+    case "newListing":
+      return <ListingFormPage />
+    case "editListing":
+      return <ListingFormPage key={route.listingId} id={route.listingId} />
+    case "myListings":
+      return <MyListingsPage />
     case "notFound":
       return <NotFoundPage path={route.path} />
   }

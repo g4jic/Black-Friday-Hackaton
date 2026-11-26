@@ -1,4 +1,4 @@
-import { FileChartColumn, History, House, Info, Plus, Settings as SettingsIcon, SlidersHorizontal, type LucideIcon } from "lucide-react"
+import { Building2, FileChartColumn, History, House, Info, Plus, Settings as SettingsIcon, SlidersHorizontal, type LucideIcon } from "lucide-react"
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { cx } from "../ui"
 import { currentUser } from "./identity"
@@ -9,6 +9,7 @@ type NavItem = { label: string; to: string; icon: LucideIcon; isActive: (route: 
 const NAV_ITEMS: NavItem[] = [
   { label: "Home", to: paths.dashboard(), icon: House, isActive: (r) => r.name === "dashboard" },
   { label: "New", to: paths.newResearch(), icon: Plus, isActive: (r) => r.name === "newResearch" },
+  { label: "Listings", to: paths.listings(), icon: Building2, isActive: (r) => r.name === "listings" || r.name === "listing" },
   { label: "History", to: paths.history(), icon: History, isActive: (r) => r.name === "history" },
   { label: "Reports", to: paths.reports(), icon: FileChartColumn, isActive: (r) => r.name === "reports" },
   { label: "Assumptions", to: paths.assumptions(), icon: SlidersHorizontal, isActive: (r) => r.name === "assumptions" },
@@ -17,6 +18,7 @@ const NAV_ITEMS: NavItem[] = [
 const NAV_TOOLTIPS: Record<string, string> = {
   Home: "Home",
   New: "New research",
+  Listings: "Commercial spaces published on SuiteSpot",
   History: "History of research runs",
   Reports: "Audited reports",
   Assumptions: "Assumptions: the rules the code uses",
@@ -145,6 +147,17 @@ function AvatarMenu({ settingsActive }: { settingsActive: boolean }) {
             className="flex w-full items-center gap-2 rounded-[14px] px-3 py-2 text-left text-sm font-medium text-ink hover:bg-white"
           >
             <SettingsIcon size={16} aria-hidden /> Settings
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false)
+              navigate(paths.myListings())
+            }}
+            className="flex w-full items-center gap-2 rounded-[14px] px-3 py-2 text-left text-sm font-medium text-ink hover:bg-white"
+          >
+            <Building2 size={16} aria-hidden /> My listings
           </button>
         </div>
       )}

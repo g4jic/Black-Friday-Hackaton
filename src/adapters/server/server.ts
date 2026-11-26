@@ -4,6 +4,10 @@ import { existsSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 import type { InferenceRunner } from "@mozaik-ai/core"
 import type { DemoLatency } from "../inference/scripts/demo-script.js"
+import type { ListingStore } from "../../application/listings/listing-store.js"
+import { seedCatalogue } from "../seed/seed-catalogue.js"
+import { LOCAL_LANDLORD, LOCAL_LISTINGS_FILE, LocalListingStore } from "../storage/local-listing-store.js"
+import { registerListingRoutes, type ActorResolver } from "./listing-routes.js"
 import { registerResearchRoutes, type DemoCatalogue } from "./research-routes.js"
 
 const webDist = fileURLToPath(new URL("../../../web/dist", import.meta.url))
@@ -13,13 +17,23 @@ export function runMode(): "demo" | "live" {
   return process.env.SUITESPOT_MODE === "live" && Boolean(process.env.ANTHROPIC_API_KEY) ? "live" : "demo"
 }
 
-export type ServerOptions = { readonly demoPace?: DemoLatency; readonly liveRunner?: () => InferenceRunner; readonly demoCatalogue?: DemoCatalogue }
+export type ServerOptions = {
+  readonly demoPace?: DemoLatency
+  readonly liveRunner?: () => InferenceRunner
+  readonly demoCatalogue?: DemoCatalogue
+  /** For tests: a store without a file. Default: the local store (seed + data/local-listings.json). */
+  readonly listingStore?: ListingStore
+  readonly resolveActor?: ActorResolver
+}
 
 export async function buildServer(options: ServerOptions = {}): Promise<FastifyInstance> {
   const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" } })
 
   app.get("/api/health", async () => ({ status: "ok", mode: runMode() }))
   // The API key stays in this process: no route returns it, and every outgoing event is scrubbed of it.
+  // Without Supabase: the local store, and every caller acts as the one Local demo landlord (clearly labelled).
+  const listingStore = options.listingStore ?? new LocalListingStore({ seed: seedCatalogue(), file: LOCAL_LISTINGS_FILE })
+  registerListingRoutes(app, { store: listingStore, resolveActor: options.resolveActor ?? (async () => LOCAL_LANDLORD), backend: "local" })
   registerResearchRoutes(app, { liveAvailable: () => runMode() === "live", demoPace: options.demoPace, liveRunner: options.liveRunner, demoCatalogue: options.demoCatalogue })
 
   // In production the built web app is served by this same process (one Railway service).

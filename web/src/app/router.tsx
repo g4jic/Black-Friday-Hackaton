@@ -14,6 +14,11 @@ export type Route =
   | { name: "reports" }
   | { name: "assumptions" }
   | { name: "settings" }
+  | { name: "listings" }
+  | { name: "listing"; listingId: string }
+  | { name: "newListing" }
+  | { name: "editListing"; listingId: string }
+  | { name: "myListings" }
   | { name: "notFound"; path: string }
 
 const STATIC_ROUTES: Record<string, Route> = {
@@ -23,12 +28,19 @@ const STATIC_ROUTES: Record<string, Route> = {
   "/reports": { name: "reports" },
   "/assumptions": { name: "assumptions" },
   "/settings": { name: "settings" },
+  "/listings": { name: "listings" },
+  "/listings/new": { name: "newListing" },
+  "/my-listings": { name: "myListings" },
 }
 
 export function parseRoute(pathname: string): Route {
   const path = pathname.replace(/\/+$/, "") || "/"
   const staticRoute = STATIC_ROUTES[path]
   if (staticRoute) return staticRoute
+  const editListingMatch = /^\/listings\/([a-z0-9-]+)\/edit$/.exec(path)
+  if (editListingMatch) return { name: "editListing", listingId: editListingMatch[1]! }
+  const listingMatch = /^\/listings\/([a-z0-9-]+)$/.exec(path)
+  if (listingMatch) return { name: "listing", listingId: listingMatch[1]! }
   const runMatch = /^\/research\/([A-Za-z0-9-]+)\/run$/.exec(path)
   if (runMatch) return { name: "run", researchId: runMatch[1]! }
   const candidateMatch = /^\/research\/([A-Za-z0-9-]+)\/candidate\/([A-Za-z0-9-]+)$/.exec(path)
@@ -48,6 +60,11 @@ export const paths = {
   reports: () => "/reports",
   assumptions: () => "/assumptions",
   settings: () => "/settings",
+  listings: () => "/listings",
+  listing: (listingId: string) => `/listings/${listingId}`,
+  newListing: () => "/listings/new",
+  editListing: (listingId: string) => `/listings/${listingId}/edit`,
+  myListings: () => "/my-listings",
 }
 
 const listeners = new Set<() => void>()
