@@ -94,7 +94,15 @@ export function NewResearchPage({ config }: { config: Config | null }) {
   useEffect(() => {
     fetch("/api/demo-questionnaire")
       .then((response) => response.json() as Promise<{ profile: ProfileInput }>)
-      .then((body) => setDemoProfile(body.profile))
+      .then((body) => {
+        setDemoProfile(body.profile)
+        // A first visit has an empty questionnaire: start from the demo example so one click runs, keeping what Settings has.
+        setForm((current) => {
+          const example = toForm(body.profile)
+          const filled = Object.fromEntries(Object.entries(current).map(([k, v]) => [k, v.trim() ? v : example[k as keyof ProfileForm]])) as ProfileForm
+          return current.monthlyBudget.trim() ? { ...filled, leaseMonths: current.leaseMonths } : example
+        })
+      })
       .catch(() => setDemoProfile(null))
   }, [])
 
@@ -146,7 +154,7 @@ export function NewResearchPage({ config }: { config: Config | null }) {
               </span>
             </div>
           ) : (
-            <p className="mb-4">Prefilled from your Settings. Every number you give here is shown as "your questionnaire" next to the results.</p>
+            <p className="mb-4">Prefilled from your Settings and an example; change anything. Every number here is shown as "your questionnaire" next to the results.</p>
           )}
           <ProfileFields form={shownForm} locked={profileLocked} onChange={(patch) => setForm({ ...form, ...patch })} />
         </Card>
