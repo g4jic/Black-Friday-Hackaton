@@ -27,7 +27,7 @@ export function describeSource(s: SourceDTO, depth = 0): string {
   const pad = "  ".repeat(depth)
   const head =
     s.kind === "listing" || s.kind === "lease"
-      ? `${pad}${s.kind} ${s.ref}${s.field ? ` / ${s.field}` : ""}${s.clause ? ` / ${s.clause}` : ""}${s.quote ? `: "${s.quote}"` : ""}${s.missing ? ": not stated in the text" : ""}`
+      ? `${pad}${s.kind} ${s.ref}${s.field ? ` / ${s.field}` : ""}${s.clause ? ` / ${s.clause}` : ""}${s.quote ? `: "${s.quote}"` : ""}${s.missing ? ": not stated in the text" : ""}${s.form ? " (as typed in the listing form)" : ""}`
       : s.kind === "profile"
         ? `${pad}questionnaire / ${s.field ?? s.ref}`
         : `${pad}${s.kind}: ${s.ref}`

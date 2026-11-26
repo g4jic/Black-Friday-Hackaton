@@ -11,7 +11,7 @@ export type WireEvent = {
   data?: Record<string, unknown>
 }
 
-export type SourceDTO = { kind: string; ref: string; field?: string; clause?: string; quote?: string; missing?: boolean; inputs?: SourceDTO[] }
+export type SourceDTO = { kind: string; ref: string; field?: string; clause?: string; quote?: string; missing?: boolean; form?: boolean; inputs?: SourceDTO[] }
 
 export type ValueDTO =
   | { kind: "money"; amount: number; currency: string }

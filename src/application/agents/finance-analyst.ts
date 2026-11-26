@@ -136,11 +136,11 @@ export function createFinanceAnalyst(rt: AppRuntime, options: FinanceOptions): A
     const terms = leaseTermsFor(candidate.listing, profile, lease)
     if (isMissingData(terms)) return "missing data: the listing does not state the rent, so nothing can be computed"
     // Never let a questionnaire value look like a lease term: say where the term came from.
-    const leaseNote = !rt.state.hasLease(candidateId)
-      ? "no lease draft: term from the questionnaire"
-      : !lease
+    const leaseNote = !lease
+      ? rt.state.hasLease(candidateId)
         ? "lease not verified: term from the questionnaire"
-        : isMissingData(lease.term)
+        : "no lease draft: term from the questionnaire"
+      : isMissingData(lease.term)
           ? "lease term not verified: term from the questionnaire"
           : null
     const rec = (name: CalculationName, claim: string, value: unknown, source: SourceRef) =>
@@ -269,7 +269,7 @@ export function createFinanceAnalyst(rt: AppRuntime, options: FinanceOptions): A
     )
     const message = [
       `Candidate id: ${candidateId}`,
-      `Listing: ${candidate.listing.ref}${rt.state.hasLease(candidateId) ? " (a lease draft exists; the Lease reader is reading it)" : " (no lease draft)"}`,
+      `Listing: ${candidate.listing.ref}${rt.state.hasLease(candidateId) ? " (a lease draft exists; the Lease reader is reading it)" : rt.state.leaseClauses.has(candidateId) ? " (no lease draft; the lease terms come from the listing form)" : " (no lease draft)"}`,
       ...(feedback ? ["", `Your previous explanation was rejected: ${feedback}`, "Use only numbers the tool returned, exactly as returned."] : []),
     ].join("\n")
     rt.startLoop({

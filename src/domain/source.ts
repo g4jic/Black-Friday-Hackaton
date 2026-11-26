@@ -2,8 +2,9 @@ import { DomainError } from "./errors.js"
 
 /**
  * Where a value comes from. Every number SuiteSpot shows carries one.
- * - listing: a listing text the user pasted or a SuiteSpot listing ("pasted-3", "listing-ns014") + field + quote (the exact
- *   excerpt of the text the value was taken from), or a listing page URL (mode B, only with the site's permission)
+ * - listing: a listing text the user pasted ("pasted-3") + field + quote (the exact excerpt of the text the value was
+ *   taken from); or a SuiteSpot listing ("listing-ns014") + field + form: the value as the landlord typed it in the
+ *   structured listing form; or a listing page URL (only with the site's permission)
  * - osm: an OpenStreetMap element ("node/123") or the Overpass query that produced it
  * - lease: a lease document id (+ clause)
  * - profile: an answer the user gave in the questionnaire (+ field)
@@ -22,6 +23,8 @@ export type SourceRef = {
   readonly quote?: string
   /** The source is the text itself, which does NOT state this field (no quote possible). Needs `field`. */
   readonly missing?: boolean
+  /** The value is a field of a structured SuiteSpot listing, as the landlord typed it in the form. Needs `field`. */
+  readonly form?: boolean
   readonly inputs?: readonly SourceRef[]
 }
 
@@ -49,6 +52,11 @@ export function validateSource(source: unknown): SourceRef {
   if (typeof s.ref !== "string" || s.ref.trim() === "") throw new DomainError("invalid_source", "Source ref is empty")
   switch (s.kind) {
     case "listing":
+      if (s.form === true) {
+        if (!/^listing-[a-z0-9]+$/.test(s.ref)) throw new DomainError("invalid_source", `A listing form source must name a SuiteSpot listing (listing-<id>), got "${s.ref}"`)
+        if (!s.field) throw new DomainError("invalid_source", "A listing form source must name the field")
+        break
+      }
       if (LISTING_TEXT_ID.test(s.ref)) {
         if (s.missing === true) {
           if (!s.field) throw new DomainError("invalid_source", "A 'not stated' listing source must name the field")
@@ -61,7 +69,7 @@ export function validateSource(source: unknown): SourceRef {
         break
       }
       if (!/^https?:\/\/\S+$/i.test(s.ref)) {
-        throw new DomainError("invalid_source", `Listing source must be a listing text id (pasted-<n>, demo-<id>) or an http(s) URL, got "${s.ref}"`)
+        throw new DomainError("invalid_source", `Listing source must be a listing text id (pasted-<n>, listing-<id>) or an http(s) URL, got "${s.ref}"`)
       }
       break
     case "lease":

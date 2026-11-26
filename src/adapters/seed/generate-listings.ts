@@ -73,7 +73,7 @@ export const DISTRICTS: Record<SupportedCity, readonly District[]> = {
 const BUSY: Record<string, number> = { "Novi Sad/Centar": 3, "Novi Sad/Stari grad": 3, "Novi Sad/Liman 1": 3, "Beograd/Novi Beograd": 3, "Beograd/Vračar": 2, "Beograd/Stari grad": 2 }
 const WEIGHTED_DISTRICTS = Object.fromEntries(
   (Object.keys(DISTRICTS) as SupportedCity[]).map((city) => [city, DISTRICTS[city].flatMap((d) => Array.from({ length: BUSY[`${city}/${d.name}`] ?? 1 }, () => d))]),
-) as Record<SupportedCity, readonly District[]>
+) as unknown as Record<SupportedCity, readonly District[]>
 
 const MALE = ["Marko", "Nikola", "Stefan", "Milan", "Aleksandar", "Nemanja", "Dragan", "Zoran", "Miloš", "Dušan", "Lazar", "Vladimir", "Ivan", "Petar", "Đorđe", "Bojan", "Goran", "Srđan", "Uroš", "Filip", "Luka", "Dejan", "Branislav", "Saša"] as const
 const FEMALE = ["Milica", "Jelena", "Ana", "Marija", "Jovana", "Ivana", "Dragana", "Snežana", "Tamara", "Teodora", "Katarina", "Sanja", "Mirjana", "Biljana", "Nataša", "Gordana", "Sara", "Tijana", "Vesna", "Ljiljana", "Nevena", "Danijela", "Maja", "Kristina"] as const

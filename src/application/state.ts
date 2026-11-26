@@ -9,6 +9,7 @@ import {
   type HardFlag,
   type LeaseClauses,
   type LeaseText,
+  type Listing,
   type ListingText,
   type ListingTextInput,
   type RankedCandidate,
@@ -41,6 +42,8 @@ export class SuiteSpotState extends RuntimeState {
   requirements: Requirement[] = []
   /** Listing texts of this run, contacts already removed (the raw paste is never stored). */
   readonly listingTexts = new Map<string, ListingText>()
+  /** SuiteSpot listings of this run, turned into candidates by code (no Scout needed: the form is structured). */
+  readonly catalogueListings = new Set<string>()
   readonly candidates = new Map<string, Candidate>()
   readonly findings: Finding[] = []
   /** The "failed items" queue: listings the Scout could not turn into a valid candidate. */
@@ -121,6 +124,19 @@ export class SuiteSpotState extends RuntimeState {
     }
     for (const t of batch) this.listingTexts.set(t.id, t)
     return batch
+  }
+
+  /** A SuiteSpot listing becomes a candidate at once (code built it from the form). Idempotent. */
+  addCatalogueCandidate(listing: Listing): Candidate {
+    if (!/^listing-[a-z0-9]+$/.test(listing.ref)) throw new DomainError("invalid_input", `"${listing.ref}" is not a SuiteSpot listing`)
+    if (this.listingTexts.has(listing.ref)) throw new DomainError("invalid_input", `Listing "${listing.ref}" was already submitted as text`)
+    this.catalogueListings.add(listing.ref)
+    return this.addCandidate(new Candidate(listing.ref, listing))
+  }
+
+  /** How many listings this run evaluates: pasted texts the Scout reads plus SuiteSpot listings. */
+  expectedListings(): number {
+    return this.listingTexts.size + this.catalogueListings.size
   }
 
   listingText(id: string): ListingText {

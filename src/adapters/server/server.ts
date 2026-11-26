@@ -34,7 +34,7 @@ export async function buildServer(options: ServerOptions = {}): Promise<FastifyI
   // Without Supabase: the local store, and every caller acts as the one Local demo landlord (clearly labelled).
   const listingStore = options.listingStore ?? new LocalListingStore({ seed: seedCatalogue(), file: LOCAL_LISTINGS_FILE })
   registerListingRoutes(app, { store: listingStore, resolveActor: options.resolveActor ?? (async () => LOCAL_LANDLORD), backend: "local" })
-  registerResearchRoutes(app, { liveAvailable: () => runMode() === "live", demoPace: options.demoPace, liveRunner: options.liveRunner, demoCatalogue: options.demoCatalogue })
+  registerResearchRoutes(app, { liveAvailable: () => runMode() === "live", demoPace: options.demoPace, liveRunner: options.liveRunner, demoCatalogue: options.demoCatalogue, listingStore })
 
   // In production the built web app is served by this same process (one Railway service).
   if (existsSync(webDist)) {

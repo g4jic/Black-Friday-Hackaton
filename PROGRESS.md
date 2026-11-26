@@ -30,6 +30,15 @@ No long dashes in this file; use a plain hyphen.
   clauses, or no description; required form fields are never empty. `npm run seed:report` prints a summary.
 - Step 3 DONE: listing API (`src/adapters/server/listing-routes.ts`) and pages /listings, /listings/:id (Show contact,
   demo phone masked, no links), /listings/new, /listings/:id/edit, /my-listings.
+- Step 4 DONE: SuiteSpot listings become candidates by code (`src/domain/catalogue-match.ts`): every value has a
+  form source `{ kind: "listing", ref: "listing-ns014", field, form: true }`, no Scout. "Find spaces" =
+  `matchListings` (city, area range, type of business, rent + costs within budget + 10% tolerance; max 8, closest
+  to budget first). A listing with a lease draft goes to the Lease reader; one without a draft gets the same lease
+  rules on its form terms ("Listing form check", plain code), which can reject it at once (any loop already started
+  stops at its breakpoint, before inference). Keyless demo = Find spaces on the seed with the demo questionnaire;
+  scripted Lease reader answers come from the seed's exact clause sentences (`seed-lease-answers.ts`), still checked
+  by `buildLease`. "Evaluate for my business" (`/research/new?listing=<id>`): demo listings run without a key, any
+  listing in live mode. Live `source: "search"` uses the user's questionnaire. Form vs draft comparison is step 7.
 - Local ports: another local project may hold 3000 and 5173; stop it before `npm run dev`.
 
 ## 26 Nov 2026, late evening (Andrej): app flow, run orbit, results redesign

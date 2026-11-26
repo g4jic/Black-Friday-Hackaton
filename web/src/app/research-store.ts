@@ -106,7 +106,11 @@ function ensureEntry(researchId: string): void {
   openStream(researchId)
 }
 
-export type StartRequest = { source: "demo" } | { mode: "live"; source: "pasted"; listings: { text: string; url?: string; lease?: string }[]; profile?: unknown }
+export type StartRequest =
+  | { source: "demo" }
+  | { mode: "live"; source: "pasted"; listings: { text: string; url?: string; lease?: string }[]; profile?: unknown }
+  | { mode: "live"; source: "search"; profile?: unknown }
+  | { mode?: "live"; source: "listing"; listingId: string; profile?: unknown }
 
 /** Starts a run on the server and begins streaming it. Throws with the server's message on refusal. */
 export async function startResearch(request: StartRequest, accessCode?: string): Promise<string> {

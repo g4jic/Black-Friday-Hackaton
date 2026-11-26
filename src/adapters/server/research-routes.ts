@@ -14,11 +14,19 @@ import {
   BusinessProfile,
   createLeaseText,
   createListingBatch,
+  catalogueCandidate,
+  leaseTextOf,
+  matchListings,
   type BusinessProfileInput,
+  type CatalogueCandidate,
+  type SpaceListing,
   type LeaseText,
   type ListingTextInput,
 } from "../../domain/index.js"
+import type { ListingStore } from "../../application/listings/listing-store.js"
 import { loadDemoQuestionnaire } from "../fixtures/demo-questionnaire.js"
+import { seedCatalogue } from "../seed/seed-catalogue.js"
+import { seedLeaseAnswers } from "../seed/seed-lease-answers.js"
 import { createLiveRunner } from "../inference/live-runner.js"
 import { MockRunner } from "../inference/mock-runner.js"
 import { demoRoomScript, type DemoLatency } from "../inference/scripts/demo-script.js"
@@ -40,8 +48,8 @@ export const DEMO_PACE: DemoLatency = {
 export const FAST_PACE: DemoLatency = { scout: () => 10, leaseReader: 60, financeStep: 20, reportWriter: 20 }
 
 /**
- * The listings a demo run uses, with the scripted model answers for them. None is built in right now: the old
- * fixtures were removed and the seeded catalogue replaces them. Tests pass their own.
+ * Pasted listing texts with scripted Scout and Lease reader answers, for tests of the pasted-text path in demo mode.
+ * Without it, the demo searches the seeded SuiteSpot catalogue (scripted Lease reader answers from the seed).
  */
 export type DemoCatalogue = {
   readonly listings: () => ListingTextInput[]
@@ -52,6 +60,8 @@ export type DemoCatalogue = {
 
 export type ResearchRoutesOptions = {
   readonly demoCatalogue?: DemoCatalogue
+  /** The published SuiteSpot listings ("Find spaces" and "Evaluate for my business" in live mode). */
+  readonly listingStore?: ListingStore
   /** Whether live mode may be used (SUITESPOT_MODE=live and a key on the server). */
   readonly liveAvailable: () => boolean
   readonly demoPace?: DemoLatency
@@ -59,7 +69,7 @@ export type ResearchRoutesOptions = {
   readonly liveRunner?: () => InferenceRunner
 }
 
-type Body = { mode?: ResearchMode; source?: "demo" | "pasted"; listings?: { text?: unknown; lease?: unknown; url?: unknown }[]; profile?: Partial<BusinessProfileInput> }
+type Body = { mode?: ResearchMode; source?: "demo" | "pasted" | "search" | "listing"; listingId?: unknown; listings?: { text?: unknown; lease?: unknown; url?: unknown }[]; profile?: Partial<BusinessProfileInput> }
 
 /** Name of the environment variable with the live mode access code (also in .env.example, PROGRESS.md, CLAUDE.md). */
 export const ACCESS_CODE_ENV = "SUITESPOT_ACCESS_CODE"
@@ -90,6 +100,18 @@ class HttpError extends Error {
     super(message)
   }
 }
+
+/** The seeded demo catalogue, built once: the listings and the scripted Lease reader answers for their drafts. */
+let seedDemo: { listings: SpaceListing[]; leaseAnswers: Record<string, unknown> } | null = null
+const demoSeed = () => (seedDemo ??= { listings: seedCatalogue().listings, leaseAnswers: seedLeaseAnswers() })
+
+/** SuiteSpot listings as candidates: code builds each from the form; drafts go to the Lease reader. */
+const fromCatalogue = (spaces: readonly SpaceListing[]): { catalogue: CatalogueCandidate[]; leases: LeaseText[] } => ({
+  catalogue: spaces.map(catalogueCandidate),
+  leases: spaces.flatMap((s) => leaseTextOf(s) ?? []),
+})
+
+const NO_MATCH = "No SuiteSpot listing matches this questionnaire (city, area range, budget and type of business). Widen the area range or the budget."
 
 export function registerResearchRoutes(app: FastifyInstance, options: ResearchRoutesOptions): void {
   const sessions = new Map<string, ResearchSession>()
@@ -137,13 +159,33 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
         const active = [...sessions.values()].filter((s) => s.mode === "live" && s.status === "running").length
         if (active >= MAX_ACTIVE_LIVE) throw new HttpError(429, "A live research is already running. Wait for it to finish.")
       }
-      let listings: ListingTextInput[]
-      let leases: LeaseText[]
-      const catalogue = options.demoCatalogue
-      if ((body.source ?? "demo") === "demo") {
-        if (!catalogue) throw new HttpError(503, "The demo catalogue is not available on this server yet.")
-        listings = catalogue.listings()
-        leases = catalogue.leases()
+      const source = body.source ?? "demo"
+      const demo = loadDemoQuestionnaire()
+      // Demo runs always use the fixed demo profile (the scripted answers were made for it).
+      const profile = mode === "live" ? liveProfile(body.profile, demo.profile) : demo.profile
+      let listings: ListingTextInput[] = []
+      let leases: LeaseText[] = []
+      let catalogue: CatalogueCandidate[] = []
+      const pastedDemo = options.demoCatalogue
+      if (source === "demo" && pastedDemo) {
+        listings = pastedDemo.listings()
+        leases = pastedDemo.leases()
+      } else if (source === "demo") {
+        // The keyless demo: "Find spaces" over the seeded synthetic listings with the demo questionnaire.
+        ;({ catalogue, leases } = fromCatalogue(matchListings(demoSeed().listings, profile)))
+      } else if (source === "search") {
+        if (mode !== "live") throw new HttpError(400, "Searching with your own questionnaire needs live mode. The demo searches with the demo questionnaire.")
+        if (!options.listingStore) throw new HttpError(503, "The listing catalogue is not available on this server.")
+        const matched = matchListings(await options.listingStore.listPublished(), profile)
+        if (matched.length === 0) throw new HttpError(400, NO_MATCH)
+        ;({ catalogue, leases } = fromCatalogue(matched))
+      } else if (source === "listing") {
+        const listingId = typeof body.listingId === "string" ? body.listingId : ""
+        const space = /^listing-[a-z0-9]+$/.test(listingId) ? (mode === "live" ? await options.listingStore?.get(listingId) : demoSeed().listings.find((l) => l.id === listingId)) : null
+        if (!space || !space.props.published) {
+          throw new HttpError(mode === "live" ? 404 : 400, mode === "live" ? "Unknown listing" : "Without live mode only a demo listing can be evaluated (with the demo questionnaire).")
+        }
+        ;({ catalogue, leases } = fromCatalogue([space]))
       } else {
         if (mode !== "live") throw new HttpError(400, "Pasted listings need live mode: demo mode replays scripted answers for the demo listings only.")
         const raw = Array.isArray(body.listings) ? body.listings : []
@@ -151,17 +193,18 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
         createListingBatch(listings) // validates 1 to 8, empty texts; throws DomainError
         leases = raw.flatMap((l, i) => (typeof l.lease === "string" && l.lease.trim() ? [createLeaseText(`pasted-${i + 1}`, l.lease, false)] : []))
       }
-      const demo = loadDemoQuestionnaire()
-      // Demo runs always use the fixed demo profile (the scripted answers were recorded for it).
-      const profile = mode === "live" ? liveProfile(body.profile, demo.profile) : demo.profile
       const requirements = profile === demo.profile ? demo.requirements : []
       const id = randomUUID()
       const session = new ResearchSession({
         id,
         mode,
         model: mode === "live" ? LIVE_MODEL : "mock",
-        runner: mode === "live" ? (options.liveRunner ?? createLiveRunner)() : new MockRunner({ script: demoRoomScript({ scout: catalogue?.scoutAnswers() ?? {}, lease: catalogue?.leaseAnswers() ?? {} }, options.demoPace ?? DEMO_PACE) }),
+        runner:
+          mode === "live"
+            ? (options.liveRunner ?? createLiveRunner)()
+            : new MockRunner({ script: demoRoomScript(pastedDemo && listings.length ? { scout: pastedDemo.scoutAnswers(), lease: pastedDemo.leaseAnswers() } : { scout: {}, lease: demoSeed().leaseAnswers }, options.demoPace ?? DEMO_PACE) }),
         listings,
+        catalogue,
         leases,
         profile,
         requirements,
@@ -171,7 +214,7 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
       })
       sessions.set(id, session)
       for (const old of [...sessions.keys()].slice(0, Math.max(0, sessions.size - KEEP_SESSIONS))) sessions.delete(old)
-      return reply.code(201).send({ id, mode, listings: listings.length, synthetic: (body.source ?? "demo") === "demo" })
+      return reply.code(201).send({ id, mode, listings: listings.length + catalogue.length, synthetic: source !== "pasted" && catalogue.every((c) => c.listing.synthetic) })
     } catch (error) {
       const status = error instanceof HttpError ? error.status : error instanceof DomainError ? 400 : 500
       const message = error instanceof HttpError || error instanceof DomainError ? error.message : "Could not start the research"

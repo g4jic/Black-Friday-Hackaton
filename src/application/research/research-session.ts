@@ -1,5 +1,6 @@
 import { createHuman, SituationSpecification, type InferenceRunner, type SemanticEvent } from "@mozaik-ai/core"
-import type { BusinessProfile, LeaseText, ListingTextInput, Requirement } from "../../domain/index.js"
+import type { BusinessProfile, CatalogueCandidate, LeaseText, ListingTextInput, Requirement } from "../../domain/index.js"
+import { submitCatalogueListings } from "../agents/catalogue.js"
 import { createFinanceAnalyst } from "../agents/finance-analyst.js"
 import { createLeaseReader } from "../agents/lease-reader.js"
 import { createRanker } from "../agents/ranker.js"
@@ -17,7 +18,10 @@ export type ResearchInput = {
   readonly mode: ResearchMode
   readonly model: string
   readonly runner: InferenceRunner
+  /** Pasted listing texts (the Scout reads them). May be empty when the run uses SuiteSpot listings. */
   readonly listings: readonly ListingTextInput[]
+  /** SuiteSpot listings, built by code from the structured form (no Scout). */
+  readonly catalogue?: readonly CatalogueCandidate[]
   readonly leases: readonly LeaseText[]
   readonly profile: BusinessProfile
   readonly requirements: readonly Requirement[]
@@ -63,6 +67,7 @@ type Payload = Record<string, unknown> & {
 /** Domain event fields that may go to the browser, per event type (everything else is dropped). */
 const PASS_THROUGH: Record<string, readonly string[]> = {
   "listings.submitted": ["listingIds", "removedContacts"],
+  "catalogue.matched": ["listingIds"],
   "candidate.found": ["candidateId", "missing", "unverified"],
   "candidate.rejected": ["candidateId", "cancelledLoops"],
   "candidate.flag_recorded": ["candidateId"],
@@ -127,7 +132,8 @@ export class ResearchSession {
     this.rt.state.setQuestionnaire(input.profile, input.requirements)
     this.rt.state.submitLeases(input.leases)
     this.timer = setInterval(() => this.checkDone(), 50)
-    submitListings(this.rt, input.listings, user.getId())
+    if (input.listings.length > 0) submitListings(this.rt, input.listings, user.getId())
+    if (input.catalogue?.length) submitCatalogueListings(this.rt, input.catalogue, user.getId())
   }
 
   get id(): string {
@@ -231,7 +237,7 @@ export class ResearchSession {
     const loopsDone = this.rt.loops().every((l) => l.status === "done")
     const settled = state.runStop
       ? loopsDone // cancelled: done as soon as every loop has stopped
-      : state.candidates.size + state.failedListings.length >= this.input.listings.length &&
+      : state.candidates.size + state.failedListings.length >= state.expectedListings() &&
         this.rt.loops().length > 0 &&
         loopsDone &&
         (this.rankingDone || state.candidates.size === 0) &&

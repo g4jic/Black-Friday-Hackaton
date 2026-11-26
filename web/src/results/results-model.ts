@@ -16,7 +16,7 @@ export const CONFIDENCE_LABEL: Record<string, string> = { high: "High confidence
 export function plainSource(source: SourceDTO): string {
   switch (source.kind) {
     case "listing":
-      return source.field === "url" ? "you entered it" : "from the listing"
+      return source.field === "url" ? "you entered it" : source.form ? "from the listing form" : "from the listing"
     case "lease":
       return "from the lease draft"
     case "profile":

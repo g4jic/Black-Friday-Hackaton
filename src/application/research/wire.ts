@@ -26,7 +26,7 @@ export type WireEvent = {
   readonly data?: Record<string, unknown>
 }
 
-export type SourceDTO = { kind: string; ref: string; field?: string; clause?: string; quote?: string; missing?: boolean; inputs?: SourceDTO[] }
+export type SourceDTO = { kind: string; ref: string; field?: string; clause?: string; quote?: string; missing?: boolean; form?: boolean; inputs?: SourceDTO[] }
 
 export type ValueDTO =
   | { kind: "money"; amount: number; currency: string }
@@ -89,6 +89,7 @@ export function sourceDTO(s: SourceRef): SourceDTO {
     ...(s.clause ? { clause: s.clause } : {}),
     ...(s.quote ? { quote: s.quote } : {}),
     ...(s.missing ? { missing: true } : {}),
+    ...(s.form ? { form: true } : {}),
     ...(s.inputs?.length ? { inputs: s.inputs.map(sourceDTO) } : {}),
   }
 }

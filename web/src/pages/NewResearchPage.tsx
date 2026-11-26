@@ -1,4 +1,4 @@
-import { FileSearch, Lock, Play, Plus, Search, Trash2, type LucideIcon } from "lucide-react"
+import { Building2, FileSearch, Lock, Play, Plus, Search, Trash2, type LucideIcon } from "lucide-react"
 import { useEffect, useState } from "react"
 import { startResearch, type StartRequest } from "../app/research-store"
 import { Link, navigate, paths, setSearchParam, useLocation } from "../app/router"
@@ -7,6 +7,8 @@ import { Card } from "../app/Shell"
 import type { Config, ProfileInput } from "../types"
 import { Pill, cx } from "../ui"
 import { INPUT, LABEL } from "./SettingsPage"
+import { floorLabel, listingsApi, useLoad } from "../listings/listings-api"
+import { formatMoney } from "../format"
 
 type Mode = "evaluate" | "find"
 type ListingDraft = { text: string; url: string; lease: string; showLease: boolean }
@@ -81,6 +83,8 @@ function profileFromForm(form: ProfileForm): { profile: Partial<ProfileInput> } 
 export function NewResearchPage({ config }: { config: Config | null }) {
   const { search } = useLocation()
   const mode: Mode = search.get("mode") === "find" ? "find" : "evaluate"
+  // "Evaluate for my business" on a listing page: evaluate that one SuiteSpot listing.
+  const listingId = mode === "evaluate" ? search.get("listing") : null
   const settings = useSettings()
   const [demoProfile, setDemoProfile] = useState<ProfileInput | null>(null)
   const [form, setForm] = useState<ProfileForm>(() => fromSettings(settings))
@@ -96,8 +100,8 @@ export function NewResearchPage({ config }: { config: Config | null }) {
   }, [])
 
   const liveAvailable = Boolean(config?.liveAvailable)
-  // Mode B runs on the synthetic demo listings with the fixed demo profile; mode A needs live mode.
-  const profileLocked = mode === "find" || !liveAvailable
+  // Without live mode every run uses the fixed demo profile (the scripted answers were made for it).
+  const profileLocked = !liveAvailable
   const shownForm = profileLocked && demoProfile ? toForm(demoProfile) : form
   const maxListings = config?.maxListings ?? 8
   const filledDrafts = drafts.filter((d) => d.text.trim())
@@ -120,6 +124,14 @@ export function NewResearchPage({ config }: { config: Config | null }) {
     void start({ mode: "live", source: "pasted", profile: checked.profile, listings: filledDrafts.map((d) => ({ text: d.text, ...(d.url.trim() ? { url: d.url.trim() } : {}), ...(d.lease.trim() ? { lease: d.lease } : {}) })) }, settings.liveAccessCode)
   }
 
+  /** Live runs on SuiteSpot listings use the questionnaire as typed; demo runs use the demo profile. */
+  const startOnCatalogue = (request: { source: "search" } | { source: "listing"; listingId: string }) => {
+    if (!liveAvailable) return void start(request.source === "search" ? { source: "demo" } : request)
+    const checked = profileFromForm(form)
+    if ("error" in checked) return setError(checked.error)
+    void start({ mode: "live", ...request, profile: checked.profile }, settings.liveAccessCode)
+  }
+
   const updateDraft = (index: number, patch: Partial<ListingDraft>) => setDrafts(drafts.map((d, i) => (i === index ? { ...d, ...patch } : d)))
 
   return (
@@ -139,8 +151,7 @@ export function NewResearchPage({ config }: { config: Config | null }) {
                 </span>
               </Pill>
               <span className="text-[13px] text-ink-2">
-                {mode === "find" ? "Find spaces runs on synthetic demo listings with this fixed profile." : "Demo runs use this fixed profile."} Your own profile is used in live
-                mode.
+                Demo runs use this fixed profile. Your own profile is used in live mode.
               </span>
             </div>
           ) : (
@@ -152,24 +163,23 @@ export function NewResearchPage({ config }: { config: Config | null }) {
         {mode === "find" ? (
           <Card title="Find spaces">
             <p>
-              SuiteSpot evaluates 8 synthetic commercial listings in Novi Sad and 3 lease drafts. Live search of listing sites is off: we only read a site that has given
-              written permission.
+              SuiteSpot picks up to {maxListings} listings published on SuiteSpot that fit the city, the area range, the budget and the type of business. The agents then
+              evaluate them all at the same time. SuiteSpot never reads other listing sites.
             </p>
             <div className="mt-4 flex flex-wrap gap-1.5">
               <Pill variant="brand" icon={false}>
-                Demo data
+                Synthetic demo listings
               </Pill>
-              <Pill icon={false}>8 listings</Pill>
-              <Pill icon={false}>3 lease drafts</Pill>
-              <Pill icon={false}>no API key</Pill>
+              <Pill icon={false}>up to {maxListings} candidates</Pill>
+              {!liveAvailable && <Pill icon={false}>no API key</Pill>}
             </div>
             <button
               type="button"
-              onClick={() => void start({ source: "demo" })}
-              disabled={starting}
+              onClick={() => startOnCatalogue({ source: "search" })}
+              disabled={starting || (liveAvailable && accessCodeMissing)}
               className="mt-6 inline-flex h-10 items-center gap-2 rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e] disabled:opacity-50"
             >
-              <Play size={16} strokeWidth={2} aria-hidden /> {starting ? "Starting..." : "Run the research"}
+              <Play size={16} strokeWidth={2} aria-hidden /> {starting ? "Starting..." : liveAvailable ? "Search and evaluate" : "Run the demo search"}
             </button>
             {error && (
               <p role="alert" className="mt-3 text-[13px] text-hard">
@@ -177,6 +187,8 @@ export function NewResearchPage({ config }: { config: Config | null }) {
               </p>
             )}
           </Card>
+        ) : listingId ? (
+          <ListingToEvaluate listingId={listingId} liveAvailable={liveAvailable} starting={starting} error={error} blocked={liveAvailable && accessCodeMissing} onStart={() => startOnCatalogue({ source: "listing", listingId })} />
         ) : (
           <Card title="Listings">
             {!liveAvailable && (
@@ -258,6 +270,61 @@ export function NewResearchPage({ config }: { config: Config | null }) {
         )}
       </div>
     </div>
+  )
+}
+
+/** The SuiteSpot listing chosen with "Evaluate for my business". Without live mode only a demo listing can run. */
+function ListingToEvaluate({ listingId, liveAvailable, starting, error, blocked, onStart }: { listingId: string; liveAvailable: boolean; starting: boolean; error: string | null; blocked: boolean; onStart: () => void }) {
+  const loaded = useLoad(listingId, () => listingsApi.get(listingId))
+  const listing = loaded.data
+  const canRun = Boolean(listing) && (liveAvailable || Boolean(listing?.isDemo))
+  return (
+    <Card title="Listing to evaluate">
+      {loaded.error ? (
+        <p role="alert" className="text-[13px] text-hard">
+          This listing could not be loaded ({loaded.error}).
+        </p>
+      ) : !listing ? (
+        <p className="text-[13px]">Loading the listing...</p>
+      ) : (
+        <div className="glass-strong flex items-start gap-3 rounded-[24px] p-4">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-ink">
+            <Building2 size={18} aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <Link to={paths.listing(listing.id)} className="font-semibold text-ink hover:underline">
+                {listing.title}
+              </Link>
+              {listing.isDemo && (
+                <Pill variant="brand" icon={false}>
+                  Demo listing
+                </Pill>
+              )}
+            </div>
+            <p className="tnum mt-1 text-[13px]">
+              {listing.district}, {listing.city} · {listing.areaM2} m² · {floorLabel(listing.floor)} · {formatMoney(listing.rentMonthly, "EUR")} rent +{" "}
+              {formatMoney(listing.serviceChargeMonthly, "EUR")} costs a month
+            </p>
+            <p className="mt-1 text-[13px]">{listing.leaseDraft ? "Has a lease draft: the Lease reader reads it." : "No lease draft: the lease rules run on the terms in the listing form."}</p>
+          </div>
+        </div>
+      )}
+      {listing && !canRun && <p className="mt-3 text-[13px]">Evaluating a listing that is not a demo listing needs live mode (a model API key on the server).</p>}
+      <button
+        type="button"
+        onClick={onStart}
+        disabled={!canRun || starting || blocked}
+        className="mt-4 inline-flex h-10 items-center gap-2 rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e] disabled:opacity-40"
+      >
+        <Play size={16} aria-hidden /> {starting ? "Starting..." : "Evaluate this listing"}
+      </button>
+      {error && (
+        <p role="alert" className="mt-3 text-[13px] text-hard">
+          {error}
+        </p>
+      )}
+    </Card>
   )
 }
 
