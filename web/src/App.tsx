@@ -11,6 +11,7 @@ import { RunView } from "./run/RunView"
 import { ListingFormPage } from "./listings/ListingFormPage"
 import { BrowseListingsPage, ListingDetailPage, MyListingsPage } from "./listings/ListingPages"
 import { MySpacesPage } from "./pages/MySpacesPage"
+import { SimulatedPaymentPage } from "./deals/DealViews"
 import { CandidatePage } from "./results/CandidatePage"
 import { DashboardPage, NotFoundPage } from "./pages/SimplePages"
 import { RequireLandlord } from "./pages/AuthPages"
@@ -36,6 +37,7 @@ const TITLES: Record<Route["name"], string> = {
   mySpaces: "My spaces",
   login: "Sign in",
   signup: "Sign up",
+  simulatedPayment: "Payment",
   notFound: "Page not found",
 }
 
@@ -128,6 +130,8 @@ function Page({ route, config }: { route: Route; config: Config | null }) {
     case "login":
     case "signup":
       return null
+    case "simulatedPayment":
+      return <SimulatedPaymentPage reference={route.reference} />
     case "notFound":
       return <NotFoundPage path={route.path} />
   }

@@ -1,5 +1,6 @@
 import { Building2, Eye, Mail, MapPin, Pencil, Phone, Play, Plus, Trash2 } from "lucide-react"
 import { SaveButton } from "./SaveButton"
+import { LandlordDeals, OfferForm } from "../deals/DealViews"
 import { useEffect, useMemo, useState } from "react"
 import { Link, navigate, paths } from "../app/router"
 import { BUSINESS_TYPE_LABELS } from "../app/settings"
@@ -189,6 +190,7 @@ export function ListingDetailPage({ id }: { id: string }) {
             )}
           </div>
         </Card>
+        <OfferForm listing={l} />
         {l.isDemo && <p className="px-2 text-[13px] text-ink-3">{LAUNCH_NOTE}</p>}
       </div>
     </div>
@@ -275,18 +277,7 @@ export function MyListingsPage() {
         ))}
       </ul>
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card title="Offers">
-          <p>No offers yet. When someone sends an offer for one of your spaces, it appears here.</p>
-          <Link to={paths.newListing()} className={cx(PRIMARY, "mt-4")}>
-            List a space
-          </Link>
-        </Card>
-        <Card title="Rented out">
-          <p>No rented spaces yet. Spaces you rent out through SuiteSpot appear here.</p>
-          <Link to={paths.newListing()} className={cx(PRIMARY, "mt-4")}>
-            List a space
-          </Link>
-        </Card>
+        <LandlordDeals />
       </div>
     </div>
   )

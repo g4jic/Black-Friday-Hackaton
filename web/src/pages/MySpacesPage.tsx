@@ -1,4 +1,5 @@
-import { Bookmark, Building2, KeyRound } from "lucide-react"
+import { Bookmark, Building2 } from "lucide-react"
+import { TenantDeals } from "../deals/DealViews"
 import { Link, paths } from "../app/router"
 import { Card } from "../app/Shell"
 import { formatMoney } from "../format"
@@ -7,11 +8,12 @@ import { SaveButton } from "../listings/SaveButton"
 
 const CTA = "inline-flex h-10 items-center rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e]"
 
-/** My spaces: the spaces I saved (watchlist) and the spaces I rent. */
+/** My spaces: the spaces I rent (with their rent), my offers, and the spaces I saved. */
 export function MySpacesPage() {
   const { data, error } = useLoad("my-saved", listingsApi.saved)
   return (
     <div className="flex flex-col gap-4">
+      <TenantDeals />
       <Card title="Saved spaces">
         {error && <p role="alert" className="text-hard">{error}</p>}
         {!data && !error && <p>Loading...</p>}
@@ -42,16 +44,7 @@ export function MySpacesPage() {
           </ul>
         )}
       </Card>
-      <Card title="Spaces I rent">
-        <div className="flex flex-col items-start gap-4">
-          <p className="inline-flex items-center gap-2">
-            <KeyRound size={16} className="text-ink" aria-hidden /> No rented spaces yet. When you rent a space through SuiteSpot it appears here.
-          </p>
-          <Link to={paths.findSpaces()} className={CTA}>
-            Find spaces
-          </Link>
-        </div>
-      </Card>
+
     </div>
   )
 }
