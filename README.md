@@ -10,7 +10,9 @@ in code stops the agents still working on a deal breaker, and every number on th
 > **All listings, landlords and businesses are synthetic. Not financial or legal advice.**
 
 - Demo video: **[link coming]** (2-3 min)
-- Live deployment: **[link coming]**
+- Live deployment: **https://suitespot-production.up.railway.app** (sign up, then Research. The three demo scenarios
+  and the whole deal loop run without any code; your own questionnaire runs the live model and needs the access code
+  under Settings, so a public link cannot spend our key)
 - Mozaik Cloud: [screenshot of a live run](#how-the-agents-run-concurrently) (the Cloud project is private)
 
 ## Contents

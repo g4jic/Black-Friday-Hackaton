@@ -27,8 +27,14 @@ submission text) is in progress. Submissions close at midnight CET.
 - **Supabase:** migration `supabase/migrations/20261127150000_offers_tenancies_payments.sql` is APPLIED (Andrej, 27 Nov
   evening) and `supabase/checks/rls-checks.sql` passed ("all RLS checks passed"). Its `do $$ ... end $$;` blocks from
   line 93 were fixed (they had a single `$`).
-- **Railway:** `railway.json` committed (build `npm run build`, start `npm start`, healthcheck `/api/health`). Not
-  deployed yet: the Railway CLI (`npx @railway/cli`, 5.76.2) needs `npx @railway/cli login` in Andrej's own terminal.
+- **Railway: DEPLOYED** at https://suitespot-production.up.railway.app (project SuiteSpot in the workspace
+  "Scope | Digital Studio", service suitespot, deployed with `npx @railway/cli up` from this folder, not from GitHub:
+  redeploy after a push with `npx @railway/cli up --ci`). Variables: ANTHROPIC_API_KEY, SUITESPOT_ACCESS_CODE (Andrej
+  has the value, never in the repo), SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY. Health "live", demo
+  Office in Beograd run checked on the deploy (10.1 s, 32 loops, peak 30). Railway says railway.json works until
+  2026-12-01; after that its defaults still run npm run build and npm start.
+  STILL TO DO by hand: Supabase Auth Site URL and redirect = the Railway address, "Confirm email" off, and one
+  full deal loop on the deploy (Claude may not make accounts on a production host).
 - **Mozaik Cloud screenshot:** `design/screenshots/mozaik-cloud.png` is the older one (before Location analyst and
   Premises inspector). A new one needs a sign in at app.jigjoy.ai; optional.
 
