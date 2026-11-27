@@ -24,6 +24,7 @@ https://suitespot-production.up.railway.app
 
 ## Demo or video URL
 https://youtu.be/syJkZpOK5TE (walkthrough, 3.5 min)
+Motion video (0:54): https://github.com/g4jic/Black-Friday-Hackaton/blob/main/design/motion/suitespot-intro.mp4
 
 ## What does it do?
 SuiteSpot finds a small business the best financial deal on a commercial space.

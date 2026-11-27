@@ -1,6 +1,6 @@
 # SuiteSpot intro video (Remotion)
 
-A 58.5 second motion design intro (1920x1080, 60 fps) that presents SuiteSpot as a financial decision tool for a
+A 54.75 second motion design intro (1920x1080, 60 fps) that presents SuiteSpot as a financial decision tool for a
 business choosing a commercial lease. It has its own `package.json`; the app in the repo root does not depend on it.
 
 ## Run

@@ -16,6 +16,7 @@ answer takes about ten seconds instead of an evening with a spreadsheet.
 ![Results: ranked spaces, the rank circle coloured by the verdict, with score, monthly cost and the main reason](design/screenshots/results-list.png)
 
 - **Walkthrough video (3.5 min):** https://youtu.be/syJkZpOK5TE
+- **Motion video (0:54):** [design/motion/suitespot-intro.mp4](design/motion/suitespot-intro.mp4)
 - **Live:** https://suitespot-production.up.railway.app (sign up with any email; runs the real model)
 - **Local:** no key, no database, four commands ([Quick start](#quick-start))
 - Team **Scope** (Aleksa Ćupina, Andrej Gajić). Built during the JigJoy Black Friday AI Hackathon, 26-27 Nov 2026,

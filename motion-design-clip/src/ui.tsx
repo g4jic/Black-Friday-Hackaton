@@ -16,7 +16,8 @@ export const Words: React.FC<{
   accent?: string[];
   accentColor?: string;
   rise?: number;
-}> = ({ text, at, step = 5, dur = 18, style, accent = [], accentColor = C.brand, rise = 34 }) => {
+  blur?: number;
+}> = ({ text, at, step = 5, dur = 18, style, accent = [], accentColor = C.brand, rise = 34, blur = 12 }) => {
   const f = useCurrentFrame();
   const words = text.split(" ");
   return (
@@ -32,7 +33,7 @@ export const Words: React.FC<{
               whiteSpace: "pre",
               opacity: ip(f, [a, a + dur * 0.6], [0, 1]),
               translate: `0px ${ip(f, [a, a + dur], [rise, 0])}px`,
-              filter: `blur(${ip(f, [a, a + dur * 0.8], [12, 0])}px)`,
+              filter: `blur(${ip(f, [a, a + dur * 0.8], [blur, 0])}px)`,
               color: accent.includes(clean) ? accentColor : undefined,
             }}
           >
@@ -46,12 +47,13 @@ export const Words: React.FC<{
 };
 
 /** The SuiteSpot lens (the logo's magnifying glass), drawn from the same 480 viewBox; building index from the sign in map. */
-export const Lens: React.FC<{ size: number; building?: number | null; buildingScale?: number; style?: React.CSSProperties; handle?: boolean }> = ({
+export const Lens: React.FC<{ size: number; building?: number | null; buildingScale?: number; style?: React.CSSProperties; handle?: boolean; hollow?: boolean }> = ({
   size,
   building = 0,
   buildingScale = 1,
   style,
   handle = true,
+  hollow = false,
 }) => {
   const b = building === null ? null : AUTH_BUILDINGS[building % AUTH_BUILDINGS.length];
   return (
@@ -76,7 +78,7 @@ export const Lens: React.FC<{ size: number; building?: number | null; buildingSc
         </clipPath>
       </defs>
       {handle ? <line x1="337.9" y1="337.9" x2="388.8" y2="388.8" stroke="url(#lensInk)" strokeWidth={64} strokeLinecap="round" /> : null}
-      <circle cx="212" cy="212" r="164" fill="url(#lensFill)" />
+      {hollow ? null : <circle cx="212" cy="212" r="164" fill="url(#lensFill)" />}
       {b ? (
         <g clipPath="url(#lensClip)">
           <g style={{ transformOrigin: "212px 250px", scale: String(buildingScale) }}>
@@ -86,7 +88,7 @@ export const Lens: React.FC<{ size: number; building?: number | null; buildingSc
           </g>
         </g>
       ) : null}
-      <path d="M 88 184 A 124 124 0 0 1 184 88" fill="none" stroke="#fff" strokeWidth={14} strokeLinecap="round" opacity={0.9} />
+      {hollow ? null : <path d="M 88 184 A 124 124 0 0 1 184 88" fill="none" stroke="#fff" strokeWidth={14} strokeLinecap="round" opacity={0.9} />}
       <circle cx="212" cy="212" r="164" fill="none" stroke="url(#lensCoral)" strokeWidth={40} />
     </svg>
   );

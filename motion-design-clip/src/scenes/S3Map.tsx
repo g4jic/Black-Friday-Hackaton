@@ -1,12 +1,13 @@
 import React, { useMemo } from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
-import { C, fontFamily, ip, s, easeInOut, easeIn } from "../lib";
+import { C, fontFamily, ip, s, easeInOut } from "../lib";
 import { Lens } from "../ui";
 
 /**
- * Scene 3 (starts at 11.95 s): the sign in map from the app (city blocks, a river, listings as coral dots), the lens
- * tours two listings and a building pops up with a pill, then the camera enters the lens (the welcome zoom after
- * sign in). The pills name candidates of the recorded Office in Beograd run.
+ * Scene 3 (11.95 s to 14.97 s): the sign in map from the app (calm city blocks, a river, listings as coral dots), the
+ * lens tours two listings and a building pops up with a pill. Then the lens glides to the centre and grows while the
+ * map dissolves; its white glass is where the app window opens (AppWindow picks up the same lens geometry).
+ * The pills name candidates of the recorded Office in Beograd run.
  */
 function rng(seed: number) {
   let v = seed;
@@ -16,16 +17,18 @@ function rng(seed: number) {
   };
 }
 type Block = { x: number; y: number; w: number; h: number; fill: string };
+/** a calm street grid: regular blocks, three close tints, no jitter */
 function cityBlocks(): Block[] {
   const r = rng(7);
-  const fills = ["#FFFFFF", "#FFFFFF", "#FFFFFF", "#FBEFF4", "#F6E8F5", "#FBE5DC", "#E6F5EA"];
+  const fills = ["#FFFFFF", "#FFFFFF", "#FCF4F8", "#F9EEF6"];
   const out: Block[] = [];
-  for (let row = 0; row < 19; row++) {
-    for (let col = 0; col < 32; col++) {
-      if (r() < 0.12) continue;
-      const w = 44 + r() * 34;
-      const h = 50 + r() * 30;
-      out.push({ x: col * 74 + (row % 2) * 18 + r() * 6 - 60, y: row * 74 + r() * 6 - 60, w, h, fill: fills[Math.floor(r() * fills.length)]! });
+  const step = 112;
+  for (let row = 0; row < 13; row++) {
+    for (let col = 0; col < 22; col++) {
+      if (r() < 0.07) continue;
+      const wide = r() < 0.25;
+      out.push({ x: col * step - 90, y: row * step - 90, w: wide ? step * 2 - 22 : step - 22, h: step - 22, fill: fills[Math.floor(r() * fills.length)]! });
+      if (wide) col++;
     }
   }
   return out;
@@ -35,57 +38,57 @@ const STOP_A = { x: -440, y: -150 };
 const STOP_B = { x: 330, y: 110 };
 const DOTS = [STOP_A, STOP_B, { x: -150, y: 300 }, { x: 640, y: -300 }, { x: -760, y: 230 }, { x: 120, y: -330 }, { x: 760, y: 360 }];
 
+/** the lens box size and glass radius at the hand off to the app window */
+export const LENS_END_BOX = 1000;
+export const S3_END = 3.02; // local seconds
+
 export const S3Map: React.FC = () => {
   const f = useCurrentFrame();
   const blocks = useMemo(cityBlocks, []);
   const toA = ip(f, [s(0.3), s(0.95)], [0, 1], easeInOut);
   const toB = ip(f, [s(1.55), s(2.2)], [0, 1], easeInOut);
-  const lx = STOP_A.x * toA + (STOP_B.x - STOP_A.x) * toB;
-  const ly = STOP_A.y * toA + (STOP_B.y - STOP_A.y) * toB;
+  const toC = ip(f, [s(2.5), s(3.02)], [0, 1], easeInOut);
+  const lx = (STOP_A.x * toA + (STOP_B.x - STOP_A.x) * toB) * (1 - toC);
+  const ly = (STOP_A.y * toA + (STOP_B.y - STOP_A.y) * toB) * (1 - toC);
   const popA = ip(f, [s(0.98), s(1.2)], [0, 1]) * (1 - ip(f, [s(1.45), s(1.6)], [0, 1]));
-  const popB = ip(f, [s(2.22), s(2.45)], [0, 1]);
-  // camera: arrives from the lens zoom of scene 2, then enters the lens at the end
+  const popB = ip(f, [s(2.22), s(2.45)], [0, 1]) * (1 - ip(f, [s(2.55), s(2.8)], [0, 1]));
   const arrive = ip(f, [0, s(0.4)], [0, 1]);
-  const enter = ip(f, [s(2.85), s(3.6)], [0, 1], easeIn);
-  const camScale = (1.35 - arrive * 0.35) * (1 + enter * 9);
+  const camScale = 1.35 - arrive * 0.35;
   const pan = f * 0.35; // the map keeps sliding slowly, as on the sign in page
-  const building = popB > 0 ? 0 : 2;
-  const pop = popB > 0 ? popB : popA;
-  const label = popB > 0 ? "Palilula · 45 m2" : "Karaburma · 62 m2";
-  const lensSize = 280;
+  const building = f >= s(2.0) ? 0 : 2;
+  const pop = f >= s(2.0) ? popB : popA;
+  const label = f >= s(2.0) ? "Palilula · 45 m2" : "Karaburma · 62 m2";
+  const lensSize = 280 + (LENS_END_BOX - 280) * toC;
+  const mapOut = ip(f, [s(2.55), s(3.0)], [0, 1]);
   return (
-    <AbsoluteFill style={{ fontFamily, background: "#F6EEF6", overflow: "hidden" }}>
-      <AbsoluteFill
-        style={{
-          scale: String(camScale),
-          transformOrigin: `${960 + lx * (enter > 0 ? 1 : 1) - 18}px ${540 + ly - 18}px`,
-        }}
-      >
-        <svg width={1920} height={1080} viewBox="0 0 1920 1080" style={{ position: "absolute", inset: 0 }}>
-          <g transform={`translate(${-pan} ${-pan * 0.35})`}>
-            {blocks.map((b, i) => (
-              <rect key={i} x={b.x} y={b.y} width={b.w} height={b.h} rx={8} fill={b.fill} opacity={0.92} />
-            ))}
-            <path d="M -80 900 C 400 980, 860 760, 1150 620 S 1700 380, 2400 300" fill="none" stroke="#E2D2F6" strokeWidth={110} strokeLinecap="round" />
-            <path d="M -80 900 C 400 980, 860 760, 1150 620 S 1700 380, 2400 300" fill="none" stroke="#D5BFF1" strokeWidth={8} opacity={0.8} />
-          </g>
-        </svg>
-        {DOTS.map((d, i) => (
-          <div
-            key={i}
-            style={{
-              position: "absolute",
-              left: 960 + d.x - 10,
-              top: 540 + d.y - 10,
-              width: 20,
-              height: 20,
-              borderRadius: 99,
-              background: C.brand,
-              boxShadow: "0 0 0 7px rgba(255,255,255,0.75)",
-              scale: String(ip(f, [s(0.1) + i * 3, s(0.35) + i * 3], [0, 1])),
-            }}
-          />
-        ))}
+    <AbsoluteFill style={{ fontFamily, overflow: "hidden" }}>
+      <AbsoluteFill style={{ scale: String(camScale), transformOrigin: `${960 + lx - 18}px ${540 + ly - 18}px` }}>
+        <AbsoluteFill style={{ background: "#F6EEF6", opacity: 1 - mapOut, filter: mapOut > 0 ? `blur(${mapOut * 8}px)` : undefined }}>
+          <svg width={1920} height={1080} viewBox="0 0 1920 1080" style={{ position: "absolute", inset: 0 }}>
+            <g transform={`translate(${-pan} ${-pan * 0.35})`}>
+              {blocks.map((b, i) => (
+                <rect key={i} x={b.x} y={b.y} width={b.w} height={b.h} rx={14} fill={b.fill} />
+              ))}
+              <path d="M -80 900 C 400 980, 860 760, 1150 620 S 1700 380, 2400 300" fill="none" stroke="#E6D8F7" strokeWidth={110} strokeLinecap="round" />
+            </g>
+          </svg>
+          {DOTS.map((d, i) => (
+            <div
+              key={i}
+              style={{
+                position: "absolute",
+                left: 960 + d.x - 11,
+                top: 540 + d.y - 11,
+                width: 22,
+                height: 22,
+                borderRadius: 99,
+                background: C.brand,
+                boxShadow: "0 0 0 7px rgba(255,255,255,0.85), 0 6px 14px rgba(242,92,84,0.3)",
+                scale: String(ip(f, [s(0.1) + i * 3, s(0.35) + i * 3], [0, 1])),
+              }}
+            />
+          ))}
+        </AbsoluteFill>
         {/* the lens */}
         <div
           style={{
@@ -94,10 +97,10 @@ export const S3Map: React.FC = () => {
             top: 540 + ly - lensSize * (212 / 480),
             width: lensSize,
             height: lensSize,
-            translate: `0px ${Math.sin(f / 22) * 4 * (1 - enter)}px`,
+            translate: `0px ${Math.sin(f / 22) * 4 * (1 - toC)}px`,
           }}
         >
-          <Lens size={lensSize} building={building} buildingScale={0.4 + pop * 0.6} style={{ filter: "drop-shadow(0 24px 40px rgba(120,40,60,0.28))" }} />
+          <Lens size={lensSize} building={f >= s(2.85) ? null : building} buildingScale={f >= s(2.5) ? popB : 0.4 + pop * 0.6} style={{ filter: "drop-shadow(0 24px 40px rgba(120,40,60,0.28))" }} />
           <div
             style={{
               position: "absolute",
@@ -105,7 +108,7 @@ export const S3Map: React.FC = () => {
               top: -22,
               translate: "-50% 0",
               scale: String(0.6 + pop * 0.4),
-              opacity: pop * (1 - enter * 4),
+              opacity: pop,
               height: 46,
               padding: "0 20px",
               borderRadius: 99,
@@ -123,10 +126,8 @@ export const S3Map: React.FC = () => {
           </div>
         </div>
       </AbsoluteFill>
-      <AbsoluteFill style={{ background: "white", opacity: Math.max(1 - ip(f, [0, s(0.3)], [0, 1]), ip(f, [s(3.35), s(3.6)], [0, 1])) }} />
+      {/* arrives from the white glass of scene 2 */}
+      <AbsoluteFill style={{ background: "white", opacity: 1 - ip(f, [0, s(0.3)], [0, 1]) }} />
     </AbsoluteFill>
   );
 };
-
-export const S3_ENTER_END = s(3.6);
-void easeInOut;
