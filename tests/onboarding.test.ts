@@ -3,18 +3,27 @@ import { LocalAccounts } from "../src/adapters/auth/local-accounts.js"
 import { buildServer } from "../src/adapters/server/server.js"
 import { LocalListingStore } from "../src/adapters/storage/local-listing-store.js"
 import { seedCatalogue } from "../src/adapters/seed/seed-catalogue.js"
-import { onboardingRedirect, safeNext } from "../web/src/app/onboarding-gate.js"
+import { onboardingPath, onboardingRedirect, safeNext } from "../web/src/app/onboarding-gate.js"
 
 describe("onboarding gate (web/src/app/onboarding-gate.ts)", () => {
   it("sends an account that has not finished the onboarding to /onboarding, remembering the page", () => {
-    expect(onboardingRedirect({ onboardedAt: null, onOnboarding: false, here: "/history?x=1", next: null })).toBe("/onboarding?next=%2Fhistory%3Fx%3D1")
-    expect(onboardingRedirect({ onboardedAt: null, onOnboarding: true, here: "/onboarding", next: "/history" })).toBeNull()
+    expect(onboardingRedirect({ onboardedAt: null, onOnboarding: false, step: null, here: "/history?x=1", next: null })).toBe("/onboarding?next=%2Fhistory%3Fx%3D1")
+    expect(onboardingRedirect({ onboardedAt: null, onOnboarding: true, step: null, here: "/onboarding", next: "/history" })).toBeNull()
   })
 
   it("a returning user who finished the onboarding goes straight in, and /onboarding sends them on", () => {
-    expect(onboardingRedirect({ onboardedAt: "2026-11-27T20:00:00.000Z", onOnboarding: false, here: "/history", next: null })).toBeNull()
-    expect(onboardingRedirect({ onboardedAt: "2026-11-27T20:00:00.000Z", onOnboarding: true, here: "/onboarding", next: "/my-listings" })).toBe("/my-listings")
-    expect(onboardingRedirect({ onboardedAt: "2026-11-27T20:00:00.000Z", onOnboarding: true, here: "/onboarding", next: null })).toBe("/")
+    expect(onboardingRedirect({ onboardedAt: "2026-11-27T20:00:00.000Z", onOnboarding: false, step: null, here: "/history", next: null })).toBeNull()
+    expect(onboardingRedirect({ onboardedAt: "2026-11-27T20:00:00.000Z", onOnboarding: true, step: null, here: "/onboarding", next: "/my-listings" })).toBe("/my-listings")
+    expect(onboardingRedirect({ onboardedAt: "2026-11-27T20:00:00.000Z", onOnboarding: true, step: null, here: "/onboarding", next: null })).toBe("/")
+  })
+
+  it("a form step stays open for every account (onboarding steps, and adding a role later); skip moves through the same paths", () => {
+    expect(onboardingRedirect({ onboardedAt: null, onOnboarding: true, step: "seeker", here: "/onboarding?step=seeker", next: "/" })).toBeNull()
+    expect(onboardingRedirect({ onboardedAt: "2026-11-27T20:00:00.000Z", onOnboarding: true, step: "owner", here: "/onboarding?step=owner&add=1", next: "/history" })).toBeNull()
+    expect(onboardingRedirect({ onboardedAt: "2026-11-27T20:00:00.000Z", onOnboarding: true, step: "nonsense", here: "/onboarding?step=nonsense", next: "/history" })).toBe("/history")
+    expect(onboardingPath("role", { next: null })).toBe("/onboarding")
+    expect(onboardingPath("owner", { next: "/history" })).toBe("/onboarding?step=owner&next=%2Fhistory")
+    expect(onboardingPath("seeker", { next: "/", add: true })).toBe("/onboarding?step=seeker&add=1&next=%2F")
   })
 
   it("never sends the user back to sign in, sign up, the onboarding or another site", () => {

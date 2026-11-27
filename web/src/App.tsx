@@ -16,7 +16,7 @@ import { CandidatePage } from "./results/CandidatePage"
 import { DashboardPage, NotFoundPage } from "./pages/SimplePages"
 import { RequireLandlord } from "./pages/AuthPages"
 import { AuthRoute, AuthScreen } from "./pages/AuthScreen"
-import { onboardingRedirect, safeNext } from "./app/onboarding-gate"
+import { isFormStep, onboardingRedirect, safeNext } from "./app/onboarding-gate"
 import { OnboardingPage } from "./pages/OnboardingPage"
 import { useAuth } from "./app/auth"
 import { useWelcomeHold } from "./app/welcome"
@@ -80,7 +80,7 @@ export function App() {
   const onboardedAt = auth.landlord?.onboardedAt ?? null
   useEffect(() => {
     if (!signedIn) return
-    const to = onboardingRedirect({ onboardedAt, onOnboarding: route.name === "onboarding", here, next: search.get("next") })
+    const to = onboardingRedirect({ onboardedAt, onOnboarding: route.name === "onboarding", step: search.get("step"), here, next: search.get("next") })
     if (to) navigate(to, { replace: true })
   }, [signedIn, onboardedAt, route.name, here, search])
 
@@ -90,7 +90,8 @@ export function App() {
   // While the welcome animation plays the sign in screen stays, although the account is signed in already.
   if (!auth.landlord || welcoming) return <AuthScreen mode="signin" next={route.name === "onboarding" ? safeNext(search.get("next")) : here} />
   // The welcome veil fades away on the onboarding (no sidebar, nothing around it), not on the app.
-  if (onboarding) return <OnboardingPage />
+  // Also a finished account adding the other role (a form step): the same full screen, no sidebar.
+  if (onboarding || (route.name === "onboarding" && isFormStep(search.get("step")))) return <OnboardingPage />
   if (route.name === "onboarding") return <div className="min-h-dvh" aria-busy="true" />
 
   const titleExtra = route.name === "run" || route.name === "results" || route.name === "candidate" ? <AnswerSourcePill researchId={route.researchId} /> : null

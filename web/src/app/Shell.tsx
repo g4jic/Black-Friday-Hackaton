@@ -1,8 +1,9 @@
 import { Bookmark, Building2, CircleHelp, History, House, Info, LayoutList, LogOut, Plus, Search, Settings as SettingsIcon, type LucideIcon } from "lucide-react"
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { cx } from "../ui"
-import { logOut, useAuth } from "./auth"
-import { ROLE_LABELS } from "./roles"
+import { logOut, updateOnboarding, useAuth } from "./auth"
+import { onboardingPath } from "./onboarding-gate"
+import { listsSpaces, ROLE_LABELS, seeksSpaces } from "./roles"
 import { Link, navigate, paths, useLocation, type Route } from "./router"
 
 /** label: under the icon (the rail is narrow); name: the full name for the tooltip and screen readers. */
@@ -101,7 +102,15 @@ function AvatarMenu({ settingsActive }: { settingsActive: boolean }) {
     setOpen(false)
     navigate(to)
   }
-  const ITEM = "flex w-full items-center gap-2 rounded-[14px] px-3 py-2 text-left text-sm font-medium text-ink hover:bg-white"
+  const ITEM = "flex w-full items-center gap-2.5 rounded-[14px] px-2.5 py-2 text-left text-[15px] font-medium text-ink hover:bg-white"
+  const role = auth.landlord?.role ?? null
+  const { pathname, search } = useLocation()
+  /** "Also find a space" / "Also list a space": the role becomes both, then the form of the added role opens. */
+  const addRole = async (added: "seeker" | "owner") => {
+    setOpen(false)
+    await updateOnboarding({ role: "both" })
+    navigate(onboardingPath(added, { next: pathname + (search.toString() ? `?${search}` : ""), add: true }))
+  }
 
   useEffect(() => {
     if (!open) return
@@ -131,31 +140,49 @@ function AvatarMenu({ settingsActive }: { settingsActive: boolean }) {
         <span className="text-[11px] leading-3 font-medium text-ink-2">{user.name}</span>
       </button>
       {open && (
-        <div role="menu" className="pop-in absolute w-[220px] max-sm:right-0 max-sm:bottom-[64px] sm:bottom-0 sm:left-[84px] rounded-[20px] glass-strong p-2 shadow-[var(--shadow-pop)]">
-          <div className="px-3 pt-2 pb-2.5">
-            <p className="truncate text-sm font-semibold text-ink">{user.name}</p>
-            {auth.landlord?.email && <p className="truncate text-xs text-ink-2">{auth.landlord.email}</p>}
-            {auth.landlord?.role && (
-              <span className="mt-2 inline-flex h-6 items-center rounded-full bg-brand-50 px-2.5 text-xs font-medium text-ink">{ROLE_LABELS[auth.landlord.role]}</span>
-            )}
+        <div role="menu" aria-label="Profile" className="pop-in absolute flex w-[300px] flex-col gap-2 max-sm:right-0 max-sm:bottom-[64px] sm:bottom-0 sm:left-[84px] rounded-[24px] glass-strong p-4 shadow-[var(--shadow-pop)]">
+          <div className="flex items-center gap-3 px-1 pb-1">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-lilac text-base font-bold text-ink">{user.name[0]}</span>
+            <span className="flex min-w-0 flex-col gap-1">
+              <span className="truncate text-[15px] font-semibold text-ink">{user.name}</span>
+              {auth.landlord?.email && <span className="truncate text-[13px] text-ink-2">{auth.landlord.email}</span>}
+              {role && <span className="self-start rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-bold text-ink">{ROLE_LABELS[role]}</span>}
+            </span>
           </div>
-          <button type="button" role="menuitem" onClick={() => go(paths.mySpaces())} className={ITEM}>
-            <Bookmark size={16} aria-hidden /> My spaces
-          </button>
-          <button type="button" role="menuitem" onClick={() => go(paths.myListings())} className={ITEM}>
-            <LayoutList size={16} aria-hidden /> My listings
-          </button>
-          <button type="button" role="menuitem" onClick={() => go(paths.newListing())} className={ITEM}>
-            <Plus size={16} aria-hidden /> List a space
-          </button>
+          <div className="my-1 h-px bg-line" />
+          {role === "owner" && (
+            <button type="button" role="menuitem" onClick={() => void addRole("seeker")} className={ITEM}>
+              <Search size={16} aria-hidden /> Also find a space (add Space seeker)
+            </button>
+          )}
+          {role === "seeker" && (
+            <button type="button" role="menuitem" onClick={() => void addRole("owner")} className={ITEM}>
+              <Building2 size={16} aria-hidden /> Also list a space (add Space owner)
+            </button>
+          )}
+          {seeksSpaces(role) && (
+            <button type="button" role="menuitem" onClick={() => go(paths.mySpaces())} className={ITEM}>
+              <Bookmark size={16} aria-hidden /> My spaces
+            </button>
+          )}
+          {listsSpaces(role) && (
+            <>
+              <button type="button" role="menuitem" onClick={() => go(paths.myListings())} className={ITEM}>
+                <LayoutList size={16} aria-hidden /> My listings
+              </button>
+              <button type="button" role="menuitem" onClick={() => go(paths.newListing())} className={ITEM}>
+                <Plus size={16} aria-hidden /> Add a space
+              </button>
+            </>
+          )}
           <button type="button" role="menuitem" onClick={() => go(paths.howItWorks())} className={ITEM}>
             <CircleHelp size={16} aria-hidden /> How it works
           </button>
           <button type="button" role="menuitem" onClick={() => go(paths.settings())} className={ITEM}>
-            <SettingsIcon size={16} aria-hidden /> Settings
+            <SettingsIcon size={16} aria-hidden /> Settings · role and profile
           </button>
           {auth.landlord && (
-            <button type="button" role="menuitem" onClick={() => void logOut().then(() => go(paths.dashboard()))} className={ITEM}>
+            <button type="button" role="menuitem" onClick={() => void logOut().then(() => go(paths.dashboard()))} className={cx(ITEM, "text-ink-2")}>
               <LogOut size={16} aria-hidden /> Sign out
             </button>
           )}

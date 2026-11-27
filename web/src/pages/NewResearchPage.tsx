@@ -4,6 +4,7 @@ import { StartError, startResearch, type StartRequest } from "../app/research-st
 import { EMPTY_LISTING_FORM, FIELD_NAMES, ListingTermsFields, toInput, type Form as ListingForm } from "../listings/ListingFormPage"
 import { Link, navigate, paths, setSearchParam, useLocation } from "../app/router"
 import { BUSINESS_TYPE_LABELS, CURRENCIES, useSettings, type Settings } from "../app/settings"
+import { businessDescription } from "../app/business-profile"
 import { Card } from "../app/Shell"
 import type { Config, ProfileInput } from "../types"
 import { Pill, cx } from "../ui"
@@ -32,19 +33,22 @@ const toForm = (p: ProfileInput): ProfileForm => ({
   yearsPlanned: p.yearsPlanned === undefined ? "" : String(p.yearsPlanned),
 })
 
+const orEmpty = (n: number | null) => (n === null ? "" : String(n))
+
+/** The saved business profile (onboarding or Settings) prefills the questionnaire; must haves and districts become the description. */
 const fromSettings = (s: Settings): ProfileForm => ({
   businessType: s.businessType,
   city: s.city,
   currency: s.currency,
-  monthlyBudget: s.monthlyBudget === null ? "" : String(s.monthlyBudget),
-  expectedMonthlyRevenue: "",
-  areaMinM2: "",
-  areaMaxM2: "",
-  leaseMonths: "36",
+  monthlyBudget: orEmpty(s.monthlyBudget),
+  expectedMonthlyRevenue: orEmpty(s.expectedMonthlyRevenue),
+  areaMinM2: orEmpty(s.areaMinM2),
+  areaMaxM2: orEmpty(s.areaMaxM2),
+  leaseMonths: s.leaseMonths === null ? "36" : String(s.leaseMonths),
   fitOutBudget: "",
   equipmentBudget: "",
-  grossMarginPercent: "",
-  description: "",
+  grossMarginPercent: orEmpty(s.grossMarginPercent),
+  description: businessDescription(s),
   yearsPlanned: "",
 })
 

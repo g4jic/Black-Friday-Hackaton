@@ -463,7 +463,19 @@ button:active {
 
 /* Onboarding: the welcome veil fades away on this screen; its parts rise in one after another (delay set inline). */
 .onb-enter {
-  animation: onb-enter 520ms var(--ease-ios) both;
+  /* backwards: hidden during the delay, then the element's own styles (so the role card hover lift still works). */
+  animation: onb-enter 520ms var(--ease-ios) backwards;
+}
+/* Role cards: lift and a coral edge on hover or keyboard focus. */
+.role-card {
+  transition: transform 200ms var(--ease-ios), box-shadow 200ms var(--ease-ios), border-color 200ms var(--ease-ios), background-color 200ms var(--ease-ios);
+}
+.role-card:not(:disabled):hover,
+.role-card:focus-visible,
+.role-card.is-busy {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 48px rgba(120, 60, 90, 0.16);
+  border-color: var(--color-brand);
 }
 @keyframes onb-enter {
   from {
@@ -473,6 +485,7 @@ button:active {
 }
 @media (prefers-reduced-motion: reduce) {
   .onb-enter { animation: none; }
+  .role-card:not(:disabled):hover, .role-card:focus-visible, .role-card.is-busy { transform: none; }
 }
 
 /*

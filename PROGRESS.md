@@ -18,7 +18,27 @@ No long dashes in this file; use a plain hyphen.
 - Files: `web/src/pages/OnboardingPage.tsx`, `web/src/app/onboarding-gate.ts` (pure rules, tested),
   `web/src/app/roles.ts`, `web/src/app/auth.ts` (`updateOnboarding`), `src/adapters/auth/local-accounts.ts`,
   `tests/onboarding.test.ts`.
-- Next: phase B (forms after the cards, Skip for now, Fill with example), phase C (menu by role).
+- **Phase A matched to Aleksa's mockup** (Main.dc.html, not in the repo): "How will you use SuiteSpot?", "Step 1 of
+  2", cards with pills, "I do both. Set up both roles". **No sale anywhere:** SuiteSpot only rents out ("I rent out a
+  commercial space"), there is no Offer field.
+- **Phase B done (forms):** the card opens a form centred on the screen, no sidebar, "Skip for now" above the card on
+  the right, "Fill with example" (synthetic values, with a note that they are an example) at the top right.
+  - Find a space: business type, city, preferred districts, area from/to, max monthly cost, expected revenue, gross
+    margin (optional), lease term, Must have chips. Same rules as the domain (`web/src/app/business-profile.ts`,
+    `tests/business-profile.test.ts` checks each case against `BusinessProfile.create`). Saved in `settings.ts`
+    (localStorage) and it prefills the questionnaire. **Decision (Aleksa):** Must have and Preferred districts go
+    into the business description ("What your business does"), which the live agents read; Move-in date is left
+    out (nothing uses it). The recorded demo is unchanged (it uses the fixed demo profiles; its tests pass).
+  - List my space: `ListingTermsFields` (new `variant="plain"`, the same fields as List a space) plus lease draft and
+    contact; it publishes a real listing. **Decision (Aleksa):** Storefront window and Parking become words in the
+    listing description (`web/src/app/space-extras.ts`), which the Premises inspector reads.
+  - "I do both": Find a space (step 2 of 3), then List my space (step 3 of 3). Skip moves to the next step; the last
+    step saved or skipped finishes the onboarding. Save goes to Find spaces, Publish to My listings, Skip to the page
+    the user wanted.
+  - Avatar menu like OwnerHome.dc.html: avatar, name, email, role pill, "Also find a space (add Space seeker)" or
+    "Also list a space (add Space owner)" (opens that form with `?add=1`), "Settings · role and profile". Settings
+    shows the role and the same business profile fields (hidden for an owner only).
+- Next: phase C (menu by role).
 
 ## HANDOFF (27 Nov 2026, late evening, Andrej + Claude): READ THIS FIRST
 Changes since the handoff below (commit 39f5f9c, deployed and checked on Railway):
