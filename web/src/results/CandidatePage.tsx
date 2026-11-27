@@ -546,9 +546,9 @@ function LeaseCard({ candidate, className }: { candidate: CandidateDTO; classNam
         : "no deal breaker and nothing to check"
   const intro =
     lease.terms.length === 0
-      ? "There is no lease draft yet, so nothing could be checked: these are the questions to ask the landlord before signing."
+      ? "There is no lease draft yet, so nothing could be checked: these are the questions to ask the owner before signing."
       : lease.fromForm
-        ? `The terms the landlord typed in the listing form (no lease draft yet), checked with the same lease rules: ${meaning}.`
+        ? `The terms the owner typed in the listing form (no lease draft yet), checked with the same lease rules: ${meaning}.`
         : `What the lease draft says, clause by clause, checked by code against the lease rules: ${meaning}.`
   return (
     <ReportCard id="lease" title="Lease terms" intro={intro} className={className}>
@@ -562,7 +562,7 @@ function LeaseCard({ candidate, className }: { candidate: CandidateDTO; classNam
           ))}
         </ul>
       )}
-      {lease.fromForm && <p className="mt-4 mb-2 text-[13px] leading-5 text-ink-2">Ask the landlord before signing:</p>}
+      {lease.fromForm && <p className="mt-4 mb-2 text-[13px] leading-5 text-ink-2">Ask the owner before signing:</p>}
       {(lease.fromForm || lease.terms.length === 0) && <QuestionList questions={lease.questions} />}
       <p className="mt-4 text-xs text-ink-3">Not a legal opinion. Check permitted use and every clause before signing.</p>
     </ReportCard>
@@ -648,7 +648,7 @@ function PremisesCard({ candidate, className }: { candidate: CandidateDTO; class
       )}
       {premises.notStated.length > 0 && (
         <p className="mt-4 max-w-[70ch] text-[13px] leading-5 text-ink-2">
-          Not stated, so unknown in the score: {premises.notStated.join(", ").toLowerCase()}. Ask the landlord.
+          Not stated, so unknown in the score: {premises.notStated.join(", ").toLowerCase()}. Ask the owner.
         </p>
       )}
     </ReportCard>

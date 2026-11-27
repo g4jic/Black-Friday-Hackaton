@@ -69,7 +69,6 @@ export function BusinessProfileFields({
             )
           })}
         </div>
-        <p className="text-xs text-ink-2">Find spaces shows listings in your preferred districts first (others still follow). Must haves and districts are also added to your business description, which the agents read.</p>
       </fieldset>
     </div>
   )

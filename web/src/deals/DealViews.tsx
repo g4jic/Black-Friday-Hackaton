@@ -1,4 +1,4 @@
-import { CalendarClock, Check, CreditCard, FlaskConical, HandCoins, KeyRound, Send, X } from "lucide-react"
+import { CalendarClock, Check, CreditCard, HandCoins, KeyRound, Send, X } from "lucide-react"
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { Link, navigate, paths, setSearchParam, useLocation } from "../app/router"
 import { Card } from "../app/Shell"
@@ -7,7 +7,7 @@ import type { PublicListing } from "../listings/listings-api"
 import { useLoad } from "../listings/listings-api"
 import { INPUT, LABEL } from "../pages/SettingsPage"
 import { Pill, cx } from "../ui"
-import { METHOD_LABEL, dateLabel, dealsApi, monthLabel, type Offer, type RentDue, type TenancyView } from "./deals-api"
+import { dateLabel, dealsApi, monthLabel, type Offer, type RentDue, type TenancyView } from "./deals-api"
 
 const PRIMARY =
   "inline-flex h-10 items-center justify-center gap-2 rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e] disabled:opacity-40"
@@ -48,11 +48,7 @@ export function OfferForm({ listing }: { listing: PublicListing }) {
   if (state.kind === "sent")
     return (
       <Card title="Offer sent">
-        <p>
-          {listing.isDemo
-            ? "This listing has no real landlord yet: in My spaces you answer your own offer as the simulated landlord."
-            : "The landlord sees your offer under Offers and answers it there."}
-        </p>
+        <p>You can follow it in My spaces.</p>
         <Link to={paths.mySpaces()} className={cx(PRIMARY, "mt-4 w-full")}>
           Open My spaces
         </Link>
@@ -99,9 +95,6 @@ export function OfferForm({ listing }: { listing: PublicListing }) {
         <button type="submit" className={PRIMARY} disabled={state.kind === "sending"}>
           <Send size={16} aria-hidden /> {state.kind === "sending" ? "Sending..." : "Send offer"}
         </button>
-        {listing.isDemo && (
-          <p className="text-[12px] leading-4 text-ink-3">This listing has no real landlord yet: you answer the offer yourself as the simulated landlord.</p>
-        )}
       </form>
     </Card>
   )
@@ -110,8 +103,8 @@ export function OfferForm({ listing }: { listing: PublicListing }) {
 export function DueStatus({ due }: { due: RentDue }) {
   if (due.status === "paid")
     return (
-      <Pill variant="positive" icon={false} title={due.payment ? `${METHOD_LABEL[due.payment.method]}, reference ${due.payment.reference}` : undefined}>
-        Paid{due.payment?.method === "simulated" ? " (simulated)" : due.payment?.method === "stripe_test" ? " (Stripe test)" : ""}
+      <Pill variant="positive" icon={false} title={due.payment ? `Reference ${due.payment.reference}` : undefined}>
+        Paid
       </Pill>
     )
   if (due.status === "overdue") return <Pill variant="hard">Overdue</Pill>
@@ -147,7 +140,7 @@ function Schedule({ view }: { view: TenancyView }) {
   )
 }
 
-function TenancyRow({ view, method, onPaid }: { view: TenancyView; method: "stripe_test" | "simulated"; onPaid?: () => void }) {
+function TenancyRow({ view, onPaid }: { view: TenancyView; onPaid?: () => void }) {
   const t = view.tenancy
   const [paying, setPaying] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -174,7 +167,7 @@ function TenancyRow({ view, method, onPaid }: { view: TenancyView; method: "stri
           </Link>
           <p className="tnum text-[13px] text-ink-2">
             {formatMoney(t.rentMonthly, t.currency)} / month · from {dateLabel(t.startDate)} · {t.termMonths} months ·{" "}
-            {view.role === "tenant" ? (t.isDemoListing ? "simulated landlord" : "you rent it") : `rented by ${t.tenantName}`}
+            {view.role === "tenant" ? "you rent it" : `rented by ${t.tenantName}`}
           </p>
         </div>
       </div>
@@ -187,8 +180,8 @@ function TenancyRow({ view, method, onPaid }: { view: TenancyView; method: "stri
           </span>
           {view.role === "tenant" && (
             <button type="button" className={PRIMARY} disabled={paying} onClick={() => void pay(next.period)}>
-              {method === "stripe_test" ? <CreditCard size={16} aria-hidden /> : <FlaskConical size={16} aria-hidden />}
-              {paying ? "Opening checkout..." : `Pay rent (${method === "stripe_test" ? "Stripe test payment" : "simulated"})`}
+              <CreditCard size={16} aria-hidden />
+              {paying ? "Opening checkout..." : "Pay rent"}
             </button>
           )}
         </div>
@@ -223,7 +216,6 @@ export function OfferRow({ offer, side, onChange }: { offer: Offer; side: "tenan
   }
   const pill = OFFER_PILL[offer.status]
   const answerable = offer.status === "pending" && (side === "landlord" || offer.isDemoListing)
-  const asDemo = side === "tenant" && offer.isDemoListing
   return (
     <li className={ROW}>
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -239,23 +231,17 @@ export function OfferRow({ offer, side, onChange }: { offer: Offer; side: "tenan
         </div>
         <Pill variant={pill.variant} icon={false}>
           {pill.text}
-          {offer.decidedBy === "demo-landlord" ? " (simulated landlord)" : ""}
         </Pill>
       </div>
       {(answerable || (side === "tenant" && offer.status === "pending")) && (
         <div className="flex flex-wrap items-center gap-2">
           {answerable && (
             <>
-              {asDemo && (
-                <span className="inline-flex items-center gap-1 text-[12px] font-medium text-ink-2">
-                  <FlaskConical size={14} aria-hidden /> Simulated landlord:
-                </span>
-              )}
               <button type="button" className={PRIMARY} disabled={busy} onClick={() => void act(() => dealsApi.answer(offer.id, "accept"))}>
-                <Check size={16} aria-hidden /> {asDemo ? "Accept as the landlord" : "Accept"}
+                <Check size={16} aria-hidden /> Accept
               </button>
               <button type="button" className={SECONDARY} disabled={busy} onClick={() => void act(() => dealsApi.answer(offer.id, "decline"))}>
-                <X size={16} aria-hidden /> {asDemo ? "Decline as the landlord" : "Decline"}
+                <X size={16} aria-hidden /> Decline
               </button>
             </>
           )}
@@ -308,7 +294,7 @@ export function TenantDeals() {
           r.payment
             ? {
                 ok: true,
-                text: `Rent for ${monthLabel(r.payment.period)} paid: ${formatMoney(r.payment.amount, r.payment.currency)} (${METHOD_LABEL[r.payment.method]}).`,
+                text: `Rent for ${monthLabel(r.payment.period)} paid: ${formatMoney(r.payment.amount, r.payment.currency)}.`,
               }
             : { ok: false, text: "The checkout is not paid yet, so nothing was recorded." },
         )
@@ -336,17 +322,16 @@ export function TenantDeals() {
         {!data && !error && <p>Loading...</p>}
         {data && rented.length === 0 && (
           <Empty icon={<KeyRound size={16} className="text-ink" aria-hidden />}>
-            No rented spaces yet. An accepted offer becomes a lease here, with its rent dates.
+            No rented spaces yet.
           </Empty>
         )}
         {rented.length > 0 && (
           <ul className="flex flex-col gap-2.5">
             {rented.map((v) => (
-              <TenancyRow key={v.tenancy.id} view={v} method={data!.paymentMethod} onPaid={reload} />
+              <TenancyRow key={v.tenancy.id} view={v} onPaid={reload} />
             ))}
           </ul>
         )}
-        {data && <PaymentNote method={data.paymentMethod} />}
       </Card>
       <Card title="My offers" collapsible id="my-spaces-offers" count={data?.offersMade.length}>
         {data && data.offersMade.length === 0 && (
@@ -364,7 +349,7 @@ export function TenantDeals() {
   )
 }
 
-/** The landlord side (My listings): offers received and leased spaces with the tenants' rent status. */
+/** The owner side (My listings): offers received and leased spaces with the tenants' rent status. */
 export function LandlordDeals() {
   const { data, error, reload } = useLoad("deals-landlord", dealsApi.overview)
   const leased = data?.tenancies.filter((t) => t.role === "landlord") ?? []
@@ -391,28 +376,18 @@ export function LandlordDeals() {
       <Card title="Leased spaces" collapsible id="offers-leased" count={data ? leased.length : undefined}>
         {data && leased.length === 0 && (
           <Empty icon={<KeyRound size={16} className="text-ink" aria-hidden />}>
-            None yet. When you accept an offer, the lease and its rent dates appear here.
+            No leased spaces yet.
           </Empty>
         )}
         {leased.length > 0 && (
           <ul className="flex flex-col gap-2.5">
             {leased.map((v) => (
-              <TenancyRow key={v.tenancy.id} view={v} method={data!.paymentMethod} />
+              <TenancyRow key={v.tenancy.id} view={v} />
             ))}
           </ul>
         )}
       </Card>
     </>
-  )
-}
-
-function PaymentNote({ method }: { method: "stripe_test" | "simulated" }) {
-  return (
-    <p className="mt-4 text-[12px] leading-4 text-ink-3">
-      {method === "stripe_test"
-        ? "Payments use Stripe in test mode: fake money only (test card 4242 4242 4242 4242)."
-        : "Payments are simulated on this copy of SuiteSpot: no real money, no card. With Stripe test keys the same button opens Stripe Checkout in test mode."}
-    </p>
   )
 }
 
@@ -444,10 +419,7 @@ export function SimulatedPaymentPage({ reference }: { reference: string }) {
   }
   return (
     <div className="mx-auto w-full max-w-[460px]">
-      <Card title="Simulated payment">
-        <p className="inline-flex items-center gap-2 rounded-full bg-lilac-100 px-3 py-1 text-[13px] font-semibold text-ink">
-          <FlaskConical size={14} aria-hidden /> Simulated payment, no real money
-        </p>
+      <Card title="Pay rent">
         {error && (
           <p role="alert" className="mt-4 text-hard">
             {error}
@@ -458,10 +430,6 @@ export function SimulatedPaymentPage({ reference }: { reference: string }) {
           <>
             <p className="tnum mt-5 text-3xl font-semibold text-ink">{formatMoney(data.amount, data.currency)}</p>
             <p className="mt-1">Rent for {monthLabel(data.period)}</p>
-            <p className="mt-4 text-[13px]">
-              This copy of SuiteSpot has no payment provider keys, so this form stands in for the checkout. It records the payment the same way, marked
-              "simulated". No card is asked for and nothing is charged.
-            </p>
             {payError && (
               <p role="alert" className="mt-3 text-[13px] text-hard">
                 {payError}
@@ -469,8 +437,8 @@ export function SimulatedPaymentPage({ reference }: { reference: string }) {
             )}
             <div className="mt-5 flex flex-col gap-2">
               <button type="button" className={PRIMARY} disabled={paying || data.paid} onClick={() => void pay()}>
-                <FlaskConical size={16} aria-hidden />{" "}
-                {data.paid ? "Already paid" : paying ? "Paying..." : `Pay ${formatMoney(data.amount, data.currency)} (simulated)`}
+                <CreditCard size={16} aria-hidden />{" "}
+                {data.paid ? "Already paid" : paying ? "Paying..." : `Pay ${formatMoney(data.amount, data.currency)}`}
               </button>
               <button type="button" className={SECONDARY} onClick={() => navigate(localPath(search.get("cancel"), `${paths.mySpaces()}?payment=cancelled`))}>
                 Cancel

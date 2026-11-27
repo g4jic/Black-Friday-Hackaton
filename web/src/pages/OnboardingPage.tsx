@@ -320,7 +320,7 @@ function SeekerStep({
             setExample(true)
           }}
         />
-        {example && <ExampleNote text="Example values for a synthetic cafe, not a real business. Change them to your own before you save." />}
+        {example && <ExampleNote text="Example values. Replace them with your own." />}
         <BusinessProfileFields fields={fields} set={(patch) => setFields({ ...fields, ...patch })} problems={problems} currency={saved.currency} />
         {Object.keys(problems).length > 0 && (
           <p role="alert" className="text-[13px] text-hard">
@@ -357,7 +357,7 @@ const EXAMPLE_LISTING: ListingForm = {
   permittedUses: ["cafe_food", "retail", "office_studio"],
   structural: "landlord",
   leaseDraft:
-    "SYNTHETIC DEMO DATA. The tenant may end the lease early with 3 months written notice. Rent is adjusted once a year by the official consumer price index.",
+    "The tenant may end the lease early with 3 months written notice. Rent is adjusted once a year by the official consumer price index.",
 }
 
 function OwnerStep({ label, onBack, onDone }: { label: string; onBack: () => void; onDone: (published: boolean) => Promise<void> | void }) {
@@ -408,7 +408,7 @@ function OwnerStep({ label, onBack, onDone }: { label: string; onBack: () => voi
         <FormHeader
           label={label}
           title="Add your first space"
-          text="Seekers see these terms with their source. You can add more spaces later from My listings."
+          text="You can add more spaces later from My listings."
           onExample={() => {
             setForm({ ...EXAMPLE_LISTING, phone: form.phone, email: form.email, consent: form.consent })
             setStorefront("yes")
@@ -417,7 +417,7 @@ function OwnerStep({ label, onBack, onDone }: { label: string; onBack: () => voi
             setExample(true)
           }}
         />
-        {example && <ExampleNote text="Example values for a synthetic space. Replace them with your own space and add your contact before you publish." />}
+        {example && <ExampleNote text="Example values. Replace them with your own and add your contact." />}
         {/* Wide screens: the fields on the left scroll with the page, Contact and Publish stay in view on the right. */}
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
           <div className="flex min-w-0 flex-col gap-6">

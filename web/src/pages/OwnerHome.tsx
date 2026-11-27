@@ -84,7 +84,6 @@ function Stat({ label, value, note }: { label: string; value: number | undefined
     <div className="glass rounded-[28px] p-[22px]" title={note}>
       <p className="text-[13px] text-ink-2">{label}</p>
       <p className="tnum mt-1.5 text-[32px] leading-none font-bold text-ink">{value ?? "-"}</p>
-      <p className="mt-2 text-xs text-ink-3">{note}</p>
     </div>
   )
 }

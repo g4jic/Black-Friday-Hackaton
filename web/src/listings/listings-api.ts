@@ -105,6 +105,6 @@ export function useLoad<T>(key: string, load: () => Promise<T>): { data: T | nul
 export const floorLabel = (floor: number) => (floor === 0 ? "Ground floor" : floor === -1 ? "Basement" : floor === -2 ? "Second basement" : `Floor ${floor}`)
 
 export const indexationLabel = (ix: Indexation) =>
-  ix.kind === "cpi" ? "Once a year with the consumer price index" : ix.kind === "fixed_rate" ? `Fixed ${ix.ratePercent}% a year` : ix.kind === "none" ? "No increase during the lease" : "The landlord may change the rent at any time"
+  ix.kind === "cpi" ? "Once a year with the consumer price index" : ix.kind === "fixed_rate" ? `Fixed ${ix.ratePercent}% a year` : ix.kind === "none" ? "No increase during the lease" : "The owner may change the rent at any time"
 
 export const exitLabel = (e: EarlyTermination) => (e.allowed ? `${e.noticeMonths} month${e.noticeMonths === 1 ? "" : "s"} notice` : "The tenant cannot end the lease early")

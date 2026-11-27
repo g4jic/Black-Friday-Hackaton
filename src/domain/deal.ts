@@ -98,7 +98,7 @@ export class Offer {
   }
 
   private decide(status: "accepted" | "declined", actorId: string, now: string): Offer {
-    if (!this.canAnswer(actorId)) throw new DomainError("not_offer_party", "Only the landlord of this listing can answer the offer")
+    if (!this.canAnswer(actorId)) throw new DomainError("not_offer_party", "Only the owner of this listing can answer the offer")
     if (this.props.status !== "pending") throw new DomainError("invalid_offer", `This offer is already ${this.props.status}`)
     const decidedBy = actorId === this.props.landlordId ? actorId : DEAL_RULES.demoLandlordId
     return new Offer(Object.freeze({ ...this.props, status, decidedAt: now, decidedBy }))

@@ -146,7 +146,7 @@ export class SupabaseListingStore implements ListingStore {
 
   /** A client that acts as the landlord (RLS sees auth.uid() = actor.id). */
   private as(actor: ListingActor): SupabaseClient {
-    if (actor.kind !== "supabase" || !actor.accessToken) throw new DomainError("not_listing_owner", "Log in as a landlord to manage listings")
+    if (actor.kind !== "supabase" || !actor.accessToken) throw new DomainError("not_listing_owner", "Sign in to manage your listings")
     return createClient(this.config.url, this.config.anonKey, { ...NO_SESSION, global: { headers: { Authorization: `Bearer ${actor.accessToken}` } } })
   }
 

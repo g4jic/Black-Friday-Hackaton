@@ -65,7 +65,7 @@ export function registerDealRoutes(app: FastifyInstance, options: { deals: DealS
       "/api/payments/simulated/:reference",
       route(async (actor, req) => {
         const checkout = simulated.checkout(param(req, "reference"))
-        if (!checkout) throw new DomainError("invalid_payment", "This simulated checkout is not open any more. Start the payment again.")
+        if (!checkout) throw new DomainError("invalid_payment", "This checkout is not open any more. Start the payment again.")
         await deals.assertTenantOf(actor, checkout.tenancyId)
         return checkout
       }),
@@ -74,7 +74,7 @@ export function registerDealRoutes(app: FastifyInstance, options: { deals: DealS
       "/api/payments/simulated/:reference/pay",
       route(async (actor, req) => {
         const checkout = simulated.checkout(param(req, "reference"))
-        if (!checkout) throw new DomainError("invalid_payment", "This simulated checkout is not open any more. Start the payment again.")
+        if (!checkout) throw new DomainError("invalid_payment", "This checkout is not open any more. Start the payment again.")
         await deals.assertTenantOf(actor, checkout.tenancyId)
         return simulated.pay(checkout.reference)
       }),

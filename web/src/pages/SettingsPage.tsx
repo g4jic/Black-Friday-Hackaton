@@ -1,8 +1,9 @@
 import { ArrowRight, Camera, Check, LogOut, Trash2 } from "lucide-react"
 import { ROLE_ICONS } from "../app/role-icons"
 import { useRef, useState, type FormEvent, type KeyboardEvent } from "react"
-import { logOut, MAX_NAME_LENGTH, removeAvatar, ROLES, updateIdentity, updateOnboarding, uploadAvatar, useAuth, type Role } from "../app/auth"
+import { logOut, MAX_NAME_LENGTH, removeAvatar, ROLES, updateIdentity, updateOnboarding, useAuth, type Role } from "../app/auth"
 import { AvatarFace } from "../app/Avatar"
+import { PhotoDialog } from "../app/PhotoDialog"
 import { checkProfileFields, toProfileFields, type ProfileFields, type ProfileProblems } from "../app/business-profile"
 import { listsSpaces, ROLE_LABELS, seeksSpaces } from "../app/roles"
 import { Link, navigate, paths } from "../app/router"
@@ -60,7 +61,7 @@ function AccountSection() {
   const [busy, setBusy] = useState<"details" | "photo" | null>(null)
   const [details, setDetails] = useState<Notice>(null)
   const [photo, setPhoto] = useState<Notice>(null)
-  const fileInput = useRef<HTMLInputElement>(null)
+  const [photoOpen, setPhotoOpen] = useState(false)
   const changed = displayName.trim() !== name || email.trim().toLowerCase() !== (account?.email ?? "").toLowerCase()
 
   const saveDetails = async (event: FormEvent) => {
@@ -70,26 +71,12 @@ function AccountSection() {
     setDetails(null)
     try {
       const { emailPending } = await updateIdentity({ displayName, email })
-      setDetails({ tone: "ok", text: emailPending ? `Saved. Confirm ${email.trim().toLowerCase()} from the link we sent there; until then sign in with your current email.` : "Saved on your account." })
+      setDetails({ tone: "ok", text: emailPending ? `Check ${email.trim().toLowerCase()} for a link to confirm the new email.` : "Saved." })
       if (emailPending) setEmail(account?.email ?? "")
     } catch (failure) {
       setDetails({ tone: "error", text: (failure as Error).message })
     } finally {
       setBusy(null)
-    }
-  }
-  const choosePhoto = async (file: File | undefined) => {
-    if (!file || busy) return
-    setBusy("photo")
-    setPhoto(null)
-    try {
-      await uploadAvatar(file)
-      setPhoto({ tone: "ok", text: "Photo saved." })
-    } catch (failure) {
-      setPhoto({ tone: "error", text: (failure as Error).message })
-    } finally {
-      setBusy(null)
-      if (fileInput.current) fileInput.current.value = "" // the same file can be chosen again
     }
   }
   const dropPhoto = async () => {
@@ -109,32 +96,37 @@ function AccountSection() {
   return (
     <Card title="Account" collapsible id="settings-account">
       <div className="flex flex-col gap-5">
-        <div className="flex flex-wrap items-center gap-4">
-          <AvatarFace name={displayName || name} url={account?.avatarUrl ?? null} className="h-16 w-16 bg-lilac text-xl" />
-          <div className="flex min-w-0 flex-1 flex-col gap-2">
-            <div className="flex flex-wrap gap-2">
-              <input
-                ref={fileInput}
-                id="settings-photo"
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/*"
-                className="sr-only"
-                onChange={(event) => void choosePhoto(event.target.files?.[0])}
-                disabled={busy !== null}
-              />
-              <label htmlFor="settings-photo" className={cx(SECONDARY, "cursor-pointer", busy !== null && "pointer-events-none opacity-60")}>
-                <Camera size={16} aria-hidden /> {busy === "photo" ? "Saving..." : account?.avatarUrl ? "Change photo" : "Add a photo"}
-              </label>
-              {account?.avatarUrl && (
-                <button type="button" onClick={() => void dropPhoto()} disabled={busy !== null} className={cx(SECONDARY, "disabled:opacity-60")}>
-                  <Trash2 size={16} aria-hidden /> Remove
-                </button>
-              )}
-            </div>
-            <span className="text-[12px] text-ink-2">JPEG, PNG or WebP. Cropped to a square and shrunk in your browser before it is uploaded.</span>
-            <NoticeLine notice={photo} />
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <AvatarFace name={displayName || name} url={account?.avatarUrl ?? null} className="h-16 w-16 bg-lilac text-xl" />
+            <button
+              type="button"
+              onClick={() => {
+                setPhoto(null)
+                setPhotoOpen(true)
+              }}
+              disabled={busy !== null}
+              className={cx(SECONDARY, "disabled:opacity-60")}
+            >
+              <Camera size={16} aria-hidden /> {account?.avatarUrl ? "Change photo" : "Add a photo"}
+            </button>
+            {account?.avatarUrl && (
+              <button type="button" onClick={() => void dropPhoto()} disabled={busy !== null} className={cx(SECONDARY, "disabled:opacity-60")}>
+                <Trash2 size={16} aria-hidden /> {busy === "photo" ? "Removing..." : "Remove"}
+              </button>
+            )}
           </div>
+          <NoticeLine notice={photo} />
         </div>
+        {photoOpen && (
+          <PhotoDialog
+            onClose={() => setPhotoOpen(false)}
+            onSaved={() => {
+              setPhotoOpen(false)
+              setPhoto({ tone: "ok", text: "Photo saved." })
+            }}
+          />
+        )}
 
         <form onSubmit={saveDetails} noValidate className="flex flex-col gap-4">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -166,7 +158,7 @@ function AccountSection() {
                   setDetails(null)
                 }}
               />
-              {account?.pendingEmail && <span className="mt-1.5 block text-[12px] text-ink-2">Waiting for you to confirm {account.pendingEmail}.</span>}
+              {account?.pendingEmail && <span className="mt-1.5 block text-[12px] text-ink-2">Confirm {account.pendingEmail} from your inbox.</span>}
             </label>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -181,10 +173,7 @@ function AccountSection() {
           </div>
         </form>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/70 pt-4">
-          <span className="text-[13px] text-ink-2">
-            {auth.mode === "local" ? "This account is kept on this computer only (no Supabase configured)." : "Signed in with SuiteSpot (Supabase Auth)."}
-          </span>
+        <div className="flex justify-end border-t border-white/70 pt-4">
           <button type="button" onClick={() => void logOut().then(() => navigate(paths.dashboard()))} className={SECONDARY}>
             <LogOut size={16} aria-hidden /> Sign out
           </button>
@@ -195,9 +184,9 @@ function AccountSection() {
 }
 
 const ROLE_MEANING: Record<Role, string> = {
-  owner: "You list spaces, see how many people opened them and answer offers. Research is hidden.",
-  seeker: "You research spaces for your business, save them and make offers. Listing a space is hidden.",
-  both: "You list your own spaces and research others: the menu shows both.",
+  owner: "List your spaces and answer offers.",
+  seeker: "Research spaces, save them and make offers.",
+  both: "List your own spaces and research others.",
 }
 
 /** The role as a segmented control of three pills (a radio group: arrow keys move and choose). Saved on the account at once. */
@@ -259,7 +248,7 @@ function RoleSection() {
       <p role="status" className="mt-1 min-h-5 text-[13px]">
         {status === "saved" ? (
           <span className="inline-flex items-center gap-1.5 text-green-700">
-            <Check size={16} aria-hidden /> Saved on your account.
+            <Check size={16} aria-hidden /> Saved.
           </span>
         ) : status !== "idle" ? (
           <span className="text-hard">{status}</span>
@@ -312,10 +301,10 @@ function BusinessProfileSection() {
           <span role="status" className="text-[13px] text-ink-2">
             {status === "saved" && (
               <span className="inline-flex items-center gap-1.5 text-green-700">
-                <Check size={16} aria-hidden /> Saved in this browser.
+                <Check size={16} aria-hidden /> Saved.
               </span>
             )}
-            {status === "notStored" && "Saved for this visit only: the browser does not allow storing settings."}
+            {status === "notStored" && "Saved for this visit only."}
             {status === "invalid" && <span className="text-hard">Check the marked fields.</span>}
           </span>
         </div>

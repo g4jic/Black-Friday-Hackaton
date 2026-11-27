@@ -95,10 +95,10 @@ export function HowItWorksPage() {
     <div className="grid gap-4 lg:grid-cols-2">
       <Card title="About the data" className="lg:col-span-2">
         <p className="max-w-[80ch]">
-          Every listing, landlord, contact and business on SuiteSpot in this version is synthetic: 100 generated listings in Novi Sad and Beograd, made for this
+          Every listing, owner, contact and business on SuiteSpot in this version is synthetic: 100 generated listings in Novi Sad and Beograd, made for this
           prototype. Prices per m2 follow public 2025-2026 ranges; area data is real public OpenStreetMap data. Offers, leases and rent payments are real
           records in the app, but no real money moves: payments are simulated, or Stripe in test mode. Before launch, the founders agree the first listings with
-          landlords so the platform is not empty.
+          owners so the platform is not empty.
         </p>
       </Card>
       <Card title="Your score, out of 100">
@@ -161,7 +161,7 @@ export function HowItWorksPage() {
         <ul className="mt-1 list-disc space-y-1 pl-5">
           <li>The monthly cost is more than {pct(a.hardFlags.budgetTolerance)} over your budget.</li>
           <li>You cannot leave early and the lease runs longer than {a.hardFlags.maxTermWithoutExitMonths} months.</li>
-          <li>The landlord may raise the rent at will.</li>
+          <li>The owner may raise the rent at will.</li>
         </ul>
         <p className="mt-3 font-medium text-ink">Points to check before signing</p>
         <p className="mt-1">

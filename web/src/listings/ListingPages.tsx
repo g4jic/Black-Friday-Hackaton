@@ -70,7 +70,7 @@ export function BrowseListingsPage() {
 }
 
 /**
- * The photo the landlord linked in the listing form (the "Image link" field), or nothing: no stock photo stands in
+ * The photo the owner linked in the listing form (the "Image link" field), or nothing: no stock photo stands in
  * for a space nobody photographed. A link that does not load hides itself. No referrer goes to the image host.
  */
 function ListingPhoto({ url, title, className }: { url: string | null; title: string; className?: string }) {
@@ -156,7 +156,7 @@ export function ListingDetailPage({ id }: { id: string }) {
     ["Ending the lease early", exitLabel(l.earlyTermination)],
     ["Rent increases", indexationLabel(l.indexation)],
     ["Permitted use", l.permittedUses.map((u) => BUSINESS_TYPE_LABELS[u]).join(", ")],
-    ["Structural repairs", l.tenantPaysStructuralRepairs ? "Paid by the tenant" : "Paid by the landlord"],
+    ["Structural repairs", l.tenantPaysStructuralRepairs ? "Paid by the tenant" : "Paid by the owner"],
   ]
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
@@ -179,9 +179,6 @@ export function ListingDetailPage({ id }: { id: string }) {
               </div>
             ))}
           </dl>
-          <p className="mt-4 text-[13px] text-ink-3">
-            The landlord typed these terms. SuiteSpot checks them against the lease draft when it evaluates the space.
-          </p>
         </Card>
         <Card title="Lease draft">
           {l.leaseDraft ? (
@@ -198,7 +195,7 @@ export function ListingDetailPage({ id }: { id: string }) {
               )}
             </>
           ) : (
-            <p>The landlord has not added a lease draft. An evaluation will list the lease terms to ask about.</p>
+            <p>No lease draft yet.</p>
           )}
         </Card>
       </div>
@@ -263,7 +260,7 @@ function ContactBox({ contact }: { contact: RevealedContact }) {
   )
 }
 
-/** The landlord's own listings: edit or delete (deleting removes the contact too). */
+/** The owner's own listings: edit or delete (deleting removes the contact too). */
 export function MyListingsPage() {
   const role = useAuth().landlord?.role ?? null
   const { data, error, reload } = useLoad("my-listings", listingsApi.mine)

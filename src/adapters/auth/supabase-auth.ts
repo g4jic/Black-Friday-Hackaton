@@ -31,7 +31,7 @@ export function supabaseActorResolver(config: SupabaseAuthConfig, client?: Pick<
     const { data, error } = await supabase.auth.getUser(token)
     if (error || !data.user) return null
     const user = data.user
-    const displayName = typeof user.user_metadata?.display_name === "string" && user.user_metadata.display_name.trim() ? user.user_metadata.display_name.trim() : (user.email ?? "Landlord")
+    const displayName = typeof user.user_metadata?.display_name === "string" && user.user_metadata.display_name.trim() ? user.user_metadata.display_name.trim() : (user.email ?? "Owner")
     return { id: user.id, displayName, kind: "supabase", accessToken: token }
   }
 }

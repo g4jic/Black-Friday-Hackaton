@@ -140,7 +140,7 @@ export class DealService {
     const { redirectUrl } = await this.payments.startCheckout(
       { tenancyId: t.id, period, amount: t.rentMonthly, currency: t.currency },
       {
-        description: `Rent ${period}: ${t.listingTitle} (${this.payments.method === "stripe_test" ? "Stripe test payment" : "simulated payment"})`,
+        description: `Rent ${period}: ${t.listingTitle}`,
         successUrl: (reference) => `${back}?paid=${reference.startsWith("{") ? reference : encodeURIComponent(reference)}`,
         cancelUrl: `${back}?payment=cancelled`,
       },

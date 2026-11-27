@@ -42,7 +42,6 @@ export const dealsApi = {
 }
 
 /** How a payment is labelled everywhere: never real money. */
-export const METHOD_LABEL: Record<PaymentMethod, string> = { stripe_test: "Stripe test payment", simulated: "Simulated payment, no real money" }
 
 /** "2027-01" as "January 2027". */
 export const monthLabel = (period: string) => new Date(`${period}-01T00:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" })

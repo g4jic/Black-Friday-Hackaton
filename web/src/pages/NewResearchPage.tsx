@@ -170,12 +170,9 @@ export function NewResearchPage({ config }: { config: Config | null }) {
             <div className="mb-4 flex flex-wrap items-center gap-2">
               <Pill variant="brand" icon={false}>
                 <span className="inline-flex items-center gap-1">
-                  <Lock size={12} aria-hidden /> Demo profile
+                  <Lock size={12} aria-hidden /> Example business
                 </span>
               </Pill>
-              <span className="text-[13px] text-ink-2">
-                Without an AI model key on the server, runs use the locked profile of the demo scenario.
-              </span>
             </div>
           ) : null}
           <ProfileFields form={shownForm} locked={profileLocked} onChange={(patch) => setForm({ ...form, ...patch })} />
@@ -186,7 +183,7 @@ export function NewResearchPage({ config }: { config: Config | null }) {
             {demoOnly && <NoKeyNotice />}
             {demoOnly && scenarios.length > 0 && (
               <div className="mt-4" role="radiogroup" aria-label="Demo scenario">
-                <p className="mb-2 text-xs font-medium text-ink">Demo scenario (recorded run with the real model)</p>
+                <p className="mb-2 text-xs font-medium text-ink">Example business</p>
                 <div className="flex flex-wrap gap-2">
                   {scenarios.map((s) => (
                     <button
@@ -265,11 +262,11 @@ function ListingToEvaluate({ listingId, liveAvailable, starting, error, blocked,
               {listing.district}, {listing.city} · {listing.areaM2} m² · {floorLabel(listing.floor)} · {formatMoney(listing.rentMonthly, "EUR")} rent +{" "}
               {formatMoney(listing.serviceChargeMonthly, "EUR")} costs a month
             </p>
-            <p className="mt-1 text-[13px]">{listing.leaseDraft ? "Has a lease draft: the Lease reader reads it." : "No lease draft: the lease rules run on the terms in the listing form."}</p>
+            <p className="mt-1 text-[13px]">{listing.leaseDraft ? "With a lease draft" : "No lease draft yet"}</p>
           </div>
         </div>
       )}
-      {listing && !canRun && <p className="mt-3 text-[13px]">Evaluating a listing that is not a demo listing needs live mode (a model API key on the server).</p>}
+      {listing && !canRun && <p className="mt-3 text-[13px]">This listing can be evaluated with an AI key on the server.</p>}
       <button
         type="button"
         onClick={onStart}
@@ -363,7 +360,7 @@ function ProfileFields({ form, locked, onChange }: { form: ProfileForm; locked: 
 function NoKeyNotice() {
   return (
     <p className="mt-4 rounded-[18px] bg-white/70 px-4 py-3 text-[13px] leading-5 text-ink-2">
-      Demo mode: "Find spaces" replays a recorded run of the real AI model for one of three demo businesses, so the questionnaire is fixed. The README explains how to run it on your own business.
+      Without an AI key, Find spaces runs one of three example businesses.
     </p>
   )
 }

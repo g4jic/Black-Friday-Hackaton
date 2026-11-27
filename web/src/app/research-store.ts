@@ -60,13 +60,23 @@ function toHistoryRecord(snapshot: RunSnapshot): HistoryRecord {
   }
 }
 
+/**
+ * Display wording: the agents and the lease rules say "landlord" (the recorded runs are matched by their exact
+ * model input, so those texts stay as they are); the interface says "owner". Only sentences are rewritten (a value
+ * with a space), never ids or codes such as landlord_unilateral.
+ */
+export function ownerWording(_key: string, value: unknown): unknown {
+  if (typeof value !== "string" || !value.includes(" ")) return value
+  return value.replace(/\b(L|l)andlord(s?)\b/g, (_m, l: string, plural: string) => `${l === "L" ? "O" : "o"}wner${plural}`)
+}
+
 function openStream(researchId: string): void {
   const entry = entries.get(researchId)
   if (!entry || entry.eventSource) return
   const eventSource = new EventSource(`/api/research/${researchId}/events`)
   entry.eventSource = eventSource
   const onEvent = (message: MessageEvent<string>) => {
-    const event = JSON.parse(message.data) as WireEvent
+    const event = JSON.parse(message.data, ownerWording) as WireEvent
     update(researchId, (s) => {
       const state = applyEvent(s.state, event)
       const synthetic = s.synthetic || Object.values(state.candidates).some((c) => c.synthetic)

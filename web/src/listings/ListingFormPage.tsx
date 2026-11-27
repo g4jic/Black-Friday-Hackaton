@@ -8,7 +8,7 @@ import { cx } from "../ui"
 import { Select } from "../Select"
 import { ApiError, CITIES, listingsApi, type ContactInput, type Indexation, type ListingInput, type ListingProblem } from "./listings-api"
 
-/** The form as typed (strings), so half-typed numbers survive while the landlord edits. */
+/** The form as typed (strings), so half-typed numbers survive while the owner edits. */
 export type Form = {
   title: string
   city: string
@@ -235,7 +235,7 @@ export function ListingFormPage({ id }: { id?: string }) {
       {/* Contact and Publish stay in view while the sections on the left scroll with the page (wide screens only). */}
       <div className="flex flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
         <Card title="Contact">
-          <p className="mb-3 text-[13px]">Tenants see it only after they click "Show contact". Give a phone number, an email or both.</p>
+          <p className="mb-3 text-[13px]">A phone number, an email or both.</p>
           <div className="grid gap-3">
             {field("phone", "Phone", { placeholder: "+381 64 123 45 67", problem: ["contact.phone", "contact"] })}
             {field("email", "Email", { problem: ["contact.email"] })}
@@ -379,7 +379,7 @@ export function ListingTermsFields({
               { value: "none", label: "No increase during the lease" },
               { value: "cpi", label: "Once a year with the consumer price index" },
               { value: "fixed_rate", label: "A fixed percent every year" },
-              { value: "landlord_unilateral", label: "The landlord may change the rent at any time" },
+              { value: "landlord_unilateral", label: "The owner may change the rent at any time" },
             ]}
             className={INPUT}
           />
@@ -394,7 +394,7 @@ export function ListingTermsFields({
             value={form.structural}
             onChange={(structural) => set({ structural })}
             options={[
-              { value: "landlord", label: "The landlord" },
+              { value: "landlord", label: "The owner" },
               { value: "tenant", label: "The tenant" },
             ]}
             className={INPUT}

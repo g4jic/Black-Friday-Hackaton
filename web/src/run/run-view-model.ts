@@ -144,7 +144,7 @@ export function statusLine(s: ResearchState): string {
       case "audit.started":
         return "Auditor is checking every number in the report"
       case "ranking.done":
-        return "Ranker has ordered the candidates (worst case first)"
+        return "Ranker has ordered the candidates"
       case "candidate.rejected":
         return `Hard flag: ${id} rejected by ${e.agent ?? "an agent"}`
       case "tool.started":

@@ -201,7 +201,7 @@ export class SpaceListing {
 
   /** Throws when the actor may not change this listing. */
   assertCanChange(actorId: string): void {
-    if (!this.isOwnedBy(actorId)) throw new DomainError("not_listing_owner", "Only the landlord who published this listing can change or delete it")
+    if (!this.isOwnedBy(actorId)) throw new DomainError("not_listing_owner", "Only the owner who published this listing can change or delete it")
   }
 
   update(input: SpaceListingInput, actorId: string, now: string): SpaceListing {

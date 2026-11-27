@@ -233,41 +233,9 @@ export async function updateIdentity(change: { displayName?: string; email?: str
   return { emailPending: false }
 }
 
-/** The longest side of the stored photo, in pixels (the avatar is drawn at 48 px at most, so this is sharp on retina). */
-const AVATAR_PX = 256
-
-/** Center-crops the chosen image to a square and shrinks it to a small JPEG in the browser (no upload of the original). */
-export async function shrinkPhoto(file: File): Promise<string> {
-  if (!file.type.startsWith("image/")) throw new Error("Choose an image file (JPEG, PNG or WebP).")
-  if (file.size > 15 * 1024 * 1024) throw new Error("The photo is too large (at most 15 MB).")
-  const url = URL.createObjectURL(file)
-  try {
-    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const img = new Image()
-      img.onload = () => resolve(img)
-      img.onerror = () => reject(new Error("This image could not be read. Try a JPEG or PNG."))
-      img.src = url
-    })
-    const side = Math.min(image.naturalWidth, image.naturalHeight)
-    if (!side) throw new Error("This image could not be read. Try a JPEG or PNG.")
-    const canvas = document.createElement("canvas")
-    canvas.width = canvas.height = Math.min(AVATAR_PX, side)
-    const context = canvas.getContext("2d")
-    if (!context) throw new Error("This browser cannot prepare the photo.")
-    context.fillStyle = "#ffffff" // a transparent PNG gets a white background in the JPEG
-    context.fillRect(0, 0, canvas.width, canvas.height)
-    context.imageSmoothingQuality = "high"
-    context.drawImage(image, (image.naturalWidth - side) / 2, (image.naturalHeight - side) / 2, side, side, 0, 0, canvas.width, canvas.height)
-    return canvas.toDataURL("image/jpeg", 0.86)
-  } finally {
-    URL.revokeObjectURL(url)
-  }
-}
-
-/** Shrinks the photo, stores it on our server and saves its address on the account. */
-export async function uploadAvatar(file: File): Promise<void> {
+/** Stores the cropped photo (a small JPEG data URL from the photo dialog) on our server and saves its address on the account. */
+export async function uploadAvatarImage(image: string): Promise<void> {
   if (!state.landlord) throw new Error("Sign in first.")
-  const image = await shrinkPhoto(file)
   const response = await fetch("/api/me/avatar", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ image }) })
   const data = (await response.json().catch(() => ({}))) as { avatarUrl?: string; account?: LocalAccount; error?: string }
   if (!response.ok || !data.avatarUrl) throw new Error(data.error ?? "The photo could not be saved. Try again.")

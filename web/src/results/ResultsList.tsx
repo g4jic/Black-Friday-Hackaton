@@ -46,7 +46,7 @@ export function ResultsList({ s, researchId }: { s: ResearchState; researchId: s
       <p className="max-w-[70ch] text-lg leading-7 font-semibold text-ink">{headline(s)}</p>
       <VerdictLegend verdicts={legend} />
       {/* The ranking puts the verdict before the score (src/domain/ranking.ts), so a higher score can sit lower. */}
-      <p className="-mt-2 text-[13px] text-ink-2">Ordered by verdict first (Good, then Check before signing, then Not recommended), then by score, so a space with an open point to check can score higher and still rank lower.</p>
+      <p className="-mt-2 text-[13px] text-ink-2">Sorted by verdict, then by score.</p>
       <ol className="flex flex-col gap-3" aria-label="Candidates, best verdict first, then highest score">
         {ranked.map((entry, index) => (
           <li key={entry.candidate.id}>

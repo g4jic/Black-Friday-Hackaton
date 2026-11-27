@@ -580,7 +580,7 @@ function LeftTheOrbit({ chips }: { chips: CandidateChip[] }) {
     <section className="glass run-card min-h-[132px] rounded-[28px] px-6 py-4" aria-label="Spaces ruled out">
       <h2 className="mb-2 text-xs font-semibold tracking-[0.06em] text-ink-2 uppercase">Ruled out</h2>
       {gone.length === 0 ? (
-        <p className="text-[13px] text-ink-2">No space ruled out so far. A deal breaker stops the work on a space and lists it here.</p>
+        <p className="text-[13px] text-ink-2">No space ruled out so far.</p>
       ) : (
         <ul className="flex flex-col gap-2 text-[13px]">
           {gone.map((chip) => (

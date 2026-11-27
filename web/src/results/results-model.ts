@@ -274,7 +274,7 @@ export function strengthsAndRisks(c: CandidateDTO): { strengths: PointItem[]; ri
   return { strengths, risks }
 }
 
-/** Questions for the landlord when there is no lease draft: one per term the calculations needed and did not have. */
+/** Questions for the owner when there is no lease draft: one per term the calculations needed and did not have. */
 export const LANDLORD_QUESTIONS = [
   { term: "lease length", question: "How long is the lease, and can it be renewed?" },
   { term: "early exit", question: "Can the tenant end the lease early, and with how many months' notice?" },
