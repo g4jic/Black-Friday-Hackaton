@@ -121,8 +121,10 @@ Colour is never the only signal: every flag pill also has an icon and a word ("H
 ```
 - **Sidebar:** floating white panel, 88 px wide, radius 28, 16 px from the window edges, full height, `shadow-soft`.
   Top: the SuiteSpot mark: a magnifying glass with a short handle (coral ring, black handle) and an isometric
-  commercial building inside the lens, our own, no photo; file `design/brand/suitespot-logo.svg`. Not wired into the
-  app yet. Then the nav buttons,
+  commercial building inside the lens, our own, no photo; file `design/brand/suitespot-logo.svg`. In the app it
+  is `web/public/suitespot-logo.svg`, shown at 56 px with no circle behind it, centred over the nav buttons and linked
+  to Home ("SuiteSpot home"); hidden in the bottom bar on narrow screens. The same SVG is the favicon, with
+  `favicon-64.png` as the PNG fallback. Then the nav buttons,
   44 px strong-glass circles with an ink icon, 16 px apart. **Active:** filled `brand`, white icon (an icon, 3:1 is enough). Hover: white.
   Each button has a tooltip and an `aria-label` with its name. Bottom: a round "collapse" chevron button.
 - **Header (top left):** breadcrumb in `text-small`, `ink-2`, with a `>` chevron; under it the page title in
