@@ -10,21 +10,27 @@ SuiteSpot
 https://github.com/g4jic/Black-Friday-Hackaton
 
 ## Live deployment
-https://suitespot-production.up.railway.app (sign up, then Research. The three demo scenarios and the whole deal loop
-run with no key; your own questionnaire runs the live model on our key, capped by a usage limit in the Anthropic
-Console and one live run at a time. Every feature is open.)
+https://suitespot-production.up.railway.app (sign up, choose a role, then Research. Every feature is open: the live
+model claude-haiku-4-5 on our key with your own questionnaire, capped by a usage limit in the Anthropic Console and one
+live run at a time, and rent paid through a real Stripe Checkout in a Stripe test sandbox, test card 4242 4242 4242
+4242, fake money.)
+
+Locally, from the README with no key and no database: `npm install`, `npm run dev`. The agents replay three recorded
+real model runs (labelled "Recorded run") and rent is paid through a clearly labelled simulated checkout; everything
+else is the same code and works the same.
 
 ## Description
 "Is this lease a good financial decision for my business?" A small business owner comparing commercial spaces needs an
 evening with a spreadsheet per listing, and the lease clause that matters most is the easiest to miss. SuiteSpot is a
 two-sided platform for commercial spaces: landlords publish structured listings, a business fills in a short
-questionnaire, and Mozaik agents evaluate every candidate space at the same time from different angles. AI agents read
+questionnaire (an onboarding step sets the role, owner, seeker or both, and the business profile), and Mozaik agents evaluate every candidate space at the same time from different angles. AI agents read
 (numbers, lease drafts, the area around the address, the description of the space); plain code does every
 calculation, decides every deal breaker and every verdict, and checks every quote and every number against its
 source. Each space gets a score range, a verdict, a rent share of revenue, a bad year / good year view, a lease or buy
 comparison and a list of what to check before signing. The business can then make an offer; once the landlord accepts,
 both sides see the same lease with its rent due dates, and the tenant pays rent through one payment port (Stripe
-Checkout in test mode with test keys, a clearly labelled simulated checkout without them; no real money ever moves).
+Checkout in a test sandbox with test keys, a clearly labelled simulated checkout without them; no real money ever
+moves). 270 automated tests, no key needed.
 All listings, landlords and businesses are synthetic. Not financial or legal advice.
 
 ## How the agents run concurrently
@@ -39,5 +45,6 @@ on that candidate at its next breakpoint, before the next model call (in Office 
 unlimited rent increase after 4.6 s and the Finance analyst's running loop stops before its next tool call). When the
 room is quiet, a code Ranker scores worst case first, the Report writer drafts from numbered facts, and a code Auditor
 checks every sentence against the facts it cites (sends it back once, then removes failing sentences; 0 removed in all
-three demo runs). The Timeline tab draws every loop from the runtime's own events, and each run appears in Mozaik
-Cloud. Without a key the agents replay recorded real claude-haiku-4-5 runs, labelled "Recorded run".
+three demo runs). While a run is going, every running agent loop is a dot on the screen, drawn from the runtime's own
+events (the peak shows as many dots as loops: 27, 30 and 28 in the three scenarios); the Timeline tab draws every
+loop as a lane, and each run appears in Mozaik Cloud. Without a key the agents replay recorded real claude-haiku-4-5 runs, labelled "Recorded run".

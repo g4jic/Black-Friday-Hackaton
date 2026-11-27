@@ -3,6 +3,16 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
+## Update (27 Nov 2026, 20:30, Andrej + Claude): README and submission text for the two ways to try it
+- README: "Two ways to try it" table under the links (local from the README with no key: recorded runs, simulated
+  checkout; online: live model, Supabase, Stripe test sandbox), Stripe sandbox keys (`rkcs_test_`) and `stripe sandbox
+  create`, the online Stripe check in the real/recorded table, 270 tests in 36 files, the 7 day sandbox in Known
+  limitations. SUBMISSION.md: the same two ways, onboarding, the run animation, 270 tests.
+- Stripe on the deploy: the Railway variables STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY hold an anonymous Stripe
+  test sandbox (made 27 Nov with `stripe sandbox create`, expires after 7 days, see `expires_at`); tested on the
+  deploy: Pay rent, Stripe Checkout "Sandbox", test card entered by Andrej, January 2027 "Paid (Stripe test)".
+  Before it expires: make a new sandbox and set the two variables again.
+
 ## Update (27 Nov 2026, night, Aleksa + Claude): dev shortcuts and old screenshots removed (9b7ed14)
 - Removed the local development shortcut as planned: `web/src/dev/` (DevSignIn, dev accounts),
   `scripts/seed-dev-accounts.ts`, and the lazy DevSignIn block in `AuthScreen.tsx`. The local `data/` folder (the
@@ -179,8 +189,7 @@ user_metadata).
   `user_metadata.onboarded_at` (ISO time, set once), next to `display_name`, through `auth.updateUser`. Local accounts:
   the same two fields on the account in `data/local-accounts.json`, saved by `POST /api/local-auth/profile`
   (`{ role?, onboarded?: true }`; unknown role 400, no session 401) and returned by sign in, sign up and `/me`.
-  The user can edit their own metadata, so the role only shapes the UI; billing must keep anything that decides money
-  in a server-owned table (billing plan section 4).
+  The user can edit their own metadata, so the role only shapes the UI; nothing that decides money may rely on it.
 - Files: `web/src/pages/OnboardingPage.tsx`, `web/src/app/onboarding-gate.ts` (pure rules, tested),
   `web/src/app/roles.ts`, `web/src/app/auth.ts` (`updateOnboarding`), `src/adapters/auth/local-accounts.ts`,
   `tests/onboarding.test.ts`.

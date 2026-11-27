@@ -10,10 +10,23 @@ in code stops the agents still working on a deal breaker, and every number on th
 > **All listings, landlords and businesses are synthetic. Not financial or legal advice.**
 
 - Demo video: **[link coming]** (2-3 min)
-- Live deployment: **https://suitespot-production.up.railway.app** (sign up, then Research: every feature is open,
-  with the live model claude-haiku-4-5 on our key; spending is capped by a usage limit in the Anthropic Console, and
-  the server runs one live research at a time)
+- Live deployment: **https://suitespot-production.up.railway.app**
 - Mozaik Cloud: [screenshot of the project](#how-the-agents-run-concurrently) with the loops of every agent (the Cloud project is private)
+
+### Two ways to try it
+Both run the same code from this repository. The only differences come from keys that a public repository cannot
+ship; put your own keys in `.env` and the local version does everything the online one does.
+
+| | **Local**, from this README ([Quick start](#quick-start-no-key-no-database)) | **Online**, https://suitespot-production.up.railway.app |
+|---|---|---|
+| Setup | `npm install`, `npm run dev`: no key, no database, about two minutes | None: open the link and sign up |
+| Accounts | Kept on your computer (`data/local-accounts.json`) | Supabase Auth |
+| Agents | Three recorded real runs of claude-haiku-4-5, replayed with their timing and labelled "Recorded run" | The live model (claude-haiku-4-5) on our key, with your own questionnaire or an outside listing |
+| Rent payment | Simulated checkout, labelled "Simulated payment, no real money" | A real Stripe Checkout in a Stripe test sandbox (test card `4242 4242 4242 4242`), fake money |
+| The same in both | The Mozaik runtime, every rule, calculation, hard flag, ranking, verdict and audit; onboarding with roles; listings, offers, leases and the rent schedule | The same |
+
+Online, spending on the model is capped by a usage limit in the Anthropic Console, and the server runs one live
+research at a time.
 
 ## Contents
 - [The problem](#the-problem)
@@ -127,8 +140,11 @@ What you see:
 4. A landlord sees the same lease and the same paid month under **Offers** (sign in with a second account that chose
    "List my space", publish a listing, and make the offer from the first one to see both sides).
 
-With `STRIPE_SECRET_KEY=sk_test_...` and `STRIPE_PUBLISHABLE_KEY=pk_test_...` in `.env`, the same button opens a
-**Stripe Checkout in test mode** instead (test card `4242 4242 4242 4242`); live keys are refused. Both go through one
+With Stripe test keys in `.env` (`STRIPE_SECRET_KEY`: `sk_test_`, `rk_test_` or `rkcs_test_`;
+`STRIPE_PUBLISHABLE_KEY`: `pk_test_`), the same button opens a **Stripe Checkout in test mode** instead (test card
+`4242 4242 4242 4242`); live keys are refused. No Stripe account is needed: the Stripe CLI command
+`stripe sandbox create --email <you>` makes an anonymous test sandbox with working keys for 7 days, which is how the
+online version runs it (a Stripe account cannot be opened from Serbia; the sandbox needs no account and no country). Both go through one
 payment port (`src/application/payments/payment-gateway.ts`) and are recorded the same way, only the reference
 differs (`simulated:<id>` or the Stripe `cs_test_` session id). **Stripe test mode demonstrates the flow; Stripe does
 not support businesses registered in Serbia, so a production version would use a local payment processor behind the
@@ -150,8 +166,8 @@ the server; the browser never receives it, and server events are scrubbed of it 
 - Cost guard: set a usage limit for the key in the Anthropic Console. The server also runs at most one live research
   at a time (a second one gets 429).
 - `MOZAIK_API_KEY` (optional): Mozaik Cloud tracing. Easier: run the pairing once, see below.
-- `STRIPE_SECRET_KEY` and `STRIPE_PUBLISHABLE_KEY` (optional, test keys only): rent payments through Stripe Checkout
-  in test mode instead of the simulated checkout.
+- `STRIPE_SECRET_KEY` and `STRIPE_PUBLISHABLE_KEY` (optional, test keys only, for example from
+  `stripe sandbox create`): rent payments through Stripe Checkout in test mode instead of the simulated checkout.
 
 ## Optional: Supabase accounts and listings
 Without Supabase, listings come from a local store (the 100 seeded synthetic listings, plus anything you publish
@@ -355,7 +371,7 @@ quality check").
 | Accounts, saved spaces, view counts | Real: Supabase Auth with Supabase, local accounts on this computer without it |
 | Area data (OpenStreetMap) | Real public data: counted once for the seeded addresses and stored in `fixtures/osm/` (© OpenStreetMap contributors, ODbL); an outside listing is looked up live (at most 1 request per second) |
 | Offers, leases, rent schedule | Real code and storage (Supabase or local); on a seeded listing the landlord's answer is given by the tenant as the "simulated landlord" |
-| Rent payments | **Simulated** without Stripe keys ("Simulated payment, no real money"); **Stripe test mode** with test keys. Never real money |
+| Rent payments | **Simulated** without Stripe keys ("Simulated payment, no real money"); **Stripe test mode** with test keys (the online version uses an anonymous Stripe test sandbox, tested end to end on 27 Nov 2026: Checkout, test card, the month marked paid with the `cs_test_` session as its reference). Never real money |
 | Signing a lease, contacting landlords | Not built |
 
 ## Architecture and code map
@@ -379,12 +395,14 @@ npm test
 ```powershell
 npm run typecheck
 ```
-227 tests in 31 files, no key and no network needed (`tests/setup.ts` turns Mozaik Cloud off and blocks any request
+270 tests in 36 files, no key and no network needed (`tests/setup.ts` turns Mozaik Cloud off and blocks any request
 to another host): every domain rule and invariant (with the violation it rejects), the schema
 rules for every structured output, cancellation mid-run, a failing agent that does not stop the others, the server
-and its cost guards, the three recorded scenarios replayed end to end to an audited report, the frozen seed, and
-the full deal loop over HTTP (offer, accept, lease, simulated payment, status on both sides; the Stripe test gateway
-against a fake fetch).
+and its cost guards, the three recorded scenarios replayed end to end to an audited report, the run animation
+replayed against the real bus events of those recordings (every dot is a real loop), the onboarding and role rules,
+the business profile form against the domain, the frozen seed, and the full deal loop over HTTP (offer, accept, lease,
+simulated payment, status on both sides, leased spaces, someone else's offer or rent refused; the Stripe test gateway
+against a fake fetch, test keys only).
 
 ## Known limitations
 - Without a key, Find spaces runs only the three recorded scenarios with their locked questionnaires; your own
@@ -393,6 +411,8 @@ against a fake fetch).
   (`npm run record:demo`), and `tests/recorded-demo.test.ts` fails until it is.
 - Code removes phone numbers and emails from pasted listing text but cannot reliably detect a person's name; the
   Scout has no field for names. Do not paste text with private details.
+- A Stripe test sandbox made without an account lasts 7 days; we make a new one and swap the keys on the online
+  version before it expires. Without Stripe keys the simulated checkout is used.
 - Not built: an inspection of the premises on site, signing a lease, messages between users, a real payment
   processor (Stripe does not support businesses registered in Serbia; production would use a local processor
   behind the same payment port). Only EUR and the two seeded cities are covered by the demo data.
