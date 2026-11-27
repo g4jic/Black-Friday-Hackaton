@@ -23,7 +23,7 @@ https://github.com/g4jic/Black-Friday-Hackaton
 https://suitespot-production.up.railway.app
 
 ## Demo or video URL
-Added when the video is published.
+https://youtu.be/syJkZpOK5TE (walkthrough, 3.5 min)
 
 ## What does it do?
 SuiteSpot finds a small business the best financial deal on a commercial space.
