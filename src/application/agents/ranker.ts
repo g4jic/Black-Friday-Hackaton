@@ -45,6 +45,7 @@ export function createRanker(rt: AppRuntime): Participant {
         hasLeaseDraft: rt.state.hasLease(c.id),
         softFindings: rt.state.findings.filter((f) => f.candidateId === c.id && f.severity === "soft"),
         area: rt.state.areas.get(c.id) ?? null,
+        premises: rt.state.premises.get(c.id) ?? null,
       })
     })
     const order = rankCandidates(scores)

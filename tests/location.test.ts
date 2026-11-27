@@ -92,7 +92,7 @@ describe("Location analyst (keyless, scripted model)", () => {
     expect(explained.length).toBeGreaterThanOrEqual(6) // every candidate that was not rejected before its loop ended
     const started = ofType(s, "loop.started")
     const agentsOf = (id: string) => new Set(started.filter((e) => e.candidateId === id).map((e) => e.agent))
-    expect(agentsOf("listing-01")).toEqual(new Set(["Finance analyst", "Lease reader", "Location analyst"]))
+    expect(agentsOf("listing-01")).toEqual(new Set(["Finance analyst", "Lease reader", "Location analyst", "Premises inspector"]))
     expect(s.events.some((e) => e.type === "report.ready")).toBe(true)
   })
 

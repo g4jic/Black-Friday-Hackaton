@@ -52,6 +52,8 @@ export type CandidateDTO = {
   rejection: FlagDTO | null
   laterFlags: FlagDTO[]
   findings: FindingDTO[]
+  /** the Premises inspector's result: null while not read (or when it failed); notStated = checks the texts do not mention */
+  premises: { notStated: string[] } | null
   ranking: RankingDTO | null
 }
 
@@ -65,7 +67,7 @@ export type RankingDTO = {
   confidence: "high" | "medium" | "low"
   tier: number
   reasons: ReasonDTO[]
-  components: { name: string; weight: number; value: number | null }[]
+  components: { name: string; weight: number; value: number | null; valueHigh?: number }[]
   /** Decided by code on the server (domain/verdict.ts). */
   verdict: { verdict: Verdict; why: string }
 }

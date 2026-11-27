@@ -3,7 +3,7 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
-## HANDOFF (27 Nov 2026, branch wip/agents, Aleksa -> Andrej): READ THIS FIRST
+## HANDOFF (27 Nov 2026, branch wip/agents, Aleksa -> Andrej): READ THIS FIRST (phase 2 done, see below)
 Aleksa ran out of limit mid-phase. **main is untouched** (last good: 2db1917, all tests pass there, keyless demo works).
 Everything below is on the branch `wip/agents`, committed even though tests do not all pass. Do not merge it into
 main until the steps below are done. Feature freeze 18:00, submissions close at midnight.
@@ -67,18 +67,41 @@ pass, with a PROGRESS entry; if a phase fails, revert it)
 
 **Update (27 Nov): the OSM fixture `fixtures/osm/seed-areas.json` is now COMPLETE (59 of 59 seed addresses, all 100 listings; the resumable `scripts/fetch-osm.ts` reused the 44 logged counts and fetched the last 15), and `tests/location.test.ts` passes 10 of 10 including the fixture coverage test; the recorded-demo test still fails until `npm run record:demo` after phase 2.**
 
-**Phase 2: files written, NOT wired, does not compile yet.**
-- `src/domain/premises.ts` (PREMISES_FIELDS with quotes, buildPremises, evaluatePremises per business type, soft
-  concerns only, score range low/high, PREMISES_CONCERN_RULES), `src/application/agents/premises-inspector.ts`
-  (agent, like the Lease reader), `tests/premises.test.ts` (domain tests).
-- Missing to make it compile and run: export `./premises.js` from `src/domain/index.ts`; add `premises` map and
-  `recordPremises(facts)` to `SuiteSpotState`; add the agent to `research-session.ts` (agents list) and its events
-  (`premises.read`, `premises.extraction_rejected`, `premises.failed`) to PASS_THROUGH; a "premises" component in
-  `scoreCandidate` (use the low/high range of evaluatePremises; add PREMISES_CONCERN_RULES to checks.notCountedTwice
-  so a concern is not counted twice) and new weights (suggestion: cost 35, area 15, lease 15, location 10, premises
-  10, checks 15); scripted answers in `demo-script.ts` (route "You are the Premises inspector"); schema-rules test
-  list (premises-inspector.ts:PREMISES_EXTRACTION_SCHEMA); ui.tsx AGENTS and ORBIT_AGENTS; a Premises card on the
-  candidate page; Report writer facts (soft concerns already flow in as "check" facts).
+**Phase 2: DONE and wired (27 Nov, Aleksa + Claude).** Typecheck clean; 197 of 200 tests pass; only the 3 tests in
+`tests/recorded-demo.test.ts` fail, on purpose, until the re-recording in phase 4.
+- Wired: export from `src/domain/index.ts`; `SuiteSpotState.premises` + `recordPremises` (idempotent); agent in
+  `research-session.ts`, its events in PASS_THROUGH; "premises" part in `scoreCandidate` with its own range
+  (`ScoreComponent.valueHigh`); weights cost 35, area 15, lease 15, location 10, premises 10, checks 15 (sum 100,
+  tested); Assumptions screen shows the weight and a "Premises rules" card.
+- Rules (tested): the agent only reports facts with quotes; code checks every quote against the listing or lease text
+  (`premises.extraction_rejected`, one retry, then unverified fields become missing data); code (`evaluatePremises`)
+  decides the soft flags per business type; never a hard flag; an unmentioned check is MissingData and widens the
+  range; premises not read at all lowers confidence like a missing location.
+- Decision: premises concerns are in `checks.notCountedTwice` (not scored twice), but `CandidateScore.pointsToCheck`
+  counts them, and a Good verdict needs `pointsToCheck === 0` (domain/verdict.ts). Old cases behave the same.
+- Keyless scripted answers (`premisesDemoScript` in `demo-script.ts`): fixed phrases found in the text, copied as
+  quotes, with negation ("Bez izloga" = no storefront).
+- UI: `building-2` agent in AGENTS and ORBIT_AGENTS (Timeline lane comes from AGENTS), "The space" card on the
+  candidate page (each check with its quote, what to check before signing, what is not stated), premises item in
+  "What is unknown". The card with real data was checked by a unit test (`tests/results-model.test.ts`), not seen in
+  the browser yet (recorded runs have no premises answers).
+- Tests: `tests/premises-agent.test.ts` (4 loops in parallel per candidate, quotes in the text, concerns reach the
+  report as "check" facts and pass the Auditor, invented quote rejected, a hard flag from the Lease reader cuts the
+  Premises loop and its result never arrives), `tests/fixtures/sample-premises.ts`, updates in ranking, verdict,
+  location, schema-rules, results-model.
+- Browser check (keyless, all 3 Find spaces scenarios): no console errors, Premises lanes and "cut" marks on the
+  Timeline. As expected the recorded run is incomplete: the report says "Provider error: this request is not in the
+  recording", every candidate is Low confidence, the space card says "has not read this listing". Also (from phase 1)
+  the Location card then says "address not found in OpenStreetMap" although the real cause is the missing recording;
+  it goes away after re-recording, but the wording is misleading.
+- Local run note: `.env` has ANTHROPIC_API_KEY, so plain `npm run dev` runs LIVE. For a keyless run in PowerShell:
+  `$env:ANTHROPIC_API_KEY=' '; npm run dev` (a blank value is "set", so dotenv does not load the key; the server sees
+  no key and runs the demo).
+
+**Next, in this order:** Phase 3 (rent share of revenue rule in the Ranker, threshold as a labelled ASSUMPTION on the
+Assumptions screen, no revenue = MissingData; about 45-60 min), then Phase 4 (`npm run record:demo`, about $0.30;
+check audit 0 removed and the mid-run cuts for the video; README, screenshots; about 1.5 h). Then merge into main only
+when all tests pass.
 
 **Phase 3 and Phase 4: not started.**
 

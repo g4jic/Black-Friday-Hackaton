@@ -4,7 +4,7 @@ import { scoutDemoScript } from "./scout-script.js"
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
-export type DemoLatency = { scout?: (listingId: string) => number; leaseReader?: number; financeStep?: number; locationStep?: number; reportWriter?: number }
+export type DemoLatency = { scout?: (listingId: string) => number; leaseReader?: number; financeStep?: number; locationStep?: number; premisesStep?: number; reportWriter?: number }
 
 /** Demo-mode "model" for the Lease reader: replays the scripted answer for the lease id in the message. */
 export function leaseReaderDemoScript(answers: Record<string, unknown>, latencyMs = 0): MockScript {
@@ -57,6 +57,45 @@ export function locationDemoScript(stepLatencyMs = 0): MockScript {
   }
 }
 
+/** Scripted cues for the Premises inspector: a phrase in the text, the field it states, and the value it states. */
+const PREMISES_CUES: readonly { field: string; value: unknown; pattern: RegExp }[] = [
+  { field: "floor", value: "ground", pattern: /\bground floor\b|\bprizemlj\w*/i },
+  { field: "floor", value: "basement", pattern: /\b(?:second )?basement\b|\bu suterenu\b/i },
+  { field: "floor", value: "upper", pattern: /\bfloor [1-9]\d*\b|\bna (?:prvom|drugom|trećem|spratu)\b/i },
+  { field: "storefront", value: true, pattern: /\bizlog\w*(?: (?:prema|ka) ulici)?|\bdva izloga\b|\bstorefront\b|\bshop window\b/i },
+  { field: "parking", value: true, pattern: /\bparking\w*(?: [a-zčćšžđ]+){0,3}/i },
+  { field: "heating", value: null, pattern: /\bgrejanje:? [^.,;\n]+|\bheating:? [^.,;\n]+/i },
+  { field: "kitchenVentilation", value: true, pattern: /\bventilacij\w*(?: za kuhinju)?|\bkitchen ventilation\b/i },
+  { field: "waterAndDrain", value: true, pattern: /\bpriključak za vodu i odvod\b|\bwater and (?:a )?drain\b/i },
+  { field: "needsRenovation", value: false, pattern: /\brenoviran\w*(?: pre [a-z]+ godin[ae])?|\bbez renoviranja\b/i },
+  { field: "needsRenovation", value: true, pattern: /\bpotrebno renoviranje\b|\bzahteva renoviranje\b|\bneeds renovation\b/i },
+  { field: "stepFreeAccess", value: true, pattern: /\bbez stepenika\b|\bstep-free\b/i },
+]
+
+/**
+ * Demo-mode "model" for the Premises inspector: finds a few fixed phrases in the text and copies each one as the quote
+ * (so code can check it). A feature without a phrase is not found. It does not judge anything: code does.
+ */
+export function premisesDemoScript(stepLatencyMs = 0): MockScript {
+  return async (input): Promise<MockReply> => {
+    if (stepLatencyMs > 0) await sleep(stepLatencyMs)
+    const text = /"""\n([\s\S]*)\n"""/.exec(lastUserText(input))?.[1] ?? ""
+    const answer: Record<string, unknown> = {}
+    for (const field of ["floor", "storefront", "parking", "heating", "kitchenVentilation", "waterAndDrain", "needsRenovation", "stepFreeAccess"]) answer[field] = { found: false }
+    for (const cue of PREMISES_CUES) {
+      if ((answer[cue.field] as { found: boolean }).found) continue
+      const m = cue.pattern.exec(text)
+      if (!m) continue
+      // "Bez parkinga", "bez izloga": the phrase is negated, so the quote includes the negation and the value flips.
+      const negation = typeof cue.value === "boolean" ? /\b(bez|nema|no|without) $/i.exec(text.slice(Math.max(0, m.index - 8), m.index)) : null
+      const quote = negation ? `${negation[0]}${m[0]}` : m[0]
+      const value = cue.field === "heating" ? m[0].replace(/^\w+:?\s*/, "") : negation ? !cue.value : cue.value
+      answer[cue.field] = { found: true, value, quote }
+    }
+    return { text: JSON.stringify(answer) }
+  }
+}
+
 /**
  * Demo-mode "model" for the Report writer: builds the report only from the FACTS in its message (rank facts for the
  * top 3, then checks, rejections and unknowns), copying the fact texts, so it passes the Auditor. It computes nothing.
@@ -86,6 +125,7 @@ export function demoRoomScript(answers: { scout: Record<string, unknown>; lease:
   const lease = leaseReaderDemoScript(answers.lease, latency.leaseReader)
   const finance = financeDemoScript(latency.financeStep)
   const location = locationDemoScript(latency.locationStep ?? latency.financeStep)
+  const premises = premisesDemoScript(latency.premisesStep ?? latency.financeStep)
   const report = reportWriterDemoScript(latency.reportWriter)
   return (input: InferenceInput) => {
     const role = developerText(input)
@@ -93,6 +133,7 @@ export function demoRoomScript(answers: { scout: Record<string, unknown>; lease:
     if (role.startsWith("You are the Lease reader")) return lease(input)
     if (role.startsWith("You are the Finance analyst")) return finance(input)
     if (role.startsWith("You are the Location analyst")) return location(input)
+    if (role.startsWith("You are the Premises inspector")) return premises(input)
     if (role.startsWith("You are the Report writer")) return report(input)
     return { text: "mock answer" }
   }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { applyEvent, initialResearch, type ResearchState } from "../web/src/research-state.js"
-import { allSources, costRows, headline, leaseSection, plainSource, resultsList, scoreReason, strengthsAndRisks, unknowns } from "../web/src/results/results-model.js"
+import { allSources, costRows, headline, leaseSection, plainSource, premisesSection, resultsList, scoreReason, strengthsAndRisks, unknowns } from "../web/src/results/results-model.js"
 import { formatMoney } from "../web/src/format.js"
 import type { CandidateDTO, RankingDTO, WireEvent } from "../web/src/types.js"
 
@@ -33,6 +33,7 @@ const candidate = (id: string, address: string, m2: number, patch: Partial<Candi
   rejection: null,
   laterFlags: [],
   findings: [],
+  premises: null,
   ranking: null,
   ...patch,
 })
@@ -147,5 +148,27 @@ describe("result wording (honest and readable)", () => {
     const lease = leaseSection(c)
     expect(lease.fromForm).toBe(true)
     expect(lease.terms[0]!.text).toBe("Rent increases: follows the consumer price index")
+  })
+
+  it("the space card: each stated check with its quote, a concern says what to check, unknown checks widen the range", () => {
+    const src = (quote: string) => ({ kind: "listing", ref: "pasted-1", field: "storefront", quote })
+    const c = candidate("pasted-1", "Liman", 60, {
+      findings: [
+        { id: "pasted-1:premises:ground_floor", aspect: "premises", severity: "info", claim: "The space is on the ground floor", author: "Premises inspector", source: { kind: "listing", ref: "pasted-1", field: "floor", quote: "u prizemlju" } },
+        { id: "pasted-1:premises:storefront", aspect: "premises", severity: "info", claim: "The space has no storefront", author: "Premises inspector", source: src("Bez izloga") },
+        { id: "pasted-1:premises:concern:premises_storefront", aspect: "premises", severity: "soft", claim: "The space has no storefront", checkBeforeSigning: "how customers will find the space without a shop window", author: "Premises inspector", source: src("Bez izloga") },
+      ],
+      premises: { notStated: ["kitchenVentilation", "waterAndDrain"] },
+      ranking: ranking({ score: 76, scoreHigh: 80, components: [{ name: "cost", weight: 35, value: 1 }, { name: "premises", weight: 10, value: 0.33, valueHigh: 0.67 }] }),
+    })
+    const p = premisesSection(c)
+    expect(p.read).toBe(true)
+    expect(p.checks).toEqual([
+      { text: "The space is on the ground floor", ok: true, checkBeforeSigning: null, source: 'from the listing: "u prizemlju"' },
+      { text: "The space has no storefront", ok: false, checkBeforeSigning: "how customers will find the space without a shop window", source: 'from the listing: "Bez izloga"' },
+    ])
+    expect(p.notStated).toEqual(["Kitchen ventilation", "Water and drain"])
+    expect(unknowns(c).items).toContainEqual({ text: "The space itself: not stated in the listing or the lease (kitchen ventilation, water and drain)", points: 3 })
+    expect(premisesSection(candidate("x", "Liman", 60)).read).toBe(false)
   })
 })

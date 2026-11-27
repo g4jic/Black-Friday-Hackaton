@@ -7,7 +7,7 @@ import { candidateLocation, candidateShortName } from "../candidate-label"
 import { ResearchMissing } from "../pages/ResearchPage"
 import type { CandidateDTO } from "../types"
 import { cx } from "../ui"
-import { allSources, costRows, leaseSection, locationSection, resultsList, strengthsAndRisks, unknowns, type PointItem } from "./results-model"
+import { allSources, costRows, leaseSection, locationSection, premisesSection, resultsList, strengthsAndRisks, unknowns, type PointItem } from "./results-model"
 import { ScoreBlock, VerdictBadge } from "./ResultsList"
 
 /** One candidate (/research/:id/candidate/:candidateId): separate cards with clear headings, nothing overlapping. */
@@ -42,6 +42,7 @@ export function CandidatePage({ researchId, candidateId }: { researchId: string;
         <StrengthsRisksCard candidate={candidate} />
         <LeaseCard candidate={candidate} />
         <LocationCard candidate={candidate} />
+        <PremisesCard candidate={candidate} />
         <UnknownsCard candidate={candidate} />
       </div>
       <SourcesCard candidate={candidate} />
@@ -235,6 +236,48 @@ function LocationCard({ candidate }: { candidate: CandidateDTO }) {
       ) : (
         <p className="text-[13px] text-ink-3">The location was not checked: the address was not found in OpenStreetMap.</p>
       )}
+    </Section>
+  )
+}
+
+function PremisesCard({ candidate }: { candidate: CandidateDTO }) {
+  const premises = premisesSection(candidate)
+  if (!premises.read) {
+    return (
+      <Section title="The space">
+        <p className="text-[13px] text-ink-3">{candidate.status === "rejected" ? "Not read: a hard flag stopped the Premises inspector." : "The Premises inspector has not read this listing."}</p>
+      </Section>
+    )
+  }
+  return (
+    <Section title="The space">
+      <p className="mb-3 text-xs leading-5 text-ink-2">What the listing and the lease draft state, each with its quote. Code decides what suits your type of business.</p>
+      {premises.checks.length === 0 ? (
+        <p className="text-[13px] text-ink-3">The listing states nothing that matters for your type of business.</p>
+      ) : (
+        <ul className="flex flex-col gap-2.5">
+          {premises.checks.map((check) => {
+            const Icon = check.ok ? Check : TriangleAlert
+            return (
+              <li key={check.text} className="flex gap-2.5 text-sm leading-5">
+                <Icon size={16} className={cx("mt-0.5 shrink-0", check.ok ? "text-green-700" : "text-amber-800")} aria-hidden />
+                <span className="max-w-[70ch]">
+                  <span className="text-ink">{check.text}</span>
+                  {check.checkBeforeSigning && <span className="block text-[13px] text-ink">Check before signing: {check.checkBeforeSigning}</span>}
+                  <span className="block text-xs text-ink-2">Source: {check.source}</span>
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+      {premises.heating && (
+        <p className="mt-3 text-sm leading-5 text-ink">
+          {premises.heating.text}
+          <span className="block text-xs text-ink-2">Source: {premises.heating.source}</span>
+        </p>
+      )}
+      {premises.notStated.length > 0 && <p className="mt-4 max-w-[70ch] text-[13px] leading-5 text-ink-2">Not stated, so unknown in the score: {premises.notStated.join(", ").toLowerCase()}. Ask the landlord.</p>}
     </Section>
   )
 }

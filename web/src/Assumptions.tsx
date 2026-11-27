@@ -15,6 +15,7 @@ type Assumptions = {
     }
     checks: { description: string; penaltyEach: number; notCountedTwice: string[] }
     location: { description: string }
+    premises: { description: string }
     missingData: string
     missingDataDetail: string
     confidence: Record<string, string>
@@ -24,6 +25,7 @@ type Assumptions = {
   verdict: { good: string; checkBeforeSigning: string; notRecommended: string }
   leaseConcerns: { maxNoticeMonths: number; maxFixedIndexationPercent: number }
   location: { radiusM: number; description: string; rules: Record<string, ({ metric: string } & ({ kind: "more_is_better"; fullAt: number } | { kind: "competition"; fullAtOrBelow: number; zeroAt: number }))[]>; metricText: Record<string, string>; businessText: Record<string, string>; attribution: string }
+  premises: { description: string; checks: Record<string, string[]>; checkText: Record<string, string>; businessText: Record<string, string> }
   demoQuestionnaire: { business: string; areaM2: [number, number]; monthlyBudget: number; expectedMonthlyRevenue: number; leaseMonths: number; currency: string; grossMarginRate: number | null }
 }
 
@@ -64,14 +66,15 @@ export function AssumptionsScreen() {
           <tbody>
             {Object.entries(r.weights).map(([k, w]) => (
               <tr key={k} className="border-b border-line last:border-0">
-                <td className="py-2 pr-4 font-medium text-ink">{({ cost: "Cost", area: "Area", lease: "Lease terms", location: "Location", checks: "Points to check" } as Record<string, string>)[k] ?? k}</td>
+                <td className="py-2 pr-4 font-medium text-ink">{({ cost: "Cost", area: "Area", lease: "Lease terms", location: "Location", premises: "The space", checks: "Points to check" } as Record<string, string>)[k] ?? k}</td>
                 <td className="tnum py-2 pr-4 text-right">{w}</td>
                 <td className="py-2 text-ink-2">
                   {k === "cost" && `${r.cost.description}: full score at ${pct(r.cost.fullScoreAtOrBelow)} or less, 0 at ${pct(r.cost.zeroScoreAt)}.`}
                   {k === "area" && `${r.area.description}.`}
                   {k === "lease" && `${r.lease.description}: early exit ${r.lease.earlyExit.allowed} / ${r.lease.earlyExit.notAllowed}; notice ${r.lease.noticeMonths.map((b) => `${b.upTo === null ? "more" : `up to ${b.upTo} months`} ${b.score}`).join(", ")}; indexation by index ${r.lease.indexation.cpi}, fixed up to 3% ${r.lease.indexation.fixedUpTo3}, up to 5% ${r.lease.indexation.fixedUpTo5}, above ${r.lease.indexation.fixedAbove5}.`}
                   {k === "location" && `${r.location.description}.`}
-                  {k === "checks" && `${r.checks.description} (notice and indexation are scored under lease terms, not counted twice).`}
+                  {k === "premises" && `${r.premises.description}.`}
+                  {k === "checks" && `${r.checks.description} (notice and indexation are scored under lease terms and premises concerns under the space, not counted twice; they still prevent a Good verdict).`}
                 </td>
               </tr>
             ))}
@@ -117,6 +120,16 @@ export function AssumptionsScreen() {
           ))}
         </ul>
         <p className="mt-3 text-xs">{a.location.attribution}</p>
+      </Card>
+      <Card title="Premises rules (plain code)">
+        <p className="mb-3">{a.premises.description}. The Premises inspector (AI) only reports what the texts state, each with a quote that code checks; it never decides. A check that does not suit the business is a point to check before signing, never a hard flag.</p>
+        <ul className="space-y-2">
+          {Object.entries(a.premises.checks).map(([type, checks]) => (
+            <li key={type}>
+              <span className="font-medium text-ink">{a.premises.businessText[type] ?? type}:</span> {checks.map((c) => a.premises.checkText[c] ?? c).join("; ")}
+            </li>
+          ))}
+        </ul>
       </Card>
       <Card title="Verdict on the Decision card (plain code)">
         <ul className="list-disc space-y-1.5 pl-5">

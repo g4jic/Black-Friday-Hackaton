@@ -17,6 +17,7 @@ const candidate = (id: string, patch: Partial<CandidateDTO> = {}): CandidateDTO 
   rejection: null,
   laterFlags: [],
   findings: [],
+  premises: null,
   ranking: null,
   ...patch,
 })

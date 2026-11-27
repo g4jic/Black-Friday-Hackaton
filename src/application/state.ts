@@ -13,6 +13,7 @@ import {
   type Listing,
   type ListingText,
   type ListingTextInput,
+  type PremisesFacts,
   type RankedCandidate,
   type Fact,
   type ReportDraft,
@@ -62,6 +63,17 @@ export class SuiteSpotState extends RuntimeState {
     if (existing) return existing // idempotent: a retry never changes the data
     this.areas.set(area.candidateId, area)
     return area
+  }
+
+  /** What the Premises inspector read about the space (each value quoted and checked by code), read by the Ranker. */
+  readonly premises = new Map<string, PremisesFacts>()
+
+  recordPremises(facts: PremisesFacts): PremisesFacts {
+    this.candidate(facts.candidateId) // unknown candidate: DomainError
+    const existing = this.premises.get(facts.candidateId)
+    if (existing) return existing // idempotent: a retry never changes the facts
+    this.premises.set(facts.candidateId, facts)
+    return facts
   }
 
   /** The report: facts written by code, the Report writer's drafts, and the audited final report. */

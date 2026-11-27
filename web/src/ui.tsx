@@ -1,4 +1,4 @@
-import { Calculator, FileText, MapPin, ListOrdered, PenLine, Search, ShieldCheck, OctagonAlert, TriangleAlert, Check, Info, type LucideIcon } from "lucide-react"
+import { Building2, Calculator, FileText, MapPin, ListOrdered, PenLine, Search, ShieldCheck, OctagonAlert, TriangleAlert, Check, Info, type LucideIcon } from "lucide-react"
 import type { ReactNode } from "react"
 import { formatMoney } from "./format"
 import type { FieldDTO, SourceDTO, ValueDTO } from "./types"
@@ -9,6 +9,7 @@ export const AGENTS: { name: string; short: string; icon: LucideIcon }[] = [
   { name: "Finance analyst", short: "Finance", icon: Calculator },
   { name: "Lease reader", short: "Lease", icon: FileText },
   { name: "Location analyst", short: "Location", icon: MapPin },
+  { name: "Premises inspector", short: "Premises", icon: Building2 },
   { name: "Ranker", short: "Ranker", icon: ListOrdered },
   { name: "Report writer", short: "Report", icon: PenLine },
   { name: "Auditor", short: "Auditor", icon: ShieldCheck },

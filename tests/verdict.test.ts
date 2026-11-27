@@ -7,6 +7,7 @@ const score = (patch: Partial<CandidateScore> & { checks?: number | null }): Can
   scoreHigh: 80,
   confidence: "high",
   tier: 1,
+  pointsToCheck: patch.checks !== undefined && patch.checks !== null && patch.checks < 1 ? 1 : 0,
   reasons: [],
   components: [
     { name: "cost", weight: 45, value: 0.9 },
@@ -23,6 +24,8 @@ describe("verdict (plain code, Decision card)", () => {
     expect(verdictFor(score({ score: VERDICT_RULES.goodMinScore - 1 }), false).verdict).toBe("check_before_signing")
     expect(verdictFor(score({ confidence: "medium" }), false).verdict).toBe("check_before_signing")
     expect(verdictFor(score({ checks: 0.85 }), false).verdict).toBe("check_before_signing")
+    // A premises concern is scored under premises, not under checks, but it still blocks Good.
+    expect(verdictFor(score({ pointsToCheck: 1 }), false).verdict).toBe("check_before_signing")
   })
   it("a space outside the required area range is never Good, however high the score", () => {
     const outside = score({ score: 90, scoreHigh: 90, components: [{ name: "cost", weight: 45, value: 1 }, { name: "area", weight: 20, value: 0 }, { name: "lease", weight: 20, value: 1 }, { name: "checks", weight: 15, value: 1 }] })

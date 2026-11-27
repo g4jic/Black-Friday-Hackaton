@@ -1,6 +1,7 @@
 import {
   AreaM2,
   Money,
+  evaluatePremises,
   isMissingData,
   isRentMultiple,
   verdictFor,
@@ -65,6 +66,8 @@ export type CandidateDTO = {
   rejection: FlagDTO | null
   laterFlags: FlagDTO[]
   findings: FindingDTO[]
+  /** The Premises inspector's result: null while not read (or when it failed); notStated = checks the texts do not mention. */
+  premises: { notStated: string[] } | null
   ranking: RankingDTO | null
 }
 
@@ -76,7 +79,7 @@ export type RankingDTO = {
   confidence: string
   tier: number
   reasons: { text: string; effect: string; source: SourceDTO }[]
-  components: { name: string; weight: number; value: number | null }[]
+  components: { name: string; weight: number; value: number | null; valueHigh?: number }[]
   /** Decided by code (domain/verdict.ts). */
   verdict: { verdict: Verdict; why: string }
 }
@@ -182,8 +185,15 @@ export function candidateDTO(c: Candidate, state: SuiteSpotState): CandidateDTO 
     rejection: c.rejection ? flagDTO(c.rejection) : null,
     laterFlags: c.laterFlags.map(flagDTO),
     findings: state.findings.filter((f) => f.candidateId === c.id).map(findingDTO),
+    premises: premisesDTO(state, c.id),
     ranking: rankingDTO(state, c.id),
   }
+}
+
+function premisesDTO(state: SuiteSpotState, id: string): CandidateDTO["premises"] {
+  const facts = state.premises.get(id)
+  if (!facts || !state.profile) return null
+  return { notStated: [...evaluatePremises(facts, state.profile.businessType().value).unknown] }
 }
 
 function rankingDTO(state: SuiteSpotState, id: string): RankingDTO | null {
@@ -196,7 +206,7 @@ function rankingDTO(state: SuiteSpotState, id: string): RankingDTO | null {
     confidence: r.confidence,
     tier: r.tier,
     reasons: r.reasons.map((x) => ({ text: x.text, effect: x.effect, source: sourceDTO(x.source) })),
-    components: r.components.map((c) => ({ name: c.name, weight: c.weight, value: c.value })),
+    components: r.components.map((c) => ({ name: c.name, weight: c.weight, value: c.value, ...(c.valueHigh !== undefined ? { valueHigh: c.valueHigh } : {}) })),
     verdict: verdictFor(r, false),
   }
 }

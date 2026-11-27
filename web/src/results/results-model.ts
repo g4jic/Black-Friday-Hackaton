@@ -212,8 +212,8 @@ export function leaseSection(c: CandidateDTO): { hasLease: boolean; fromForm: bo
   return { hasLease: c.hasLease, fromForm: false, terms, questions: LANDLORD_QUESTIONS.map((q) => q.question) }
 }
 
-const COMPONENT_LABEL: Record<string, string> = { cost: "Monthly cost against your budget", area: "Area against your range", lease: "Lease terms", checks: "Points to check before signing" }
-const COMPONENT_MISSING: Record<string, string> = { cost: "the rent is not stated", area: "the area is not stated", lease: "no verified lease terms", checks: "not known" }
+const COMPONENT_LABEL: Record<string, string> = { cost: "Monthly cost against your budget", area: "Area against your range", lease: "Lease terms", location: "Location", premises: "The space itself", checks: "Points to check before signing" }
+const COMPONENT_MISSING: Record<string, string> = { cost: "the rent is not stated", area: "the area is not stated", lease: "no verified lease terms", location: "the address was not found in OpenStreetMap", premises: "the listing was not read", checks: "not known" }
 
 /** What lowers the confidence and by how much (points between the worst and the best case). */
 export function unknowns(c: CandidateDTO): { items: { text: string; points: number }[]; totalPoints: number } {
@@ -221,6 +221,10 @@ export function unknowns(c: CandidateDTO): { items: { text: string; points: numb
   const items: { text: string; points: number }[] = []
   for (const component of ranking?.components ?? []) {
     if (component.value === null) items.push({ text: `${COMPONENT_LABEL[component.name] ?? component.name}: ${COMPONENT_MISSING[component.name] ?? "unknown"}`, points: component.weight })
+    else if (component.valueHigh !== undefined && component.valueHigh > component.value) {
+      const notStated = (c.premises?.notStated ?? []).map((f) => fieldLabel(f).toLowerCase())
+      items.push({ text: `${COMPONENT_LABEL[component.name] ?? component.name}: not stated in the listing or the lease${notStated.length ? ` (${notStated.join(", ")})` : ""}`, points: Math.round(component.weight * (component.valueHigh - component.value)) })
+    }
   }
   for (const u of c.unverified) items.push({ text: `The ${u.field} could not be verified from the text (${u.reason})`, points: 0 })
   const monthly = findingOf(c, "monthly_cost")
@@ -243,6 +247,11 @@ export const FIELD_LABEL: Record<string, string> = {
   floor: "Floor",
   heating: "Heating",
   parking: "Parking",
+  storefront: "Storefront",
+  kitchenVentilation: "Kitchen ventilation",
+  waterAndDrain: "Water and drain",
+  needsRenovation: "Renovation needed",
+  stepFreeAccess: "Step-free access",
   url: "Listing address (URL)",
   minimumTermMonths: "Minimum lease term",
   earlyTermination: "Ending the lease early",
@@ -329,4 +338,35 @@ export function locationSection(c: CandidateDTO): { rows: { label: string; count
   })
   const explanation = c.findings.find((x) => x.id === `${c.id}:location:explanation`)?.claim ?? null
   return { rows, explanation, checked: rows.length > 0 }
+}
+
+/**
+ * The Premises card: what the listing and the lease draft state about the space (each line quoted, judged by code
+ * for this type of business; a line that does not suit it is a soft flag with what to check before signing), and
+ * what they do not mention. Never a hard flag.
+ */
+export function premisesSection(c: CandidateDTO): {
+  read: boolean
+  checks: { text: string; ok: boolean; checkBeforeSigning: string | null; source: string }[]
+  notStated: string[]
+  heating: { text: string; source: string } | null
+} {
+  const own = c.findings.filter((f) => f.aspect === "premises")
+  // The quote is the evidence: shown next to where it comes from, so the user can find it in the listing.
+  const quoted = (s: SourceDTO) => (s.quote ? `${plainSource(s)}: "${s.quote}"` : plainSource(s))
+  const soft = own.filter((f) => f.severity === "soft")
+  const heatingId = `${c.id}:premises:heating`
+  const checks = own
+    .filter((f) => f.severity === "info" && f.id !== heatingId)
+    .map((f) => {
+      const concern = soft.find((x) => x.claim === f.claim)
+      return { text: f.claim, ok: !concern, checkBeforeSigning: concern?.checkBeforeSigning ?? null, source: quoted(f.source) }
+    })
+  const heating = own.find((f) => f.id === heatingId)
+  return {
+    read: c.premises !== null,
+    checks,
+    notStated: (c.premises?.notStated ?? []).map(fieldLabel),
+    heating: heating ? { text: heating.claim, source: quoted(heating.source) } : null,
+  }
 }
