@@ -23,7 +23,7 @@ export type HistoryRecord = {
   readonly state: ResearchState
 }
 
-/** Where finished runs are kept. Guests: this tab's sessionStorage. Accounts later: a Supabase implementation. */
+/** Where finished runs are kept: this browser's storage, per account. */
 export interface HistoryStore {
   list(ownerId: string): HistoryRecord[]
   get(ownerId: string, researchId: string): HistoryRecord | null
@@ -33,11 +33,11 @@ export interface HistoryStore {
 const MAX_RUNS_PER_OWNER = 20
 
 /**
- * Guest history: lives only as long as the browser tab (cleared when the tab is closed). Storage errors (private
- * mode, full storage) never break the app: the run stays visible for this page view, it is just not kept.
+ * History in this browser, per account (localStorage). Storage errors (private mode, full storage) never break the
+ * app: the run stays visible for this page view, it is just not kept.
  */
-export class SessionStorageHistoryStore implements HistoryStore {
-  constructor(private readonly storage: () => Storage = () => window.sessionStorage) {}
+export class BrowserHistoryStore implements HistoryStore {
+  constructor(private readonly storage: () => Storage = () => window.localStorage) {}
 
   private key(ownerId: string): string {
     return `suitespot.history.v1.${ownerId}`
@@ -73,4 +73,4 @@ export class SessionStorageHistoryStore implements HistoryStore {
   }
 }
 
-export const historyStore: HistoryStore = new SessionStorageHistoryStore()
+export const historyStore: HistoryStore = new BrowserHistoryStore()

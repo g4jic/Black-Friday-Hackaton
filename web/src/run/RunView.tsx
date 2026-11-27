@@ -1,25 +1,10 @@
 import { Check, CircleStop, OctagonAlert } from "lucide-react"
-import { useEffect, useRef, useState, type CSSProperties } from "react"
+import { useEffect, useRef, useState } from "react"
 import { cancelResearch, useResearch, type RunSnapshot } from "../app/research-store"
 import { navigate, paths } from "../app/router"
 import { ResearchMissing } from "../pages/ResearchPage"
 import { agentIcon, cx } from "../ui"
-import { CODE_PARTICIPANTS, ORBIT_AGENTS, agentNodes, candidateChips, runCounters, statusLine, type AgentNode, type CandidateChip, type CandidatePhase } from "./run-view-model"
-
-/**
- * Geometry, as shares of the stage's half width. Agents sit on the outer ring (0.9); candidates on an inner band
- * (0.56 to 0.62) that their labels (at most 140 px wide) never leave, so an agent label passing by on the turning ring cannot touch a
- * chip, and chips never reach the centre disc (radius 0.3). Candidates move inward a little as they progress.
- */
-const PHASE_RADIUS: Record<CandidatePhase, number> = { reading: 0.62, found: 0.6, evaluating: 0.58, done: 0.56, rejected: 1.15, failed: 1.15 }
-const AGENT_RING_RADIUS = 0.9
-/**
- * The first chip sits at the top. With evenly spaced slots no two chips then sit side by side near the top or the
- * bottom, where wide labels would touch.
- */
-const chipTurn = (turn: number) => turn - 0.25
-/** Slow and calm: one turn in 90 s while agents work. */
-const DEGREES_PER_SECOND = 4
+import { ORBIT_AGENTS, agentNodes, candidateChips, runCounters, statusLine, type CandidateChip, type CandidatePhase, type OrbitAgentName } from "./run-view-model"
 
 export function usePrefersReducedMotion(): boolean {
   const query = "(prefers-reduced-motion: reduce)"
@@ -76,28 +61,100 @@ export function RunView({ researchId }: { researchId: string }) {
   )
 }
 
+/**
+ * How each agent moves on the path: its own speed, how far it drifts in and out, how fast it breathes. All agents are
+ * on the path from the start; an agent at work moves at full speed and glows, an idle one drifts slowly and fades.
+ */
+type Character = { speed: number; drift: number; driftHz: number; pulse: number; pulseHz: number }
+const CHARACTER: Record<OrbitAgentName, Character> = {
+  Scout: { speed: 1.5, drift: 0.035, driftHz: 0.9, pulse: 0.04, pulseHz: 1.6 }, // quick and restless
+  "Finance analyst": { speed: 0.9, drift: 0.01, driftHz: 0.25, pulse: 0.03, pulseHz: 0.6 }, // steady
+  "Lease reader": { speed: 0.6, drift: 0.015, driftHz: 0.2, pulse: 0.02, pulseHz: 0.4 }, // slow and careful
+  "Location analyst": { speed: 1.1, drift: 0.05, driftHz: 0.35, pulse: 0.03, pulseHz: 0.8 }, // wanders
+  "Premises inspector": { speed: 0.8, drift: 0.03, driftHz: 1.3, pulse: 0.05, pulseHz: 1.3 }, // small hops
+  Ranker: { speed: 1.0, drift: 0.0, driftHz: 0, pulse: 0.08, pulseHz: 2 }, // ticks in place
+  Auditor: { speed: 0.7, drift: 0.02, driftHz: 0.6, pulse: 0.03, pulseHz: 0.9 }, // even, watchful
+  "Report writer": { speed: 0.5, drift: 0.02, driftHz: 0.3, pulse: 0.02, pulseHz: 0.5 }, // slow drift
+}
+/** Degrees per second for speed 1 while working; idle agents move at IDLE_SHARE of it. */
+const BASE_DEGREES_PER_SECOND = 14
+const IDLE_SHARE = 0.18
+/** The path, as a share of the stage half width. */
+const PATH_RADIUS = 0.82
+/** The centre sentence changes at most this often, so it can be read. */
+const STATUS_HOLD_MS = 1500
+
+/** Shows the newest value, but changes at most once per holdMs (the last value always arrives). */
+export function useHeldValue<T>(value: T, holdMs: number): T {
+  const [shown, setShown] = useState(value)
+  const lastChange = useRef(0)
+  useEffect(() => {
+    if (Object.is(value, shown)) return
+    const wait = Math.max(0, lastChange.current + holdMs - Date.now())
+    const timer = window.setTimeout(() => {
+      lastChange.current = Date.now()
+      setShown(value)
+    }, wait)
+    return () => window.clearTimeout(timer)
+  }, [value, shown, holdMs])
+  return shown
+}
+
 function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () => void }) {
   const { state } = snapshot
-  const ringRef = useRef<HTMLDivElement>(null)
+  const stageRef = useRef<HTMLDivElement>(null)
+  const pathRef = useRef<HTMLDivElement>(null)
+  const ballRefs = useRef<(HTMLDivElement | null)[]>([])
+  const nodes = agentNodes(state)
+  const busy = ORBIT_AGENTS.map((name) => (nodes.find((n) => n.name === name)?.running ?? 0) > 0 && !state.done)
+  const busyRef = useRef(busy)
+  busyRef.current = busy
   const doneRef = useRef(state.done)
   doneRef.current = state.done
   const onSettledRef = useRef(onSettled)
   onSettledRef.current = onSettled
+  const busyCount = busy.filter(Boolean).length
 
-  // Rotation from requestAnimationFrame: transform only, no React render per frame. When the run ends the speed
-  // eases out to zero, then the orbit reports that it has settled.
+  // Every frame: transform and opacity only, set on the elements directly (no React render per frame).
   useEffect(() => {
-    let angle = 0
-    let speed = DEGREES_PER_SECOND
+    const angles = ORBIT_AGENTS.map((_, i) => (i / ORBIT_AGENTS.length) * 360 - 90)
+    const speeds = ORBIT_AGENTS.map(() => IDLE_SHARE)
+    // the path is a spring: it stretches when more agents start working and settles back (elastic)
+    let stretch = 0
+    let stretchVelocity = 0
+    let lastBusy = 0
+    let doneFade = 1
     let last = performance.now()
     let frame = 0
     const tick = (now: number) => {
-      const seconds = Math.min(0.1, (now - last) / 1000)
+      const dt = Math.min(0.1, (now - last) / 1000)
       last = now
-      if (doneRef.current) speed *= Math.exp(-seconds * 3.2)
-      angle = (angle + speed * seconds) % 360
-      ringRef.current?.style.setProperty("--orbit-angle", `${angle.toFixed(3)}deg`)
-      if (doneRef.current && speed < 0.05) {
+      const t = now / 1000
+      const half = (stageRef.current?.clientWidth ?? 600) / 2
+      const busyNow = busyRef.current.filter(Boolean).length
+      if (busyNow > lastBusy) stretchVelocity += 0.05 * (busyNow - lastBusy)
+      lastBusy = busyNow
+      stretchVelocity += (-60 * stretch - 4 * stretchVelocity) * dt
+      stretch += stretchVelocity * dt
+      if (doneRef.current) doneFade *= Math.exp(-dt * 3)
+      const breathe = 0.006 * Math.sin(t * 1.1) + 0.004 * Math.sin(t * 2.7)
+      pathRef.current?.style.setProperty("transform", `scale(${(1 + (stretch + breathe) * doneFade).toFixed(4)}) rotate(${((t * 12) % 360).toFixed(2)}deg)`)
+      ORBIT_AGENTS.forEach((name, i) => {
+        const c = CHARACTER[name]
+        const working = busyRef.current[i]!
+        const target = doneRef.current ? 0 : working ? 1 : IDLE_SHARE
+        speeds[i]! += (target - speeds[i]!) * Math.min(1, dt * 2.5)
+        angles[i] = (angles[i]! + BASE_DEGREES_PER_SECOND * c.speed * speeds[i]! * dt) % 360
+        const radius = half * PATH_RADIUS * (1 + stretch * doneFade + c.drift * doneFade * Math.sin(t * c.driftHz * 2 * Math.PI + i))
+        const a = (angles[i]! * Math.PI) / 180
+        const scale = 1 + (working ? c.pulse * Math.sin(t * c.pulseHz * 2 * Math.PI + i) : 0)
+        const el = ballRefs.current[i]
+        if (el) {
+          el.style.transform = `translate(${(Math.cos(a) * radius).toFixed(1)}px, ${(Math.sin(a) * radius).toFixed(1)}px) translate(-50%, -50%) scale(${scale.toFixed(3)})`
+          el.style.opacity = working || doneRef.current ? "1" : "0.55"
+        }
+      })
+      if (doneRef.current && Math.max(...speeds) < 0.01 && Math.abs(stretch) < 0.001) {
         onSettledRef.current()
         return
       }
@@ -107,27 +164,16 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
     return () => cancelAnimationFrame(frame)
   }, [])
 
-  const nodes = agentNodes(state)
-  const chips = candidateChips(state)
-  const status = statusLine(state)
+  const status = useHeldValue(statusLine(state), STATUS_HOLD_MS)
 
   return (
-    <div className="orbit-stage" role="img" aria-label={`Agents at work. ${status}`}>
-      {/* static rings */}
-      <div className="absolute inset-[5.5%] rounded-full border border-white/70" aria-hidden />
-      <div className="absolute inset-[24%] rounded-full border border-dashed border-ink/10" aria-hidden />
-      {/* turning layer: comet arc and the agents */}
-      <div ref={ringRef} className="orbit-ring-layer" aria-hidden>
-        <div className="orbit-comet" />
-        {nodes.map((node) => (
-          <OrbitNode key={node.name} node={node} done={state.done} />
-        ))}
-      </div>
-      {/* candidates do not turn: they only move inward (or out of the orbit) */}
-      {chips.map((chip) => (
-        <OrbitChip key={chip.id} chip={chip} slots={chips.length} />
+    <div ref={stageRef} className="orbit-stage" role="img" aria-label={`Agents at work. ${status}`}>
+      {/* the path: a gradient outline that breathes and stretches like a spring */}
+      <div ref={pathRef} className="orbit-path" style={{ inset: `${(1 - PATH_RADIUS) * 50}%` }} aria-hidden />
+      {ORBIT_AGENTS.map((name, i) => (
+        <AgentBall key={name} name={name} working={busy[i]!} count={nodes.find((n) => n.name === name)?.running ?? 0} done={state.done} ballRef={(el) => (ballRefs.current[i] = el)} />
       ))}
-      <CentreStatus status={status} done={state.done} cancelled={state.cancelled} />
+      <CentreStatus status={status} done={state.done} cancelled={state.cancelled} busyCount={busyCount} />
       {/* on a phone the centre is too small for the sentence: it goes under the orbit */}
       <p key={status} className="status-enter absolute inset-x-0 -bottom-10 text-center text-sm font-medium text-ink sm:hidden">
         {status}
@@ -136,66 +182,30 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
   )
 }
 
-function OrbitNode({ node, done }: { node: AgentNode; done: boolean }) {
-  const Icon = agentIcon(node.name)
-  const busy = node.running > 0 && !done
-  const style = { "--turn": node.slot / ORBIT_AGENTS.length - 0.25, "--radius": AGENT_RING_RADIUS } as CSSProperties
+function AgentBall({ name, working, count, done, ballRef }: { name: OrbitAgentName; working: boolean; count: number; done: boolean; ballRef: (el: HTMLDivElement | null) => void }) {
+  const Icon = agentIcon(name)
   return (
-    <div className="orbit-polar z-20" style={style}>
-      <div className="orbit-upright">
-        <div className="orbit-node-enter flex flex-col items-center gap-1">
-          <div className="relative">
-            <span className="orbit-glow" data-busy={busy} />
-            {/* one-shot work (the Ranker) flashes once per event that showed it at work */}
-            {node.name === "Ranker" && <span key={node.lastActiveSeq} className="orbit-flash absolute -inset-2 rounded-full bg-brand/40" />}
-            <span
-              className={cx(
-                "relative flex h-11 w-11 items-center justify-center rounded-full border transition-colors duration-300",
-                busy ? "border-brand bg-white text-ink" : "glass-strong border-white text-ink-2",
-              )}
-            >
-              <Icon size={19} strokeWidth={1.75} aria-hidden />
-            </span>
-            {node.running > 1 && !done && (
-              <span className="tnum absolute -top-1.5 -right-2 rounded-full bg-ink px-1.5 py-0.5 text-[10px] leading-none font-semibold text-white">×{node.running}</span>
+    <div ref={ballRef} className="orbit-ball" title={name}>
+      <div className="flex flex-col items-center gap-1">
+        <div className="relative">
+          <span className="orbit-glow" data-busy={working} />
+          <span
+            className={cx(
+              "relative flex h-11 w-11 items-center justify-center rounded-full border transition-colors duration-300",
+              working ? "border-brand bg-white text-ink" : done ? "border-white bg-white/90 text-ink" : "glass-strong border-white text-ink-2",
             )}
-          </div>
-          <span className="flex flex-col items-center max-sm:hidden">
-            <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] leading-4 font-medium whitespace-nowrap text-ink">{node.name}</span>
-            {CODE_PARTICIPANTS.has(node.name) && <span className="mt-0.5 text-[10px] leading-3 font-medium tracking-[0.04em] text-ink-3 uppercase">code</span>}
+          >
+            <Icon size={19} strokeWidth={1.75} aria-hidden />
           </span>
+          {count > 1 && working && <span className="tnum absolute -top-1.5 -right-2 rounded-full bg-ink px-1.5 py-0.5 text-[10px] leading-none font-semibold text-white">×{count}</span>}
         </div>
+        <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] leading-4 font-medium whitespace-nowrap text-ink max-sm:hidden">{name}</span>
       </div>
     </div>
   )
 }
 
-const CHIP_STYLE: Record<CandidatePhase, string> = {
-  reading: "border-dashed border-ink/20 bg-white/50 text-ink-2",
-  found: "border-white bg-white/80 text-ink",
-  evaluating: "border-brand/60 bg-white text-ink",
-  done: "border-white bg-white text-ink shadow-[var(--shadow-soft)]",
-  rejected: "border-hard bg-hard-50 text-hard",
-  failed: "border-ink/20 bg-white/60 text-ink-2",
-}
-
-function OrbitChip({ chip, slots }: { chip: CandidateChip; slots: number }) {
-  const style = { "--turn": chipTurn(chip.turn), "--radius": PHASE_RADIUS[chip.phase] } as CSSProperties
-  const leaving = chip.phase === "rejected" || chip.phase === "failed"
-  return (
-    <div className="orbit-polar orbit-chip z-10" data-phase={chip.phase} style={style} title={chip.reason ?? `${chip.label}: ${PHASE_LABEL[chip.phase]}`}>
-      <span className={cx("relative inline-flex items-center gap-1 rounded-full border px-2.5 py-1 font-medium whitespace-nowrap", CHIP_STYLE[chip.phase])}>
-        {leaving && chip.phase === "rejected" && <span className="orbit-pulse absolute inset-0 rounded-full bg-hard" aria-hidden />}
-        {chip.phase === "rejected" && <OctagonAlert size={12} aria-hidden className="relative" />}
-        <span className="chip-full tnum relative max-w-[104px] truncate">{chip.label}</span>
-        <span className="chip-short tnum relative">{Math.round(chip.turn * slots) + 1}</span>
-        {chip.rank !== null && <span className="tnum relative rounded-full bg-ink px-1.5 text-[10px] leading-4 text-white">#{chip.rank}</span>}
-      </span>
-    </div>
-  )
-}
-
-function CentreStatus({ status, done, cancelled }: { status: string; done: boolean; cancelled: boolean }) {
+function CentreStatus({ status, done, cancelled, busyCount }: { status: string; done: boolean; cancelled: boolean; busyCount: number }) {
   return (
     <div className="absolute inset-[35%] flex items-center justify-center p-[5%] text-center">
       {/* calm breathing while the agents work: its own layer, so the text never scales */}
@@ -214,7 +224,7 @@ function CentreStatus({ status, done, cancelled }: { status: string; done: boole
             )
           ) : (
             <>
-              <span className="live-dot h-1.5 w-1.5 rounded-full bg-brand" aria-hidden /> Working
+              <span className="live-dot h-1.5 w-1.5 rounded-full bg-brand" aria-hidden /> {busyCount > 0 ? `${busyCount} at work` : "Working"}
             </>
           )}
         </span>
@@ -241,9 +251,9 @@ function RunFooter({ snapshot }: { snapshot: RunSnapshot }) {
   }
   return (
     <div className="mt-14 flex flex-wrap items-center justify-center gap-3 sm:mt-6">
-      <Counter label="candidates evaluated" value={`${counters.evaluated} of ${counters.total}`} />
-      <Counter label="rejected by a hard flag" value={String(counters.rejected)} tone={counters.rejected > 0 ? "hard" : undefined} />
-      <Counter label="agents in parallel now" value={String(counters.runningNow)} detail={counters.peak > 0 ? `peak ${counters.peak}` : undefined} />
+      <Counter label="spaces evaluated" value={`${counters.evaluated} of ${counters.total}`} />
+      <Counter label="ruled out by a deal breaker" value={String(counters.rejected)} tone={counters.rejected > 0 ? "hard" : undefined} />
+      <Counter label="agent tasks running now" value={String(counters.runningNow)} detail={counters.peak > 0 ? `up to ${counters.peak}` : undefined} />
       <button
         type="button"
         onClick={() => void cancel()}
@@ -275,16 +285,16 @@ function Counter({ label, value, detail, tone }: { label: string; value: string;
 }
 
 /**
- * Candidates that left the orbit, each with its one-line reason. Shown from the start with its space reserved
+ * Spaces ruled out, each with its one-line reason. Shown from the start with its space reserved
  * (three rows), so nothing jumps when the first hard flag arrives.
  */
 function LeftTheOrbit({ chips }: { chips: CandidateChip[] }) {
   const gone = chips.filter((c) => c.phase === "rejected" || c.phase === "failed")
   return (
-    <section className="glass min-h-[132px] rounded-[28px] px-6 py-4" aria-label="Candidates that left the orbit">
-      <h2 className="mb-2 text-xs font-semibold tracking-[0.06em] text-ink-2 uppercase">Left the orbit</h2>
+    <section className="glass min-h-[132px] rounded-[28px] px-6 py-4" aria-label="Spaces ruled out">
+      <h2 className="mb-2 text-xs font-semibold tracking-[0.06em] text-ink-2 uppercase">Ruled out</h2>
       {gone.length === 0 ? (
-        <p className="text-[13px] text-ink-2">No candidate rejected so far. A hard flag takes a candidate out of the orbit and lists it here.</p>
+        <p className="text-[13px] text-ink-2">No space ruled out so far. A deal breaker stops the work on a space and lists it here.</p>
       ) : (
         <ul className="flex flex-col gap-2 text-[13px]">
           {gone.map((chip) => (
@@ -302,7 +312,7 @@ function LeftTheOrbit({ chips }: { chips: CandidateChip[] }) {
   )
 }
 
-const PHASE_LABEL: Record<CandidatePhase, string> = { reading: "being read", found: "waiting for the evaluators", evaluating: "being evaluated", done: "evaluated", rejected: "rejected", failed: "could not be read" }
+const PHASE_LABEL: Record<CandidatePhase, string> = { reading: "being read", found: "waiting for the agents", evaluating: "being evaluated", done: "evaluated", rejected: "ruled out", failed: "could not be read" }
 
 /** Reduced motion: the same facts as a static progress list. */
 function StaticProgress({ snapshot }: { snapshot: RunSnapshot }) {
@@ -332,7 +342,7 @@ function StaticProgress({ snapshot }: { snapshot: RunSnapshot }) {
         </ul>
       </div>
       <div>
-        <h2 className="mb-2 text-xs font-semibold tracking-[0.06em] text-ink-2 uppercase">Candidates</h2>
+        <h2 className="mb-2 text-xs font-semibold tracking-[0.06em] text-ink-2 uppercase">Spaces</h2>
         <ul className="flex flex-col gap-1.5 text-sm">
           {chips.map((chip) => (
             <li key={chip.id} className="flex items-center gap-2">

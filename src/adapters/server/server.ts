@@ -6,9 +6,10 @@ import type { InferenceRunner } from "@mozaik-ai/core"
 import type { DemoLatency } from "../inference/scripts/demo-script.js"
 import type { ListingStore } from "../../application/listings/listing-store.js"
 import { seedCatalogue } from "../seed/seed-catalogue.js"
-import { LOCAL_LANDLORD, LOCAL_LISTINGS_FILE, LocalListingStore } from "../storage/local-listing-store.js"
+import { LOCAL_LISTINGS_FILE, LocalListingStore } from "../storage/local-listing-store.js"
 import { SupabaseListingStore, supabaseStoreConfig } from "../storage/supabase-listing-store.js"
 import { registerListingRoutes, type ActorResolver } from "./listing-routes.js"
+import { LOCAL_ACCOUNTS_FILE, LocalAccounts, registerLocalAuthRoutes } from "../auth/local-accounts.js"
 import { supabaseActorResolver, supabaseAuthConfig, type SupabaseAuthConfig } from "../auth/supabase-auth.js"
 import { registerResearchRoutes, type DemoCatalogue, type ResearchRoutesOptions } from "./research-routes.js"
 
@@ -30,6 +31,8 @@ export type ServerOptions = {
   readonly resolveActor?: ActorResolver
   /** For tests: the auth config instead of SUPABASE_URL and SUPABASE_ANON_KEY (null = no accounts). */
   readonly auth?: SupabaseAuthConfig | null
+  /** For tests: the local accounts file when Supabase is off (null = in memory). */
+  readonly localAccountsFile?: string | null
 }
 
 export async function buildServer(options: ServerOptions = {}): Promise<FastifyInstance> {
@@ -44,8 +47,12 @@ export async function buildServer(options: ServerOptions = {}): Promise<FastifyI
   // With SUPABASE_URL and SUPABASE_ANON_KEY: landlord accounts (Supabase Auth). The anon key is public by design;
   // the browser gets it from /api/auth-config so the same env names work for the server and the frontend.
   const auth = options.auth === undefined ? supabaseAuthConfig() : options.auth
-  app.get("/api/auth-config", async () => (auth ? { enabled: true, url: auth.url, anonKey: auth.anonKey } : { enabled: false }))
-  const resolveActor = options.resolveActor ?? (auth ? supabaseActorResolver(auth) : async () => LOCAL_LANDLORD)
+  // Without Supabase: local accounts in data/local-accounts.json (this machine only, labelled in the UI), so signing
+  // up and in works the same on a fresh clone with no keys.
+  app.get("/api/auth-config", async () => (auth ? { enabled: true, url: auth.url, anonKey: auth.anonKey } : { enabled: true, local: true }))
+  const localAccounts = auth ? null : new LocalAccounts(options.localAccountsFile === undefined ? LOCAL_ACCOUNTS_FILE : options.localAccountsFile)
+  if (localAccounts) registerLocalAuthRoutes(app, localAccounts)
+  const resolveActor = options.resolveActor ?? (auth ? supabaseActorResolver(auth) : localAccounts!.actorResolver())
   registerListingRoutes(app, { store: listingStore, resolveActor, backend: auth ? "supabase" : "local" })
   registerResearchRoutes(app, { liveAvailable: () => runMode() === "live", demoPace: options.demoPace, liveRunner: options.liveRunner, demoCatalogue: options.demoCatalogue, listingStore, loadRecording: options.loadRecording, replaySpeed: options.replaySpeed })
 

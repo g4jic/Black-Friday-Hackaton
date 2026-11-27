@@ -11,7 +11,7 @@ export type Route =
   | { name: "results"; researchId: string }
   | { name: "candidate"; researchId: string; candidateId: string }
   | { name: "history" }
-  | { name: "assumptions" }
+  | { name: "howItWorks" }
   | { name: "settings" }
   | { name: "listings" }
   | { name: "listing"; listingId: string }
@@ -27,7 +27,8 @@ const STATIC_ROUTES: Record<string, Route> = {
   "/": { name: "dashboard" },
   "/research/new": { name: "newResearch" },
   "/history": { name: "history" },
-  "/assumptions": { name: "assumptions" },
+  "/how-it-works": { name: "howItWorks" },
+  "/assumptions": { name: "howItWorks" },
   "/settings": { name: "settings" },
   "/listings": { name: "listings" },
   "/listings/new": { name: "newListing" },
@@ -61,7 +62,7 @@ export const paths = {
   results: (researchId: string, tab?: string) => `/research/${researchId}${tab ? `?tab=${tab}` : ""}`,
   candidate: (researchId: string, candidateId: string) => `/research/${researchId}/candidate/${candidateId}`,
   history: () => "/history",
-  assumptions: () => "/assumptions",
+  howItWorks: () => "/how-it-works",
   settings: () => "/settings",
   listings: () => "/listings",
   listing: (listingId: string) => `/listings/${listingId}`,
@@ -70,7 +71,7 @@ export const paths = {
   myListings: () => "/my-listings",
   mySpaces: () => "/my-spaces",
   findSpaces: () => "/research/new?mode=find",
-  evaluateOutside: () => "/research/new?mode=evaluate",
+  evaluateSpace: () => "/research/new?mode=evaluate",
   login: () => "/login",
   signup: () => "/signup",
 }

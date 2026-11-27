@@ -4,6 +4,7 @@ import { candidateLabel } from "./run/run-view-model"
 import { AGENTS, Pill, agentIcon, cx } from "./ui"
 
 const LANE_H = 28
+const sec = (ms: number) => `${(ms / 1000).toFixed(1)} s`
 const LABEL_W = 200
 /** About how much of the time axis one "Hard flag: <name> rejected" label covers. */
 const FLAG_LABEL_SHARE = 0.3
@@ -24,7 +25,7 @@ function labelRows(rejections: readonly Rejection[], span: number): { rows: numb
 }
 
 /**
- * Agent lanes over time (DESIGN.md 6.10). One lane per loop, grouped by agent. Everything is drawn from events:
+ * "How your research ran" (DESIGN.md 6.10): one lane per piece of work, grouped by agent. Everything is drawn from events:
  * a bar from loop.started to loop.answered, a dot per tool call (its waiting time as a darker segment), a red x
  * where loop.cancelled landed, and a dashed line where a candidate was rejected.
  */
@@ -41,22 +42,28 @@ export function Timeline({ s, now }: { s: ResearchState; now: number }) {
   const rejections = Object.values(s.rejections)
 
   return (
-    <section className="glass rounded-[28px] px-6 pt-5 pb-6" aria-label="Timeline: agent loops over time">
+    <section className="glass rounded-[28px] px-6 pt-5 pb-6" aria-label="How your research ran">
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center title-pill rounded-full glass-strong px-3.5 py-1.5 text-lg leading-6 font-semibold">Agent loops over time</span>
+        <span className="inline-flex items-center title-pill rounded-full glass-strong px-3.5 py-1.5 text-lg leading-6 font-semibold">How your research ran</span>
         <Pill variant="brand" icon={false}>
-          peak {s.peak} loops in parallel
+          up to {s.peak} agent tasks at once
         </Pill>
         {!s.done && (
           <Pill icon={false}>
-            {busyNow} busy now
+            {busyNow} tasks running now
+          </Pill>
+        )}
+        {s.done && s.metrics && <Pill icon={false}>done in {sec(s.metrics.durationMs)}</Pill>}
+        {s.done && rejections.length > 0 && (
+          <Pill variant="hard" icon={false}>
+            {rejections.length} {rejections.length === 1 ? "space" : "spaces"} ruled out early
           </Pill>
         )}
         <span className="ml-auto flex flex-wrap items-center gap-4 text-xs text-ink-2">
-          <Legend kind="bar" /> loop running
-          <Legend kind="tool" /> calculator call
-          <Legend kind="cut" /> cancelled by a hard flag
-          <Legend kind="reject" /> candidate rejected
+          <span className="inline-flex items-center gap-1.5"><Legend kind="bar" /> an agent working on a space</span>
+          <span className="inline-flex items-center gap-1.5"><Legend kind="tool" /> a calculation</span>
+          <span className="inline-flex items-center gap-1.5"><Legend kind="cut" /> stopped early by a deal breaker</span>
+          <span className="inline-flex items-center gap-1.5"><Legend kind="reject" /> space ruled out</span>
         </span>
       </div>
 
@@ -74,7 +81,7 @@ export function Timeline({ s, now }: { s: ResearchState; now: number }) {
                   className={cx("absolute inline-flex items-center gap-1 rounded-full bg-hard px-2 py-0.5 text-[11px] font-medium whitespace-nowrap text-white", share > 0.7 && "-translate-x-full")}
                   style={{ left: x(r.at), top: row * 24 }}
                 >
-                  <OctagonAlert size={12} strokeWidth={2} aria-hidden /> Hard flag: {candidateLabel(s, r.candidateId)} rejected
+                  <OctagonAlert size={12} strokeWidth={2} aria-hidden /> Deal breaker: {candidateLabel(s, r.candidateId)} ruled out
                 </span>
               )
             })}
@@ -129,7 +136,7 @@ function Lane({ l, now, x, w, label }: { l: LoopView; now: number; x: (t: number
       <div className="flex shrink-0 items-center gap-1.5 truncate pr-3 text-[13px] text-ink" style={{ width: LABEL_W }} title={candidate}>
         <span className="tnum">{candidate}</span>
         {attempt && attempt !== "1" && <span className="text-ink-3">try {attempt}</span>}
-        {cut && <span className="text-xs font-medium text-hard">cut</span>}
+        {cut && <span className="text-xs font-medium text-hard">stopped</span>}
       </div>
       <div className="relative h-full flex-1">
         <div
@@ -138,7 +145,7 @@ function Lane({ l, now, x, w, label }: { l: LoopView; now: number; x: (t: number
             cut ? "border-hard bg-hard/25" : "border-lilac-600 bg-lilac/60",
           )}
           style={{ left: x(l.start), width: w(l.start, stop), minWidth: 8 }}
-          title={`${l.agent} on ${candidate}: ${l.start} ms to ${l.end ?? "now"}${cut ? `, cancelled ${l.cancelWhere} at ${l.cancelledAt} ms` : ""}`}
+          title={`${l.agent} on ${candidate}: ${sec(l.start)} to ${l.end === undefined ? "now" : sec(l.end)}${cut ? `, stopped at ${sec(l.cancelledAt!)} by a deal breaker` : ""}`}
         />
         {l.end === undefined && (
           // still running: a small pulsing dot at the growing end of the bar
@@ -149,7 +156,7 @@ function Lane({ l, now, x, w, label }: { l: LoopView; now: number; x: (t: number
             <span
               className="absolute top-1/2 h-2 -translate-y-1/2 rounded-full bg-brand/35"
               style={{ left: x(t.at), width: w(t.at, t.end ?? stop) }}
-              title={`${t.name}: ${t.at} ms to ${t.end ?? "now"}`}
+              title={`A calculation: ${sec(t.at)} to ${t.end === undefined ? "now" : sec(t.end)}`}
             />
             <span className="absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-brand" style={{ left: x(t.at) }} />
           </span>
@@ -158,7 +165,7 @@ function Lane({ l, now, x, w, label }: { l: LoopView; now: number; x: (t: number
           <span
             className="absolute top-1/2 z-20 flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-hard text-white shadow-[var(--shadow-soft)]"
             style={{ left: x(l.cancelledAt!) }}
-            title={`Cancelled ${l.cancelWhere} at ${l.cancelledAt} ms`}
+            title={`Stopped at ${sec(l.cancelledAt!)} by a deal breaker found for this space`}
           >
             <X size={12} strokeWidth={3} />
           </span>

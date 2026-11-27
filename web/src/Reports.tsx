@@ -25,18 +25,14 @@ export function ReportsScreen({ s }: { s: ResearchState }) {
         <Card title="Report">Run a research under New research; the report appears here when the agents are done.</Card>
       ) : !r ? (
         <Card title="Report">
-          {Object.values(s.loops).some((l) => l.agent === "Report writer") ? "The Report writer is writing; the Auditor checks every number before it is shown." : "The report is written when every candidate has been ranked."}
+          {Object.values(s.loops).some((l) => l.agent === "Report writer") ? "The report is being written. Every number is checked against its source before it is shown." : "The report is written when every space has been scored."}
         </Card>
       ) : (
         <>
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex h-8 items-center gap-2 rounded-full bg-ink px-3.5 text-[13px] font-medium text-white">
-              <ShieldCheck size={16} aria-hidden /> Audited: {r.audit.checked} claims checked, {r.audit.corrected} corrected
-              {r.audit.removed > 0 ? `, ${r.audit.removed} removed` : ""}
+              <ShieldCheck size={16} aria-hidden /> Every number checked against its source
             </span>
-            <Pill icon={false} title="The Auditor is plain code: it checks every number and candidate against the facts each sentence cites">
-              checked by code, not by a model
-            </Pill>
             {r.recommended.map((id, i) => {
               const c = s.candidates[id]
               return (

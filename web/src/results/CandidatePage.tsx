@@ -334,7 +334,7 @@ function LocationCard({ candidate }: { candidate: CandidateDTO }) {
     <Section title="Location">
       {loc.checked ? (
         <>
-          <p className="mb-3 text-xs leading-5 text-ink-2">Mapped in OpenStreetMap within 300 m of the address, counted by code. It does not measure foot traffic or revenue.</p>
+          <p className="mb-3 text-xs leading-5 text-ink-2">Mapped in OpenStreetMap within 300 m of the address. It does not measure foot traffic or revenue.</p>
           <dl className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1.5 text-sm">
             {loc.rows.map((r) => (
               <div key={r.label} className="contents">

@@ -42,11 +42,6 @@ export function RunRow({ record, tab }: { record: HistoryRecord; tab?: "report" 
           )}
           {record.mode === "live" && <Pill icon={false}>Live model</Pill>}
           {record.cancelled && <Pill variant="soft">Stopped</Pill>}
-          {tab === "report" && record.state.report && (
-            <Pill icon={false}>
-              {record.state.report.audit.checked} claims checked
-            </Pill>
-          )}
         </div>
         <ChevronRight size={18} className="text-ink-3 transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden />
       </Link>
@@ -59,7 +54,7 @@ export function HistoryPage() {
   if (records.length === 0) {
     return (
       <EmptyState
-        text="No research runs yet in this tab. Guest runs are kept until the tab is closed."
+        text="No research runs yet."
         action={
           <Link to={paths.newResearch()} className="inline-flex h-10 items-center rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e]">
             Start a research
@@ -70,7 +65,7 @@ export function HistoryPage() {
   }
   return (
     <section className="glass rounded-[28px] p-6">
-      <p className="mb-4 text-[13px] text-ink-2">Guest runs are kept until this tab is closed. Newest first.</p>
+      <p className="mb-4 text-[13px] text-ink-2">Your last 20 runs in this browser, newest first.</p>
       <ul className="flex flex-col gap-2.5">
         {records.map((record) => (
           <RunRow key={record.id} record={record} />

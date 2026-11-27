@@ -15,7 +15,7 @@ export function DashboardPage() {
         </p>
         <div className="mt-6 grid gap-3 md:grid-cols-2">
           <ModeCard to={paths.findSpaces()} icon={Search} title="Find spaces" text="Tell SuiteSpot about your business; it finds the spaces on SuiteSpot that fit and evaluates them." />
-          <ModeCard to={paths.evaluateOutside()} icon={FileSearch} title="Evaluate an outside listing" text="Found a space elsewhere? Type in its terms and check the lease before you sign." />
+          <ModeCard to={paths.evaluateSpace()} icon={FileSearch} title="Evaluate a space" text="One space, from SuiteSpot or found elsewhere: check the lease and the numbers before you sign." />
         </div>
       </section>
       <section className="glass rounded-[28px] p-6">
@@ -28,7 +28,7 @@ export function DashboardPage() {
           )}
         </div>
         {recent.length === 0 ? (
-          <p className="text-sm text-ink-2">No runs yet in this tab. Start one above; guest runs are kept until the tab is closed.</p>
+          <p className="text-sm text-ink-2">No runs yet. Start one above.</p>
         ) : (
           <ul className="flex flex-col gap-2.5">
             {recent.map((record) => (
