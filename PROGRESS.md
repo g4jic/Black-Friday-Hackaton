@@ -4,8 +4,6 @@ Read this at the start of every session. Update it before every push. Newest ent
 No long dashes in this file; use a plain hyphen.
 
 ## HANDOFF (27 Nov 2026, late evening, Andrej + Claude): READ THIS FIRST
-**Next: Aleksa builds the onboarding flow** (`docs/handoff-aleksa-onboarding.md`, on a branch `wip/onboarding`).
-**Then Andrej builds billing** (`docs/billing-plan.md`); it waits for onboarding, the two do not run in parallel.
 Changes since the handoff below (commit 39f5f9c, deployed and checked on Railway):
 - **Every feature is open: the access code is gone** (server, web, tests, scripts, `.env.example`; the Railway
   variable SUITESPOT_ACCESS_CODE is deleted). Cost guard: the usage limit in the Anthropic Console plus one live run
