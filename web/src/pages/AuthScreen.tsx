@@ -191,6 +191,11 @@ const STOPS = [
   { x: 72, y: 24 },
 ]
 
+/** Lens timing: the first stop is short so the map is moving right away; LENS_GLIDE_MS matches .auth-lens-move. */
+const LENS_FIRST_STOP_MS = 1400
+const LENS_GLIDE_MS = 1300
+const LENS_DWELL_MS = 2400
+
 /** Four demo listings for the pills ("Liman 1 · 77 m2"), from the public listings API; empty while loading. */
 function useListingLabels(): string[] {
   const [labels, setLabels] = useState<string[]>([])
@@ -210,18 +215,20 @@ function MapPanel({ lensRef }: { lensRef: RefObject<HTMLDivElement> }) {
   const [shown, setShown] = useState(true)
   useEffect(() => {
     if (prefersReducedMotion()) return
-    let hide: ReturnType<typeof setTimeout>
-    const timer = setInterval(() => {
+    // One loop from the first frame: a short first stop (the lens floats meanwhile), then glide, pop in, dwell.
+    let timer: ReturnType<typeof setTimeout>
+    const hop = () => {
       setShown(false)
-      hide = setTimeout(() => {
+      timer = setTimeout(() => {
         setStop((s) => (s + 1) % STOPS.length)
-        setTimeout(() => setShown(true), 1300)
+        timer = setTimeout(() => {
+          setShown(true)
+          timer = setTimeout(hop, LENS_DWELL_MS)
+        }, LENS_GLIDE_MS)
       }, 250)
-    }, 4200)
-    return () => {
-      clearInterval(timer)
-      clearTimeout(hide)
     }
+    timer = setTimeout(hop, LENS_FIRST_STOP_MS)
+    return () => clearTimeout(timer)
   }, [])
   const here = STOPS[stop]!
   const label = labels[stop]
@@ -238,7 +245,7 @@ function MapPanel({ lensRef }: { lensRef: RefObject<HTMLDivElement> }) {
         <span key={i} className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand ring-4 ring-white/70" style={{ left: `${s.x}%`, top: `${s.y}%` }} />
       ))}
       <div className="auth-lens-move pointer-events-none absolute inset-0" style={{ transform: `translate(${here.x - 50}%, ${here.y - 50}%)` }}>
-        <div className="absolute top-1/2 left-1/2">
+        <div className="auth-lens-float absolute top-1/2 left-1/2">
         {label && <span className={`auth-pill absolute -top-[132px] left-1/2 rounded-full border border-brand/40 bg-white px-3 py-1 text-xs font-medium whitespace-nowrap text-ink ${shown ? "is-shown" : ""}`}>{label}</span>}
         <div ref={lensRef} className="auth-lens absolute -left-[100px] -top-[100px] h-[200px] w-[200px]">
           <svg viewBox="0 0 480 480" width="100%" height="100%">

@@ -380,9 +380,17 @@ button:active {
   from { transform: translate3d(-3%, 2%, 0); }
   to { transform: translate3d(3%, -2%, 0); }
 }
+/* No will-change here: a layer promoted before the first move is rasterized once and stays soft until it moves. */
 .auth-lens-move {
   transition: transform 1.3s var(--ease-ios);
-  will-change: transform;
+}
+/* The lens floats gently from the first frame, so it never sits frozen while it waits at a listing. */
+.auth-lens-float {
+  animation: auth-float 2.6s ease-in-out infinite alternate;
+}
+@keyframes auth-float {
+  from { transform: translateY(0); }
+  to { transform: translateY(-8px); }
 }
 .auth-pill {
   opacity: 0;
@@ -417,7 +425,7 @@ button:active {
 }
 .auth-zoom .auth-building { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) {
-  .auth-map-pan { animation: none; }
+  .auth-map-pan, .auth-lens-float { animation: none; }
   .auth-lens-move, .auth-pill, .auth-building { transition: none; }
 }
 
