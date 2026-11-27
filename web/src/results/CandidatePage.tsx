@@ -230,6 +230,7 @@ function LocationCard({ candidate }: { candidate: CandidateDTO }) {
               </div>
             ))}
           </dl>
+          {loc.zone && <p className="mt-3 text-[13px] leading-5 text-ink-2">{loc.zone}</p>}
           {loc.explanation && <p className="mt-4 max-w-[70ch] text-sm leading-6 text-ink">{loc.explanation}</p>}
           <p className="mt-3 text-xs text-ink-2">Source: OpenStreetMap. Data © OpenStreetMap contributors, ODbL.</p>
         </>

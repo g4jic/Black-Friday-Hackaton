@@ -6,6 +6,7 @@ import {
   BUDGET_TOLERANCE,
   BUSINESS_TYPE_TEXT,
   LOCATION_ASSUMPTIONS,
+  NOISE_ASSUMPTIONS,
   PREMISES_ASSUMPTIONS,
   OSM_METRIC_TEXT,
   DomainError,
@@ -187,6 +188,7 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
       verdict: VERDICT_RULES,
       leaseConcerns: { maxNoticeMonths: MAX_NOTICE_MONTHS, maxFixedIndexationPercent: MAX_FIXED_INDEXATION_PERCENT },
       location: { radiusM: LOCATION_ASSUMPTIONS.radiusM, description: LOCATION_ASSUMPTIONS.description, rules: LOCATION_ASSUMPTIONS.rules, metricText: OSM_METRIC_TEXT, businessText: BUSINESS_TYPE_TEXT, attribution: OSM_ATTRIBUTION },
+      noise: NOISE_ASSUMPTIONS,
       premises: { description: PREMISES_ASSUMPTIONS.description, checks: PREMISES_ASSUMPTIONS.checks, checkText: PREMISES_ASSUMPTIONS.checkText, businessText: BUSINESS_TYPE_TEXT },
       demoQuestionnaire: {
         business: p.description,

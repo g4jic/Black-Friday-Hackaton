@@ -207,7 +207,7 @@ export function scoreCandidate(input: RankingInput): CandidateScore {
   // Location: OpenStreetMap counts scored per business type (plain code); unknown when the address was not found.
   let location: number | null = null
   if (input.area) {
-    const scored = scoreLocation(input.area, profile.businessType().value)
+    const scored = scoreLocation(input.area, profile.businessType().value, profile.input.description)
     location = scored.score
     for (const p of scored.parts) {
       reasons.push({ text: `Location: ${p.text}`, effect: p.effect, source: p.source, impact: ((p.score - 0.5) * A.weights.location) / scored.parts.length })

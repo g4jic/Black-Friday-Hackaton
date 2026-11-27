@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest"
 import { existsSync, readFileSync } from "node:fs"
 import { areaLookup, fixtureAreaLookup, SEED_AREAS_FILE } from "../src/adapters/osm/area-lookup.js"
 import type { AreaLookup } from "../src/application/location/area-lookup.js"
-import { overpassQuery } from "../src/adapters/osm/osm-client.js"
+import { landuseQuery, overpassQuery, parseLanduse } from "../src/adapters/osm/osm-client.js"
 import { seedCatalogue } from "../src/adapters/seed/seed-catalogue.js"
 import { DISTRICTS } from "../src/adapters/seed/generate-listings.js"
-import { AREA_RADIUS_M, DomainError, OSM_METRICS, createAreaData, listingFromSpaceListing, normalizeDistrict, scoreLocation, validateSource } from "../src/domain/index.js"
-import { SAMPLE_COUNTS, sampleArea, sampleAreaLookup } from "./fixtures/sample-areas.js"
+import { AREA_RADIUS_M, BusinessProfile, DomainError, OSM_METRICS, classifyZone, createAreaData, listingFromSpaceListing, noiseCheck, noisyBusiness, normalizeDistrict, scoreLocation, validateSource } from "../src/domain/index.js"
+import { HOUSING, INDUSTRY, SAMPLE_COUNTS, sampleArea, sampleAreaLookup } from "./fixtures/sample-areas.js"
 import { sampleLeaseAnswers, sampleLeases, sampleListings, sampleScoutAnswers } from "./fixtures/sample-listings.js"
 import { loadDemoQuestionnaire } from "../src/adapters/fixtures/demo-questionnaire.js"
 import { MockRunner, developerText, type MockScript } from "../src/adapters/inference/mock-runner.js"
@@ -59,6 +59,58 @@ describe("location data (domain, plain code)", () => {
   })
 })
 
+describe("noisy work and land use (domain, plain code)", () => {
+  it("noisy work is read from the business description (assumption list, English and Serbian)", () => {
+    expect(noisyBusiness("Small carpentry workshop making kitchen cabinets").noisy).toBe(true)
+    expect(noisyBusiness("Stolarska radionica, izrada nameštaja").noisy).toBe(true)
+    expect(noisyBusiness("Car repair and tyre service").noisy).toBe(true)
+    expect(noisyBusiness("Specialty coffee bar with breakfast").noisy).toBe(false)
+    expect(noisyBusiness("Accounting office for 4 people").noisy).toBe(false)
+  })
+
+  it("classifies the zone from the land use: the area the address lies in first, then homes, then industry", () => {
+    expect(classifyZone(INDUSTRY)).toBe("industrial")
+    expect(classifyZone(HOUSING)).toBe("residential")
+    expect(classifyZone({ ...HOUSING, residentialBuildings: 5, commercialAreas: 2 })).toBe("business")
+    expect(classifyZone({ ...HOUSING, residentialBuildings: 5, industrialBuildings: 4 })).toBe("industrial")
+    expect(classifyZone({ ...HOUSING, residentialBuildings: 5, commercialAreas: 0 })).toBe("mixed")
+    expect(classifyZone({ ...HOUSING, atPoint: [{ landuse: "retail", ref: "way/3" }] })).toBe("business")
+  })
+
+  it("noisy work: dense housing is a point to check, an industrial zone is a plus; a quiet business is never judged", () => {
+    const carpentry = "Carpentry workshop with machines"
+    const fewParking = { ...SAMPLE_COUNTS, parking: 0 }
+    const housing = sampleArea("a", fewParking, HOUSING)
+    const industry = sampleArea("b", fewParking, INDUSTRY)
+    expect(noiseCheck(housing, carpentry)).toMatchObject({ zone: "residential", concern: true })
+    expect(noiseCheck(industry, carpentry)).toMatchObject({ zone: "industrial", concern: false })
+    expect(noiseCheck(housing, "Specialty coffee bar")).toBeNull()
+    expect(noiseCheck(sampleArea("c"), carpentry)).toBeNull() // land use unknown: no judgement
+    const inIndustry = scoreLocation(industry, "workshop", carpentry)
+    const inHousing = scoreLocation(housing, "workshop", carpentry)
+    expect(inIndustry.parts.find((p) => p.metric === "zone")).toMatchObject({ score: 1, effect: "plus" })
+    expect(inHousing.parts.some((p) => p.metric === "zone")).toBe(false) // a point to check instead, not scored twice
+    expect(inIndustry.score).toBeGreaterThan(inHousing.score)
+    expect(scoreLocation(industry, "workshop", "Tailor and alterations").parts.some((p) => p.metric === "zone")).toBe(false)
+    expect(validateSource(inIndustry.parts.find((p) => p.metric === "zone")!.source)).toMatchObject({ kind: "osm", field: "landuse" })
+  })
+
+  it("parses the Overpass land use answer and asks for it in one query around the point", () => {
+    const q = landuseQuery(45.25, 19.84)
+    expect(q).toContain("is_in(45.250000,19.840000)")
+    expect(q.match(/out count;/g)).toHaveLength(2)
+    const parsed = parseLanduse([
+      { type: "area", id: 2_400_000_123, tags: { landuse: "industrial" } },
+      { type: "way", id: 5, tags: { landuse: "residential" } },
+      { type: "way", id: 6, tags: { landuse: "retail" } },
+      { type: "count", tags: { total: "17" } },
+      { type: "count", tags: { total: "2" } },
+    ])
+    expect(parsed).toEqual({ atPoint: [{ landuse: "industrial", ref: "way/123" }], residentialAreas: 1, industrialAreas: 0, commercialAreas: 1, residentialBuildings: 17, industrialBuildings: 2 })
+    expect(() => sampleArea("x", SAMPLE_COUNTS, { ...HOUSING, residentialBuildings: -1 })).toThrow(DomainError)
+  })
+})
+
 describe("seed area fixture (fetched once from OpenStreetMap; no network in tests)", () => {
   it.runIf(existsSync(SEED_AREAS_FILE))("covers every seeded listing, with the ODbL attribution", async () => {
     const file = JSON.parse(readFileSync(SEED_AREAS_FILE, "utf8")) as { attribution: string; listings: Record<string, string> }
@@ -108,6 +160,20 @@ describe("Location analyst (keyless, scripted model)", () => {
     expect(String(rejected[0]!.data?.reason)).toContain("1234")
     expect(ofType(s, "location.failed").length).toBeGreaterThan(0)
     expect(ofType(s, "location.explained")).toHaveLength(0)
+  })
+
+  it("noisy work in dense housing becomes a point to check before signing (code), never a hard flag", async () => {
+    const { profile, requirements } = loadDemoQuestionnaire()
+    const noisy = BusinessProfile.create({ ...profile.input, description: "Small carpentry workshop with saws and sanders" })
+    const inner = demoRoomScript({ scout: sampleScoutAnswers(), lease: sampleLeaseAnswers() }, { ...FAST_PACE, locationStep: 20 })
+    const s = new ResearchSession({ id: "noise", mode: "demo", model: "mock", runner: new MockRunner({ script: inner }), listings: sampleListings(), leases: sampleLeases(), profile: noisy, requirements, areaLookup: async (id) => sampleArea(id, SAMPLE_COUNTS, HOUSING) })
+    const start = Date.now()
+    while (s.status !== "done" && Date.now() - start < 10_000) await new Promise((r) => setTimeout(r, 20))
+    const state = (s as unknown as { rt: { state: { findings: { id: string; severity: string; checkBeforeSigning?: string }[] } } }).rt.state
+    const noise = state.findings.filter((f) => f.id.endsWith(":location:noise_near_homes"))
+    expect(noise.length).toBeGreaterThan(0)
+    for (const f of noise) expect(f).toMatchObject({ severity: "soft", checkBeforeSigning: "noise: check local rules and neighbours" })
+    expect(ofType(s, "candidate.rejected").every((e) => !String(e.data?.rule ?? "").includes("noise"))).toBe(true)
   })
 
   it("a hard flag from another agent stops the Location analyst's loop on that candidate", async () => {

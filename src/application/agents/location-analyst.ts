@@ -5,7 +5,7 @@ import { CandidateCancellation, STOPPED_PREFIX, cancellableTool, cancellationRep
 import type { AreaLookup } from "../location/area-lookup.js"
 import { strictObject } from "./quoted-schema.js"
 import { Agent, SemanticEvent, SituationSpecification, createAgent, type SituationContext, type StructuredOutputFormat, type Tool } from "@mozaik-ai/core"
-import { BUSINESS_TYPE_TEXT, LOCATION_ASSUMPTIONS, OSM_METRICS, OSM_METRIC_TEXT, AREA_RADIUS_M, scoreLocation, unsourcedNumbers, type AreaData } from "../../domain/index.js"
+import { BUSINESS_TYPE_TEXT, LOCATION_ASSUMPTIONS, OSM_METRICS, OSM_METRIC_TEXT, AREA_RADIUS_M, ZONE_TEXT, classifyZone, noiseCheck, noisyBusiness, scoreLocation, unsourcedNumbers, type AreaData } from "../../domain/index.js"
 
 export const LOCATION_NAME = "Location analyst"
 export const LOCATION_MAX_ATTEMPTS = 2
@@ -16,6 +16,7 @@ export const LOCATION_INSTRUCTION = [
   "Call at most one tool per turn. Wait for its result before the next call.",
   "Step 1: call area_data. Then answer with a short explanation (at most 80 words) for the business owner: what nearby helps this business, what competes with it, and what the data does not show.",
   "Use only numbers the tool returned, written exactly as returned. Never estimate revenue, customers or foot traffic: OpenStreetMap does not measure them.",
+  "If the tool reports noisy work, say in one sentence what the land use around the address means for neighbours (code already decided whether it is a point to check).",
   "If the tool says the address was not found, say that the location could not be checked. This is not financial or legal advice.",
 ].join(" ")
 
@@ -43,11 +44,21 @@ class WhenOwnAnswer extends SituationSpecification {
 export type LocationOptions = { model: string; lookup: AreaLookup }
 
 /** The tool's text: one line per count, with the OSM source and what the code scored for this business type. */
-export function areaDataText(area: AreaData, businessType: keyof typeof LOCATION_ASSUMPTIONS.rules): string {
-  const { score, parts } = scoreLocation(area, businessType)
+export function areaDataText(area: AreaData, businessType: keyof typeof LOCATION_ASSUMPTIONS.rules, description = ""): string {
+  const { score, parts } = scoreLocation(area, businessType, description)
+  const l = area.landuse?.value
+  const noise = noiseCheck(area, description)
   return [
     `Place: ${area.place} (${area.precision === "street" ? "the street" : "only the district centre was found, less precise"}); radius ${AREA_RADIUS_M} m; data © OpenStreetMap contributors, ODbL`,
     ...OSM_METRICS.map((m) => `${m} = ${area.counts[m].value} ${OSM_METRIC_TEXT[m]}`),
+    ...(l ? [`land use = ${ZONE_TEXT[classifyZone(l)]} (homes = ${l.residentialBuildings}, industrial buildings = ${l.industrialBuildings})`] : ["land use = not known"]),
+    ...(noisyBusiness(description).noisy
+      ? [
+          noise
+            ? `Noisy work: yes. Code decided: ${noise.concern ? "a point to check before signing (noise: check local rules and neighbours)" : noise.zone === "mixed" ? "no point to check and no plus" : "a plus in the location part"}`
+            : "Noisy work: yes, but the land use is not known",
+        ]
+      : []),
     `Scored by code for a ${BUSINESS_TYPE_TEXT[businessType]}: ${parts.map((p) => `${p.metric} ${p.score}`).join(", ")}; location part ${score}`,
   ].join("\n")
 }
@@ -78,15 +89,27 @@ export function createLocationAnalyst(rt: AppRuntime, options: LocationOptions):
           return "The address was not found in OpenStreetMap: the location cannot be checked (missing data)."
         }
         rt.state.recordArea(area)
-        const businessType = rt.state.requireProfile().businessType().value
-        const { score, parts } = scoreLocation(area, businessType)
-        allowed.set(candidateId, [AREA_RADIUS_M, score, ...OSM_METRICS.map((m) => area.counts[m].value), ...parts.map((p) => p.score)])
+        const profile = rt.state.requireProfile()
+        const businessType = profile.businessType().value
+        const description = profile.input.description
+        const { score, parts } = scoreLocation(area, businessType, description)
+        const landuse = area.landuse
+        allowed.set(candidateId, [AREA_RADIUS_M, score, ...OSM_METRICS.map((m) => area.counts[m].value), ...parts.map((p) => p.score), ...(landuse ? [landuse.value.residentialBuildings, landuse.value.industrialBuildings] : [])])
         for (const m of OSM_METRICS) {
           const c = area.counts[m]
           rt.state.addFinding({ id: `${candidateId}:location:${m}`, candidateId, aspect: "location", severity: "info", claim: `${c.value} ${OSM_METRIC_TEXT[m]} within ${AREA_RADIUS_M} m`, value: c, source: c.source, author: LOCATION_NAME })
         }
+        if (landuse) {
+          const l = landuse.value
+          const zone = ZONE_TEXT[classifyZone(l)].replace(/^an? /, "")
+          rt.state.addFinding({ id: `${candidateId}:location:zone`, candidateId, aspect: "location", severity: "info", claim: `Land use: ${zone} (${l.residentialBuildings} homes and ${l.industrialBuildings} industrial buildings mapped within ${AREA_RADIUS_M} m)`, source: landuse.source, author: LOCATION_NAME })
+          const noise = noiseCheck(area, description)
+          if (noise?.concern) {
+            rt.state.addFinding({ id: `${candidateId}:location:noise_near_homes`, candidateId, aspect: "location", severity: "soft", claim: `Noisy work in dense housing (${l.residentialBuildings} homes mapped within ${AREA_RADIUS_M} m)`, checkBeforeSigning: "noise: check local rules and neighbours", source: noise.source, author: LOCATION_NAME })
+          }
+        }
         rt.sendEvent(SemanticEvent.create("location.area_found", agent.getId(), { candidateId, place: area.place, precision: area.precision, counts: Object.fromEntries(OSM_METRICS.map((m) => [m, area.counts[m].value])) }), agent.getId())
-        return areaDataText(area, businessType)
+        return areaDataText(area, businessType, description)
       },
       onStop,
     )

@@ -357,13 +357,14 @@ const LOCATION_LABEL: Record<string, string> = {
 }
 
 /** The Location card: OpenStreetMap counts (code), the Location analyst's explanation, and whether it was checked. */
-export function locationSection(c: CandidateDTO): { rows: { label: string; count: number }[]; explanation: string | null; checked: boolean } {
+export function locationSection(c: CandidateDTO): { rows: { label: string; count: number }[]; explanation: string | null; zone: string | null; checked: boolean } {
   const rows = Object.keys(LOCATION_LABEL).flatMap((metric) => {
     const f = c.findings.find((x) => x.id === `${c.id}:location:${metric}`)
     return f?.value?.kind === "number" ? [{ label: LOCATION_LABEL[metric]!, count: f.value.value }] : []
   })
   const explanation = c.findings.find((x) => x.id === `${c.id}:location:explanation`)?.claim ?? null
-  return { rows, explanation, checked: rows.length > 0 }
+  const zone = c.findings.find((x) => x.id === `${c.id}:location:zone`)?.claim ?? null
+  return { rows, explanation, zone, checked: rows.length > 0 }
 }
 
 /**

@@ -9,7 +9,7 @@ export const SEED_AREAS_FILE = "fixtures/osm/seed-areas.json"
 type SeedAreas = { readonly areas: Record<string, AreaFetch | null>; readonly listings: Record<string, string> }
 
 const toAreaData = (candidateId: string, place: string, f: AreaFetch): AreaData =>
-  createAreaData({ candidateId, place, precision: f.geocoded.precision, geocodeRef: `${f.geocoded.osmType}/${f.geocoded.osmId}`, lat: f.geocoded.lat, lon: f.geocoded.lon, counts: f.counts })
+  createAreaData({ candidateId, place, precision: f.geocoded.precision, geocodeRef: `${f.geocoded.osmType}/${f.geocoded.osmId}`, lat: f.geocoded.lat, lon: f.geocoded.lon, counts: f.counts, landuse: f.landuse ?? null })
 
 /** "Grbavica, Gogoljeva" (the listing's address field: district, street) and the city. */
 function addressOf(listing: Listing): { district: string; street: string; city: string } | null {
