@@ -50,7 +50,7 @@ export function setAuthHeaders(provider: () => Record<string, string>): void {
   authHeaders = provider
 }
 
-async function call<T>(method: string, url: string, body?: unknown): Promise<T> {
+export async function call<T>(method: string, url: string, body?: unknown): Promise<T> {
   const response = await fetch(url, {
     method,
     headers: { ...(body === undefined ? {} : { "Content-Type": "application/json" }), ...authHeaders() },

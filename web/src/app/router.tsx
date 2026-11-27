@@ -21,6 +21,7 @@ export type Route =
   | { name: "mySpaces" }
   | { name: "login" }
   | { name: "signup" }
+  | { name: "simulatedPayment"; reference: string }
   | { name: "notFound"; path: string }
 
 const STATIC_ROUTES: Record<string, Route> = {
@@ -42,6 +43,8 @@ export function parseRoute(pathname: string): Route {
   const path = pathname.replace(/\/+$/, "") || "/"
   const staticRoute = STATIC_ROUTES[path]
   if (staticRoute) return staticRoute
+  const payMatch = /^\/pay\/simulated\/([^/]+)$/.exec(path)
+  if (payMatch) return { name: "simulatedPayment", reference: decodeURIComponent(payMatch[1]!) }
   const editListingMatch = /^\/listings\/([a-z0-9-]+)\/edit$/.exec(path)
   if (editListingMatch) return { name: "editListing", listingId: editListingMatch[1]! }
   const listingMatch = /^\/listings\/([a-z0-9-]+)$/.exec(path)
