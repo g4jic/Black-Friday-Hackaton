@@ -11,6 +11,14 @@ import { SupabaseListingStore, supabaseStoreConfig } from "../storage/supabase-l
 import { registerListingRoutes, type ActorResolver } from "./listing-routes.js"
 import { LOCAL_ACCOUNTS_FILE, LocalAccounts, registerLocalAuthRoutes } from "../auth/local-accounts.js"
 import { supabaseActorResolver, supabaseAuthConfig, type SupabaseAuthConfig } from "../auth/supabase-auth.js"
+import { DealService } from "../../application/deals/deal-service.js"
+import type { DealStore } from "../../application/deals/deal-store.js"
+import type { PaymentGateway } from "../../application/payments/payment-gateway.js"
+import { SimulatedGateway } from "../payments/simulated-gateway.js"
+import { StripeTestGateway, stripeTestConfig } from "../payments/stripe-test-gateway.js"
+import { LOCAL_DEALS_FILE, LocalDealStore } from "../storage/local-deal-store.js"
+import { SupabaseDealStore } from "../storage/supabase-deal-store.js"
+import { registerDealRoutes } from "./deal-routes.js"
 import { registerResearchRoutes, type DemoCatalogue, type ResearchRoutesOptions } from "./research-routes.js"
 
 const webDist = fileURLToPath(new URL("../../../web/dist", import.meta.url))
@@ -33,6 +41,10 @@ export type ServerOptions = {
   readonly auth?: SupabaseAuthConfig | null
   /** For tests: the local accounts file when Supabase is off (null = in memory). */
   readonly localAccountsFile?: string | null
+  /** For tests: the deal store (default: Supabase when configured, else data/local-deals.json). */
+  readonly dealStore?: DealStore
+  /** For tests: the payment gateway (default: Stripe test mode with test keys, else simulated). */
+  readonly paymentGateway?: PaymentGateway
 }
 
 export async function buildServer(options: ServerOptions = {}): Promise<FastifyInstance> {
@@ -54,6 +66,15 @@ export async function buildServer(options: ServerOptions = {}): Promise<FastifyI
   if (localAccounts) registerLocalAuthRoutes(app, localAccounts)
   const resolveActor = options.resolveActor ?? (auth ? supabaseActorResolver(auth) : localAccounts!.actorResolver())
   registerListingRoutes(app, { store: listingStore, resolveActor, backend: auth ? "supabase" : "local" })
+  // Deals: offers, tenancies and rent. Payments go through one port: Stripe Checkout in test mode when both test keys
+  // are set, otherwise the simulated checkout (same flow, labelled "Simulated payment, no real money").
+  const dealStore = options.dealStore ?? (storeConfig ? new SupabaseDealStore(storeConfig) : new LocalDealStore(LOCAL_DEALS_FILE))
+  const stripe = stripeTestConfig()
+  if (stripe.warning) app.log.warn(stripe.warning)
+  const simulated = new SimulatedGateway()
+  const gateway = options.paymentGateway ?? (stripe.config ? new StripeTestGateway(stripe.config) : simulated)
+  const deals = new DealService(dealStore, listingStore, gateway)
+  registerDealRoutes(app, { deals, resolveActor, simulated: gateway === simulated ? simulated : gateway instanceof SimulatedGateway ? gateway : null })
   registerResearchRoutes(app, { liveAvailable: () => runMode() === "live", demoPace: options.demoPace, liveRunner: options.liveRunner, demoCatalogue: options.demoCatalogue, listingStore, loadRecording: options.loadRecording, replaySpeed: options.replaySpeed })
 
   // In production the built web app is served by this same process (one Railway service).
