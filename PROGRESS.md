@@ -158,30 +158,30 @@ leave main as it is and spend the time on the video and the Railway deploy. Neve
 recorded tests: the keyless demo would break for the jury.
 
 ## For the video (Andrej): which scenario shows a hard flag cutting a running agent
-Checked on 27 Nov by replaying the three recorded scenarios at the app's own replay speed (no key). Times are from the
-start of the run. "Form check" rejections happen in the first milliseconds (code reads the listing form terms), so
-their Finance loop is cut before its first model call and shows only a red X at 0 s. The ones to show are the cuts
+Re-checked on 27 Nov afternoon after re-recording all three scenarios (A1 to A4 changed the model input), by replaying
+them at the app's own replay speed with no key: `npx tsx scripts/cut-report.ts`. Audit of every report: 0 corrected,
+0 removed (cafe 11 claims checked, office 10, shop 10). "Form check" rejections happen in the first milliseconds (code
+reads the listing form terms), so their Finance loop is cut before its first model call. The ones to show are the cuts
 raised by the **Lease reader** while the Finance analyst is already working on the same candidate:
 
 | Scenario | Candidate | Raised by, rule | Finance analyst ran before the cut | Where it stopped |
 |---|---|---|---|---|
-| Cafe in Novi Sad | Detelinara 69 m2 (listing-ns024), Adice 84 m2 (listing-ns040) | Listing form check, locked_in_without_exit | 2-3 ms | before inference |
-| **Office in Beograd** | **Voždovac, Vojvode Stepe, 51 m2 (listing-bg004)** | **Lease reader, unlimited_rent_increase** | **about 3.7 s** | **mid tool call** |
-| Office in Beograd | Banovo brdo 63 m2 (listing-bg011) | Listing form check, unlimited_rent_increase | 2 ms | before inference |
-| Shop in Novi Sad | Liman 1, Fruškogorska, 83 m2 (listing-ns044) | Lease reader, locked_in_without_exit | about 2.0 s | before its next tool call |
-| Shop in Novi Sad | Centar, Laze Telečkog, 47 m2 (listing-ns002) | Lease reader, locked_in_without_exit | about 2.0 s | mid tool call |
-| Shop in Novi Sad | Adice 84 m2 (listing-ns040), Telep 76 m2 (listing-ns014) | Listing form check, locked_in_without_exit | 1-2 ms | before inference |
+| Cafe in Novi Sad | Detelinara 69 m2 (listing-ns024), Adice 84 m2 (listing-ns040) | Listing form check, locked_in_without_exit | 7-9 ms | before inference |
+| **Office in Beograd** | **Voždovac, Vojvode Stepe, 51 m2 (listing-bg004)** | **Lease reader, unlimited_rent_increase** | **about 4.6 s (1 tool call)** | **before its next tool call** |
+| Office in Beograd | Banovo brdo 63 m2 (listing-bg011) | Listing form check, unlimited_rent_increase | 8 ms | before inference |
+| Shop in Novi Sad | Liman 1, Fruškogorska, 83 m2 (listing-ns044) | Lease reader, locked_in_without_exit | about 3.7 s (1 tool call) | before its next tool call |
+| Shop in Novi Sad | Centar, Laze Telečkog, 47 m2 (listing-ns002) | Lease reader, locked_in_without_exit | about 3.7 s (1 tool call) | before its next tool call |
+| Shop in Novi Sad | Adice 84 m2 (listing-ns040), Telep 76 m2 (listing-ns014) | Listing form check, locked_in_without_exit | 4-6 ms | before inference |
 
-**Best for the video: Office in Beograd, candidate "Voždovac · 51 m2".** Its Finance bar runs for about 3.7 seconds
-(two calculator dots), the Lease reader finds that the landlord may raise the rent without a limit, and the bar ends in
-the red X with "cut"; the dashed red line and "Hard flag: Voždovac · 51 m2 rejected" sit above it. In the run view the
-chip turns red and moves to "Left the orbit" with the reason. Second choice: **Shop in Novi Sad**, where two
-candidates are cut by the Lease reader at the same moment (about 2 s), which shows two cuts in parallel. The cafe
-scenario has no mid-run cut (both rejections come from the form check at 0 s), so do not use it for this shot; it is
-still the best scenario for the results list and the report (Grbavica 85 m2, Good, 95).
-Suggested order: Find spaces, pick Office in Beograd, Search and evaluate; film the orbit (counter "agents in
-parallel", peak 14); then Results, Timeline tab, point at the Voždovac lane; then Report tab ("Audited: N claims
-checked"); end on the Mozaik Cloud screenshot in the README.
+**Best for the video: Office in Beograd, candidate "Voždovac · 51 m2".** Its Finance bar runs for about 4.6 seconds,
+the Lease reader finds that the landlord may raise the rent without a limit, and the bar ends in the red X with
+"stopped"; the dashed red line and "Deal breaker: Voždovac · 51 m2 ruled out" sit above it. In the run view it is
+listed under "Ruled out" with the reason. Second choice: **Shop in Novi Sad**, where two candidates are cut by the
+Lease reader at about the same moment (3.7 s), which shows two cuts in parallel. The cafe scenario has no mid-run cut
+(both rejections come from the form check), so do not use it for this shot.
+Suggested order: Research, Find spaces, pick Office in Beograd, Search and evaluate; film the run (agents on the path,
+counter "agent tasks running now"); then Results, Timeline tab ("How your research ran"), point at the Voždovac lane;
+then the Report tab ("Every number checked against its source"); end on the Mozaik Cloud screenshot in the README.
 
 ## 27 Nov 2026, morning (Aleksa + Claude): README, auditor ids, rank by verdict, re-recorded demos
 - **README written** (scored): pitch, hero, keyless quick start, live and Supabase, concurrency table + Mermaid +

@@ -2,7 +2,7 @@
  "attribution": "© OpenStreetMap contributors, ODbL (https://www.openstreetmap.org/copyright)",
  "note": "Counts of mapped OpenStreetMap features around each seeded listing's street (public data). Fetched by scripts/fetch-osm.ts.",
  "radiusM": 300,
- "fetchedAt": "2026-11-27T09:44:35.052Z",
+ "fetchedAt": "2026-11-27T13:00:43.551Z",
  "areas": {
   "Braće Jerković|Voždovac|Beograd": {
    "geocoded": {
@@ -23,7 +23,15 @@
     "parking": 20
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.767445,20.500387)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.767445,20.500387)[\"shop\"];);out count;(nwr(around:300,44.767445,20.500387)[\"office\"];);out count;(nwr(around:300,44.767445,20.500387)[\"craft\"];);out count;(node(around:300,44.767445,20.500387)[\"highway\"=\"bus_stop\"];node(around:300,44.767445,20.500387)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.767445,20.500387)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.767445,20.500387)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:21.838Z"
+   "fetchedAt": "2026-11-27T09:41:21.838Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 0,
+    "industrialAreas": 0,
+    "commercialAreas": 0,
+    "residentialBuildings": 361,
+    "industrialBuildings": 0
+   }
   },
   "Bulevar Mihajla Pupina|Novi Beograd|Beograd": {
    "geocoded": {
@@ -44,7 +52,15 @@
     "parking": 12
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.818331,20.426439)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.818331,20.426439)[\"shop\"];);out count;(nwr(around:300,44.818331,20.426439)[\"office\"];);out count;(nwr(around:300,44.818331,20.426439)[\"craft\"];);out count;(node(around:300,44.818331,20.426439)[\"highway\"=\"bus_stop\"];node(around:300,44.818331,20.426439)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.818331,20.426439)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.818331,20.426439)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:22.852Z"
+   "fetchedAt": "2026-11-27T09:41:22.852Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 2,
+    "industrialAreas": 1,
+    "commercialAreas": 3,
+    "residentialBuildings": 11,
+    "industrialBuildings": 0
+   }
   },
   "Bulevar Slobodana Jovanovića|Novo naselje|Novi Sad": {
    "geocoded": {
@@ -65,7 +81,15 @@
     "parking": 38
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.252898,19.804361)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.252898,19.804361)[\"shop\"];);out count;(nwr(around:300,45.252898,19.804361)[\"office\"];);out count;(nwr(around:300,45.252898,19.804361)[\"craft\"];);out count;(node(around:300,45.252898,19.804361)[\"highway\"=\"bus_stop\"];node(around:300,45.252898,19.804361)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.252898,19.804361)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.252898,19.804361)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:23.956Z"
+   "fetchedAt": "2026-11-27T09:41:23.956Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 2,
+    "industrialAreas": 0,
+    "commercialAreas": 2,
+    "residentialBuildings": 56,
+    "industrialBuildings": 2
+   }
   },
   "Bulevar kralja Aleksandra|Zvezdara|Beograd": {
    "geocoded": {
@@ -86,7 +110,15 @@
     "parking": 6
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.805793,20.474755)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.805793,20.474755)[\"shop\"];);out count;(nwr(around:300,44.805793,20.474755)[\"office\"];);out count;(nwr(around:300,44.805793,20.474755)[\"craft\"];);out count;(node(around:300,44.805793,20.474755)[\"highway\"=\"bus_stop\"];node(around:300,44.805793,20.474755)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.805793,20.474755)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.805793,20.474755)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:25.104Z"
+   "fetchedAt": "2026-11-27T09:41:25.104Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 15,
+    "industrialAreas": 0,
+    "commercialAreas": 2,
+    "residentialBuildings": 213,
+    "industrialBuildings": 0
+   }
   },
   "Cara Dušana|Adice|Novi Sad": {
    "geocoded": {
@@ -107,7 +139,15 @@
     "parking": 12
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.244518,19.825143)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.244518,19.825143)[\"shop\"];);out count;(nwr(around:300,45.244518,19.825143)[\"office\"];);out count;(nwr(around:300,45.244518,19.825143)[\"craft\"];);out count;(node(around:300,45.244518,19.825143)[\"highway\"=\"bus_stop\"];node(around:300,45.244518,19.825143)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.244518,19.825143)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.244518,19.825143)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:26.148Z"
+   "fetchedAt": "2026-11-27T09:41:26.148Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 3,
+    "industrialAreas": 0,
+    "commercialAreas": 1,
+    "residentialBuildings": 243,
+    "industrialBuildings": 0
+   }
   },
   "Dimitrija Tucovića|Zvezdara|Beograd": {
    "geocoded": {
@@ -128,7 +168,15 @@
     "parking": 3
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.805895,20.484008)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.805895,20.484008)[\"shop\"];);out count;(nwr(around:300,44.805895,20.484008)[\"office\"];);out count;(nwr(around:300,44.805895,20.484008)[\"craft\"];);out count;(node(around:300,44.805895,20.484008)[\"highway\"=\"bus_stop\"];node(around:300,44.805895,20.484008)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.805895,20.484008)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.805895,20.484008)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:27.379Z"
+   "fetchedAt": "2026-11-27T09:41:27.379Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 36,
+    "industrialAreas": 0,
+    "commercialAreas": 3,
+    "residentialBuildings": 322,
+    "industrialBuildings": 0
+   }
   },
   "Fruškogorska|Liman 1|Novi Sad": {
    "geocoded": {
@@ -149,7 +197,15 @@
     "parking": 55
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.243762,19.848630)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.243762,19.848630)[\"shop\"];);out count;(nwr(around:300,45.243762,19.848630)[\"office\"];);out count;(nwr(around:300,45.243762,19.848630)[\"craft\"];);out count;(node(around:300,45.243762,19.848630)[\"highway\"=\"bus_stop\"];node(around:300,45.243762,19.848630)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.243762,19.848630)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.243762,19.848630)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:28.484Z"
+   "fetchedAt": "2026-11-27T09:41:28.484Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 3,
+    "industrialAreas": 0,
+    "commercialAreas": 0,
+    "residentialBuildings": 42,
+    "industrialBuildings": 1
+   }
   },
   "Gagarinova|Novo naselje|Novi Sad": {
    "geocoded": {
@@ -170,7 +226,15 @@
     "parking": 32
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.260239,19.829504)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.260239,19.829504)[\"shop\"];);out count;(nwr(around:300,45.260239,19.829504)[\"office\"];);out count;(nwr(around:300,45.260239,19.829504)[\"craft\"];);out count;(node(around:300,45.260239,19.829504)[\"highway\"=\"bus_stop\"];node(around:300,45.260239,19.829504)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.260239,19.829504)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.260239,19.829504)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:30.031Z"
+   "fetchedAt": "2026-11-27T09:41:30.031Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 6,
+    "industrialAreas": 0,
+    "commercialAreas": 1,
+    "residentialBuildings": 102,
+    "industrialBuildings": 2
+   }
   },
   "Gogoljeva|Grbavica|Novi Sad": {
    "geocoded": {
@@ -191,7 +255,15 @@
     "parking": 48
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.247072,19.832742)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.247072,19.832742)[\"shop\"];);out count;(nwr(around:300,45.247072,19.832742)[\"office\"];);out count;(nwr(around:300,45.247072,19.832742)[\"craft\"];);out count;(node(around:300,45.247072,19.832742)[\"highway\"=\"bus_stop\"];node(around:300,45.247072,19.832742)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.247072,19.832742)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.247072,19.832742)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:30.741Z"
+   "fetchedAt": "2026-11-27T09:41:30.741Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 6,
+    "industrialAreas": 0,
+    "commercialAreas": 1,
+    "residentialBuildings": 215,
+    "industrialBuildings": 0
+   }
   },
   "Gospodar Jevremova|Dorćol|Beograd": {
    "geocoded": {
@@ -212,7 +284,15 @@
     "parking": 8
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.818267,20.463957)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.818267,20.463957)[\"shop\"];);out count;(nwr(around:300,44.818267,20.463957)[\"office\"];);out count;(nwr(around:300,44.818267,20.463957)[\"craft\"];);out count;(node(around:300,44.818267,20.463957)[\"highway\"=\"bus_stop\"];node(around:300,44.818267,20.463957)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.818267,20.463957)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.818267,20.463957)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:31.634Z"
+   "fetchedAt": "2026-11-27T09:41:31.634Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 24,
+    "industrialAreas": 0,
+    "commercialAreas": 4,
+    "residentialBuildings": 310,
+    "industrialBuildings": 1
+   }
   },
   "Gospodska|Zemun|Beograd": {
    "geocoded": {
@@ -233,7 +313,15 @@
     "parking": 4
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.846087,20.414935)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.846087,20.414935)[\"shop\"];);out count;(nwr(around:300,44.846087,20.414935)[\"office\"];);out count;(nwr(around:300,44.846087,20.414935)[\"craft\"];);out count;(node(around:300,44.846087,20.414935)[\"highway\"=\"bus_stop\"];node(around:300,44.846087,20.414935)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.846087,20.414935)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.846087,20.414935)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:32.886Z"
+   "fetchedAt": "2026-11-27T09:41:32.886Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 2,
+    "industrialAreas": 0,
+    "commercialAreas": 1,
+    "residentialBuildings": 204,
+    "industrialBuildings": 0
+   }
   },
   "Ignjata Pavlasa|Stari grad|Novi Sad": {
    "geocoded": {
@@ -254,7 +342,15 @@
     "parking": 21
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.255046,19.849091)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.255046,19.849091)[\"shop\"];);out count;(nwr(around:300,45.255046,19.849091)[\"office\"];);out count;(nwr(around:300,45.255046,19.849091)[\"craft\"];);out count;(node(around:300,45.255046,19.849091)[\"highway\"=\"bus_stop\"];node(around:300,45.255046,19.849091)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.255046,19.849091)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.255046,19.849091)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:34.024Z"
+   "fetchedAt": "2026-11-27T09:41:34.024Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 3,
+    "industrialAreas": 0,
+    "commercialAreas": 2,
+    "residentialBuildings": 71,
+    "industrialBuildings": 0
+   }
   },
   "Ilije Ognjanovića|Liman 2|Novi Sad": {
    "geocoded": {
@@ -275,7 +371,15 @@
     "parking": 20
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.254878,19.847409)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.254878,19.847409)[\"shop\"];);out count;(nwr(around:300,45.254878,19.847409)[\"office\"];);out count;(nwr(around:300,45.254878,19.847409)[\"craft\"];);out count;(node(around:300,45.254878,19.847409)[\"highway\"=\"bus_stop\"];node(around:300,45.254878,19.847409)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.254878,19.847409)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.254878,19.847409)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:35.037Z"
+   "fetchedAt": "2026-11-27T09:41:35.037Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 2,
+    "industrialAreas": 0,
+    "commercialAreas": 1,
+    "residentialBuildings": 60,
+    "industrialBuildings": 0
+   }
   },
   "Ivana Milutinovića|Karaburma|Beograd": {
    "geocoded": {
@@ -296,7 +400,15 @@
     "parking": 0
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.876705,20.464358)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.876705,20.464358)[\"shop\"];);out count;(nwr(around:300,44.876705,20.464358)[\"office\"];);out count;(nwr(around:300,44.876705,20.464358)[\"craft\"];);out count;(node(around:300,44.876705,20.464358)[\"highway\"=\"bus_stop\"];node(around:300,44.876705,20.464358)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.876705,20.464358)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.876705,20.464358)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:36.062Z"
+   "fetchedAt": "2026-11-27T09:41:36.062Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 14,
+    "industrialAreas": 0,
+    "commercialAreas": 2,
+    "residentialBuildings": 613,
+    "industrialBuildings": 2
+   }
   },
   "Ive Andrića|Telep|Novi Sad": {
    "geocoded": {
@@ -317,7 +429,15 @@
     "parking": 0
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.207839,19.846219)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.207839,19.846219)[\"shop\"];);out count;(nwr(around:300,45.207839,19.846219)[\"office\"];);out count;(nwr(around:300,45.207839,19.846219)[\"craft\"];);out count;(node(around:300,45.207839,19.846219)[\"highway\"=\"bus_stop\"];node(around:300,45.207839,19.846219)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.207839,19.846219)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.207839,19.846219)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:37.202Z"
+   "fetchedAt": "2026-11-27T09:41:37.202Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 3,
+    "industrialAreas": 0,
+    "commercialAreas": 0,
+    "residentialBuildings": 182,
+    "industrialBuildings": 0
+   }
   },
   "Ive Lole Ribara|Grbavica|Novi Sad": {
    "geocoded": {
@@ -338,7 +458,15 @@
     "parking": 21
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.255113,19.852840)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.255113,19.852840)[\"shop\"];);out count;(nwr(around:300,45.255113,19.852840)[\"office\"];);out count;(nwr(around:300,45.255113,19.852840)[\"craft\"];);out count;(node(around:300,45.255113,19.852840)[\"highway\"=\"bus_stop\"];node(around:300,45.255113,19.852840)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.255113,19.852840)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.255113,19.852840)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:38.328Z"
+   "fetchedAt": "2026-11-27T09:41:38.328Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 3,
+    "industrialAreas": 0,
+    "commercialAreas": 2,
+    "residentialBuildings": 83,
+    "industrialBuildings": 0
+   }
   },
   "Janka Čmelika|Detelinara|Novi Sad": {
    "geocoded": {
@@ -359,7 +487,15 @@
     "parking": 28
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.258009,19.813083)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.258009,19.813083)[\"shop\"];);out count;(nwr(around:300,45.258009,19.813083)[\"office\"];);out count;(nwr(around:300,45.258009,19.813083)[\"craft\"];);out count;(node(around:300,45.258009,19.813083)[\"highway\"=\"bus_stop\"];node(around:300,45.258009,19.813083)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.258009,19.813083)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.258009,19.813083)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:40.097Z"
+   "fetchedAt": "2026-11-27T09:41:40.097Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 3,
+    "industrialAreas": 0,
+    "commercialAreas": 3,
+    "residentialBuildings": 105,
+    "industrialBuildings": 0
+   }
   },
   "Jevrejska|Stari grad|Novi Sad": {
    "geocoded": {
@@ -380,7 +516,15 @@
     "parking": 17
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.254202,19.842322)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.254202,19.842322)[\"shop\"];);out count;(nwr(around:300,45.254202,19.842322)[\"office\"];);out count;(nwr(around:300,45.254202,19.842322)[\"craft\"];);out count;(node(around:300,45.254202,19.842322)[\"highway\"=\"bus_stop\"];node(around:300,45.254202,19.842322)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.254202,19.842322)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.254202,19.842322)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:40.635Z"
+   "fetchedAt": "2026-11-27T09:41:40.635Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 3,
+    "industrialAreas": 0,
+    "commercialAreas": 0,
+    "residentialBuildings": 98,
+    "industrialBuildings": 1
+   }
   },
   "Jurija Gagarina|Novi Beograd|Beograd": {
    "geocoded": {
@@ -401,7 +545,15 @@
     "parking": 4
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.801138,20.374522)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.801138,20.374522)[\"shop\"];);out count;(nwr(around:300,44.801138,20.374522)[\"office\"];);out count;(nwr(around:300,44.801138,20.374522)[\"craft\"];);out count;(node(around:300,44.801138,20.374522)[\"highway\"=\"bus_stop\"];node(around:300,44.801138,20.374522)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.801138,20.374522)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.801138,20.374522)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:41.721Z"
+   "fetchedAt": "2026-11-27T09:41:41.721Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 4,
+    "industrialAreas": 0,
+    "commercialAreas": 1,
+    "residentialBuildings": 62,
+    "industrialBuildings": 0
+   }
   },
   "Kalenićeva|Vračar|Beograd": {
    "geocoded": {
@@ -422,7 +574,15 @@
     "parking": 4
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.800689,20.476646)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.800689,20.476646)[\"shop\"];);out count;(nwr(around:300,44.800689,20.476646)[\"office\"];);out count;(nwr(around:300,44.800689,20.476646)[\"craft\"];);out count;(node(around:300,44.800689,20.476646)[\"highway\"=\"bus_stop\"];node(around:300,44.800689,20.476646)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.800689,20.476646)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.800689,20.476646)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:42.819Z"
+   "fetchedAt": "2026-11-27T09:41:42.819Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 32,
+    "industrialAreas": 0,
+    "commercialAreas": 1,
+    "residentialBuildings": 350,
+    "industrialBuildings": 0
+   }
   },
   "Kisačka|Rotkvarija|Novi Sad": {
    "geocoded": {
@@ -443,7 +603,15 @@
     "parking": 10
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.265578,19.835841)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.265578,19.835841)[\"shop\"];);out count;(nwr(around:300,45.265578,19.835841)[\"office\"];);out count;(nwr(around:300,45.265578,19.835841)[\"craft\"];);out count;(node(around:300,45.265578,19.835841)[\"highway\"=\"bus_stop\"];node(around:300,45.265578,19.835841)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.265578,19.835841)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.265578,19.835841)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:43.883Z"
+   "fetchedAt": "2026-11-27T09:41:43.883Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 4,
+    "industrialAreas": 1,
+    "commercialAreas": 4,
+    "residentialBuildings": 167,
+    "industrialBuildings": 3
+   }
   },
   "Kopaonička|Adice|Novi Sad": {
    "geocoded": {
@@ -464,7 +632,15 @@
     "parking": 0
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.237192,19.787748)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.237192,19.787748)[\"shop\"];);out count;(nwr(around:300,45.237192,19.787748)[\"office\"];);out count;(nwr(around:300,45.237192,19.787748)[\"craft\"];);out count;(node(around:300,45.237192,19.787748)[\"highway\"=\"bus_stop\"];node(around:300,45.237192,19.787748)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.237192,19.787748)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.237192,19.787748)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:46.198Z"
+   "fetchedAt": "2026-11-27T09:41:46.198Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 2,
+    "industrialAreas": 0,
+    "commercialAreas": 0,
+    "residentialBuildings": 250,
+    "industrialBuildings": 0
+   }
   },
   "Kosančićev venac|Stari grad|Beograd": {
    "geocoded": {
@@ -485,7 +661,15 @@
     "parking": 4
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.817583,20.450882)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.817583,20.450882)[\"shop\"];);out count;(nwr(around:300,44.817583,20.450882)[\"office\"];);out count;(nwr(around:300,44.817583,20.450882)[\"craft\"];);out count;(node(around:300,44.817583,20.450882)[\"highway\"=\"bus_stop\"];node(around:300,44.817583,20.450882)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.817583,20.450882)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.817583,20.450882)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:47.120Z"
+   "fetchedAt": "2026-11-27T09:41:47.120Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 0,
+    "industrialAreas": 0,
+    "commercialAreas": 0,
+    "residentialBuildings": 123,
+    "industrialBuildings": 1
+   }
   },
   "Kosovska|Podbara|Novi Sad": {
    "geocoded": {
@@ -506,7 +690,15 @@
     "parking": 24
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.262834,19.850356)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.262834,19.850356)[\"shop\"];);out count;(nwr(around:300,45.262834,19.850356)[\"office\"];);out count;(nwr(around:300,45.262834,19.850356)[\"craft\"];);out count;(node(around:300,45.262834,19.850356)[\"highway\"=\"bus_stop\"];node(around:300,45.262834,19.850356)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.262834,19.850356)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.262834,19.850356)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:48.144Z"
+   "fetchedAt": "2026-11-27T09:41:48.144Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 4,
+    "industrialAreas": 1,
+    "commercialAreas": 1,
+    "residentialBuildings": 210,
+    "industrialBuildings": 1
+   }
   },
   "Kralja Petra|Stari grad|Beograd": {
    "geocoded": {
@@ -527,7 +719,15 @@
     "parking": 6
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.817959,20.452648)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.817959,20.452648)[\"shop\"];);out count;(nwr(around:300,44.817959,20.452648)[\"office\"];);out count;(nwr(around:300,44.817959,20.452648)[\"craft\"];);out count;(node(around:300,44.817959,20.452648)[\"highway\"=\"bus_stop\"];node(around:300,44.817959,20.452648)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.817959,20.452648)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.817959,20.452648)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:49.577Z"
+   "fetchedAt": "2026-11-27T09:41:49.577Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 0,
+    "industrialAreas": 0,
+    "commercialAreas": 0,
+    "residentialBuildings": 168,
+    "industrialBuildings": 1
+   }
   },
   "Kursulina|Vračar|Beograd": {
    "geocoded": {
@@ -548,7 +748,15 @@
     "parking": 4
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.800091,20.472783)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.800091,20.472783)[\"shop\"];);out count;(nwr(around:300,44.800091,20.472783)[\"office\"];);out count;(nwr(around:300,44.800091,20.472783)[\"craft\"];);out count;(node(around:300,44.800091,20.472783)[\"highway\"=\"bus_stop\"];node(around:300,44.800091,20.472783)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.800091,20.472783)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.800091,20.472783)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:50.405Z"
+   "fetchedAt": "2026-11-27T09:41:50.405Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 32,
+    "industrialAreas": 0,
+    "commercialAreas": 1,
+    "residentialBuildings": 352,
+    "industrialBuildings": 0
+   }
   },
   "Laze Telečkog|Centar|Novi Sad": {
    "geocoded": {
@@ -569,7 +777,15 @@
     "parking": 13
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.256618,19.845642)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.256618,19.845642)[\"shop\"];);out count;(nwr(around:300,45.256618,19.845642)[\"office\"];);out count;(nwr(around:300,45.256618,19.845642)[\"craft\"];);out count;(node(around:300,45.256618,19.845642)[\"highway\"=\"bus_stop\"];node(around:300,45.256618,19.845642)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.256618,19.845642)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.256618,19.845642)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:51.523Z"
+   "fetchedAt": "2026-11-27T09:41:51.523Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 1,
+    "industrialAreas": 0,
+    "commercialAreas": 0,
+    "residentialBuildings": 117,
+    "industrialBuildings": 0
+   }
   },
   "Maksima Gorkog|Vračar|Beograd": {
    "geocoded": {
@@ -590,7 +806,15 @@
     "parking": 0
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.858902,20.527772)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.858902,20.527772)[\"shop\"];);out count;(nwr(around:300,44.858902,20.527772)[\"office\"];);out count;(nwr(around:300,44.858902,20.527772)[\"craft\"];);out count;(node(around:300,44.858902,20.527772)[\"highway\"=\"bus_stop\"];node(around:300,44.858902,20.527772)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.858902,20.527772)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.858902,20.527772)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:52.753Z"
+   "fetchedAt": "2026-11-27T09:41:52.753Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 0,
+    "industrialAreas": 0,
+    "commercialAreas": 0,
+    "residentialBuildings": 25,
+    "industrialBuildings": 0
+   }
   },
   "Marijane Gregoran|Karaburma|Beograd": {
    "geocoded": {
@@ -611,7 +835,15 @@
     "parking": 4
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.813238,20.506783)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.813238,20.506783)[\"shop\"];);out count;(nwr(around:300,44.813238,20.506783)[\"office\"];);out count;(nwr(around:300,44.813238,20.506783)[\"craft\"];);out count;(node(around:300,44.813238,20.506783)[\"highway\"=\"bus_stop\"];node(around:300,44.813238,20.506783)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.813238,20.506783)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.813238,20.506783)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:54.288Z"
+   "fetchedAt": "2026-11-27T09:41:54.288Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 3,
+    "industrialAreas": 0,
+    "commercialAreas": 0,
+    "residentialBuildings": 280,
+    "industrialBuildings": 0
+   }
   },
   "Matice srpske|Mirijevo|Beograd": {
    "geocoded": {
@@ -632,7 +864,15 @@
     "parking": 8
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.789747,20.524147)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.789747,20.524147)[\"shop\"];);out count;(nwr(around:300,44.789747,20.524147)[\"office\"];);out count;(nwr(around:300,44.789747,20.524147)[\"craft\"];);out count;(node(around:300,44.789747,20.524147)[\"highway\"=\"bus_stop\"];node(around:300,44.789747,20.524147)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.789747,20.524147)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.789747,20.524147)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:54.800Z"
+   "fetchedAt": "2026-11-27T09:41:54.800Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 0,
+    "industrialAreas": 0,
+    "commercialAreas": 0,
+    "residentialBuildings": 172,
+    "industrialBuildings": 0
+   }
   },
   "Mileve Marić|Telep|Novi Sad": {
    "geocoded": {
@@ -653,7 +893,15 @@
     "parking": 18
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.251183,19.786862)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.251183,19.786862)[\"shop\"];);out count;(nwr(around:300,45.251183,19.786862)[\"office\"];);out count;(nwr(around:300,45.251183,19.786862)[\"craft\"];);out count;(node(around:300,45.251183,19.786862)[\"highway\"=\"bus_stop\"];node(around:300,45.251183,19.786862)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.251183,19.786862)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.251183,19.786862)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:56.036Z"
+   "fetchedAt": "2026-11-27T09:41:56.036Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 4,
+    "industrialAreas": 0,
+    "commercialAreas": 2,
+    "residentialBuildings": 94,
+    "industrialBuildings": 0
+   }
   },
   "Mirijevski bulevar|Mirijevo|Beograd": {
    "geocoded": {
@@ -674,7 +922,15 @@
     "parking": 2
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.801896,20.526380)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.801896,20.526380)[\"shop\"];);out count;(nwr(around:300,44.801896,20.526380)[\"office\"];);out count;(nwr(around:300,44.801896,20.526380)[\"craft\"];);out count;(node(around:300,44.801896,20.526380)[\"highway\"=\"bus_stop\"];node(around:300,44.801896,20.526380)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.801896,20.526380)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.801896,20.526380)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:41:57.073Z"
+   "fetchedAt": "2026-11-27T09:41:57.073Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 0,
+    "industrialAreas": 0,
+    "commercialAreas": 0,
+    "residentialBuildings": 287,
+    "industrialBuildings": 1
+   }
   },
   "Narodnog fronta|Liman 2|Novi Sad": {
    "geocoded": {
@@ -737,7 +993,15 @@
     "parking": 6
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.802691,20.470479)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.802691,20.470479)[\"shop\"];);out count;(nwr(around:300,44.802691,20.470479)[\"office\"];);out count;(nwr(around:300,44.802691,20.470479)[\"craft\"];);out count;(node(around:300,44.802691,20.470479)[\"highway\"=\"bus_stop\"];node(around:300,44.802691,20.470479)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.802691,20.470479)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.802691,20.470479)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:42:00.329Z"
+   "fetchedAt": "2026-11-27T09:42:00.329Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 29,
+    "industrialAreas": 0,
+    "commercialAreas": 0,
+    "residentialBuildings": 347,
+    "industrialBuildings": 0
+   }
   },
   "Omladinskih brigada|Novi Beograd|Beograd": {
    "geocoded": {
@@ -758,7 +1022,15 @@
     "parking": 0
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.749575,20.574658)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.749575,20.574658)[\"shop\"];);out count;(nwr(around:300,44.749575,20.574658)[\"office\"];);out count;(nwr(around:300,44.749575,20.574658)[\"craft\"];);out count;(node(around:300,44.749575,20.574658)[\"highway\"=\"bus_stop\"];node(around:300,44.749575,20.574658)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.749575,20.574658)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.749575,20.574658)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:42:01.354Z"
+   "fetchedAt": "2026-11-27T09:42:01.354Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 1,
+    "industrialAreas": 0,
+    "commercialAreas": 0,
+    "residentialBuildings": 191,
+    "industrialBuildings": 0
+   }
   },
   "Partizanska|Klisa|Novi Sad": {
    "geocoded": {
@@ -779,7 +1051,15 @@
     "parking": 3
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.267938,19.823646)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.267938,19.823646)[\"shop\"];);out count;(nwr(around:300,45.267938,19.823646)[\"office\"];);out count;(nwr(around:300,45.267938,19.823646)[\"craft\"];);out count;(node(around:300,45.267938,19.823646)[\"highway\"=\"bus_stop\"];node(around:300,45.267938,19.823646)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.267938,19.823646)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.267938,19.823646)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:42:02.479Z"
+   "fetchedAt": "2026-11-27T09:42:02.479Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 0,
+    "industrialAreas": 1,
+    "commercialAreas": 5,
+    "residentialBuildings": 0,
+    "industrialBuildings": 2
+   }
   },
   "Pašićeva|Centar|Novi Sad": {
    "geocoded": {
@@ -800,7 +1080,15 @@
     "parking": 10
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.258489,19.846017)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.258489,19.846017)[\"shop\"];);out count;(nwr(around:300,45.258489,19.846017)[\"office\"];);out count;(nwr(around:300,45.258489,19.846017)[\"craft\"];);out count;(node(around:300,45.258489,19.846017)[\"highway\"=\"bus_stop\"];node(around:300,45.258489,19.846017)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.258489,19.846017)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.258489,19.846017)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:42:03.617Z"
+   "fetchedAt": "2026-11-27T09:42:03.617Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 3,
+    "industrialAreas": 0,
+    "commercialAreas": 0,
+    "residentialBuildings": 263,
+    "industrialBuildings": 0
+   }
   },
   "Pere Velimirovića|Banovo brdo|Beograd": {
    "geocoded": {
@@ -821,7 +1109,15 @@
     "parking": 0
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.756898,20.446505)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.756898,20.446505)[\"shop\"];);out count;(nwr(around:300,44.756898,20.446505)[\"office\"];);out count;(nwr(around:300,44.756898,20.446505)[\"craft\"];);out count;(node(around:300,44.756898,20.446505)[\"highway\"=\"bus_stop\"];node(around:300,44.756898,20.446505)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.756898,20.446505)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.756898,20.446505)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:42:04.655Z"
+   "fetchedAt": "2026-11-27T09:42:04.655Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 0,
+    "industrialAreas": 1,
+    "commercialAreas": 0,
+    "residentialBuildings": 83,
+    "industrialBuildings": 0
+   }
   },
   "Požeška|Banovo brdo|Beograd": {
    "geocoded": {
@@ -842,7 +1138,15 @@
     "parking": 9
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.766924,20.412989)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.766924,20.412989)[\"shop\"];);out count;(nwr(around:300,44.766924,20.412989)[\"office\"];);out count;(nwr(around:300,44.766924,20.412989)[\"craft\"];);out count;(node(around:300,44.766924,20.412989)[\"highway\"=\"bus_stop\"];node(around:300,44.766924,20.412989)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.766924,20.412989)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.766924,20.412989)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:42:05.757Z"
+   "fetchedAt": "2026-11-27T09:42:05.757Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 3,
+    "industrialAreas": 1,
+    "commercialAreas": 0,
+    "residentialBuildings": 167,
+    "industrialBuildings": 2
+   }
   },
   "Prvomajska|Zemun|Beograd": {
    "geocoded": {
@@ -863,7 +1167,15 @@
     "parking": 2
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.842851,20.378559)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.842851,20.378559)[\"shop\"];);out count;(nwr(around:300,44.842851,20.378559)[\"office\"];);out count;(nwr(around:300,44.842851,20.378559)[\"craft\"];);out count;(node(around:300,44.842851,20.378559)[\"highway\"=\"bus_stop\"];node(around:300,44.842851,20.378559)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.842851,20.378559)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.842851,20.378559)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:42:06.851Z"
+   "fetchedAt": "2026-11-27T09:42:06.851Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 2,
+    "industrialAreas": 0,
+    "commercialAreas": 0,
+    "residentialBuildings": 481,
+    "industrialBuildings": 1
+   }
   },
   "Rumenačka|Detelinara|Novi Sad": {
    "geocoded": {
@@ -884,7 +1196,15 @@
     "parking": 30
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.265282,19.815551)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.265282,19.815551)[\"shop\"];);out count;(nwr(around:300,45.265282,19.815551)[\"office\"];);out count;(nwr(around:300,45.265282,19.815551)[\"craft\"];);out count;(node(around:300,45.265282,19.815551)[\"highway\"=\"bus_stop\"];node(around:300,45.265282,19.815551)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.265282,19.815551)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.265282,19.815551)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:42:08.009Z"
+   "fetchedAt": "2026-11-27T09:42:08.009Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 3,
+    "industrialAreas": 1,
+    "commercialAreas": 6,
+    "residentialBuildings": 67,
+    "industrialBuildings": 0
+   }
   },
   "Seljačkih buna|Novo naselje|Novi Sad": {
    "geocoded": {
@@ -905,7 +1225,15 @@
     "parking": 23
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.253107,19.792720)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.253107,19.792720)[\"shop\"];);out count;(nwr(around:300,45.253107,19.792720)[\"office\"];);out count;(nwr(around:300,45.253107,19.792720)[\"craft\"];);out count;(node(around:300,45.253107,19.792720)[\"highway\"=\"bus_stop\"];node(around:300,45.253107,19.792720)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.253107,19.792720)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.253107,19.792720)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:42:09.136Z"
+   "fetchedAt": "2026-11-27T09:42:09.136Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 2,
+    "industrialAreas": 0,
+    "commercialAreas": 1,
+    "residentialBuildings": 18,
+    "industrialBuildings": 1
+   }
   },
   "Seljačkih buna|Satelit|Novi Sad": {
    "geocoded": {
@@ -926,7 +1254,15 @@
     "parking": 23
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.253107,19.792720)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.253107,19.792720)[\"shop\"];);out count;(nwr(around:300,45.253107,19.792720)[\"office\"];);out count;(nwr(around:300,45.253107,19.792720)[\"craft\"];);out count;(node(around:300,45.253107,19.792720)[\"highway\"=\"bus_stop\"];node(around:300,45.253107,19.792720)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.253107,19.792720)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.253107,19.792720)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:42:10.160Z"
+   "fetchedAt": "2026-11-27T09:42:10.160Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 2,
+    "industrialAreas": 0,
+    "commercialAreas": 1,
+    "residentialBuildings": 18,
+    "industrialBuildings": 1
+   }
   },
   "Starine Novaka|Palilula|Beograd": {
    "geocoded": {
@@ -947,7 +1283,15 @@
     "parking": 6
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.809476,20.475137)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.809476,20.475137)[\"shop\"];);out count;(nwr(around:300,44.809476,20.475137)[\"office\"];);out count;(nwr(around:300,44.809476,20.475137)[\"craft\"];);out count;(node(around:300,44.809476,20.475137)[\"highway\"=\"bus_stop\"];node(around:300,44.809476,20.475137)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.809476,20.475137)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.809476,20.475137)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:42:20.685Z"
+   "fetchedAt": "2026-11-27T09:42:20.685Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 10,
+    "industrialAreas": 0,
+    "commercialAreas": 4,
+    "residentialBuildings": 150,
+    "industrialBuildings": 1
+   }
   },
   "Strahinjića bana|Dorćol|Beograd": {
    "geocoded": {
@@ -968,7 +1312,15 @@
     "parking": 16
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.824690,20.455772)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.824690,20.455772)[\"shop\"];);out count;(nwr(around:300,44.824690,20.455772)[\"office\"];);out count;(nwr(around:300,44.824690,20.455772)[\"craft\"];);out count;(node(around:300,44.824690,20.455772)[\"highway\"=\"bus_stop\"];node(around:300,44.824690,20.455772)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.824690,20.455772)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.824690,20.455772)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:42:28.080Z"
+   "fetchedAt": "2026-11-27T09:42:28.080Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 31,
+    "industrialAreas": 0,
+    "commercialAreas": 2,
+    "residentialBuildings": 188,
+    "industrialBuildings": 0
+   }
   },
   "Svetozara Miletića|Stari grad|Novi Sad": {
    "geocoded": {
@@ -989,7 +1341,15 @@
     "parking": 18
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.256721,19.846756)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.256721,19.846756)[\"shop\"];);out count;(nwr(around:300,45.256721,19.846756)[\"office\"];);out count;(nwr(around:300,45.256721,19.846756)[\"craft\"];);out count;(node(around:300,45.256721,19.846756)[\"highway\"=\"bus_stop\"];node(around:300,45.256721,19.846756)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.256721,19.846756)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.256721,19.846756)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:42:34.840Z"
+   "fetchedAt": "2026-11-27T09:42:34.840Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 2,
+    "industrialAreas": 0,
+    "commercialAreas": 1,
+    "residentialBuildings": 147,
+    "industrialBuildings": 0
+   }
   },
   "Temerinska|Rotkvarija|Novi Sad": {
    "geocoded": {
@@ -1031,7 +1391,15 @@
     "parking": 9
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.757195,20.415080)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.757195,20.415080)[\"shop\"];);out count;(nwr(around:300,44.757195,20.415080)[\"office\"];);out count;(nwr(around:300,44.757195,20.415080)[\"craft\"];);out count;(node(around:300,44.757195,20.415080)[\"highway\"=\"bus_stop\"];node(around:300,44.757195,20.415080)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.757195,20.415080)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.757195,20.415080)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:43:04.113Z"
+   "fetchedAt": "2026-11-27T09:43:04.113Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 2,
+    "industrialAreas": 0,
+    "commercialAreas": 1,
+    "residentialBuildings": 296,
+    "industrialBuildings": 0
+   }
   },
   "Ugrinovačka|Zemun|Beograd": {
    "geocoded": {
@@ -1052,7 +1420,15 @@
     "parking": 12
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.849982,20.386152)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.849982,20.386152)[\"shop\"];);out count;(nwr(around:300,44.849982,20.386152)[\"office\"];);out count;(nwr(around:300,44.849982,20.386152)[\"craft\"];);out count;(node(around:300,44.849982,20.386152)[\"highway\"=\"bus_stop\"];node(around:300,44.849982,20.386152)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.849982,20.386152)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.849982,20.386152)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:43:09.450Z"
+   "fetchedAt": "2026-11-27T09:43:09.450Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 0,
+    "industrialAreas": 1,
+    "commercialAreas": 0,
+    "residentialBuildings": 445,
+    "industrialBuildings": 0
+   }
   },
   "Ustanička|Voždovac|Beograd": {
    "geocoded": {
@@ -1073,7 +1449,15 @@
     "parking": 13
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.782453,20.509435)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.782453,20.509435)[\"shop\"];);out count;(nwr(around:300,44.782453,20.509435)[\"office\"];);out count;(nwr(around:300,44.782453,20.509435)[\"craft\"];);out count;(node(around:300,44.782453,20.509435)[\"highway\"=\"bus_stop\"];node(around:300,44.782453,20.509435)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.782453,20.509435)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.782453,20.509435)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:43:21.532Z"
+   "fetchedAt": "2026-11-27T09:43:21.532Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 1,
+    "industrialAreas": 0,
+    "commercialAreas": 1,
+    "residentialBuildings": 138,
+    "industrialBuildings": 0
+   }
   },
   "Vere Pavlović|Satelit|Novi Sad": {
    "geocoded": {
@@ -1094,7 +1478,15 @@
     "parking": 34
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.245033,19.837232)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.245033,19.837232)[\"shop\"];);out count;(nwr(around:300,45.245033,19.837232)[\"office\"];);out count;(nwr(around:300,45.245033,19.837232)[\"craft\"];);out count;(node(around:300,45.245033,19.837232)[\"highway\"=\"bus_stop\"];node(around:300,45.245033,19.837232)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.245033,19.837232)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.245033,19.837232)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:43:32.910Z"
+   "fetchedAt": "2026-11-27T09:43:32.910Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 5,
+    "industrialAreas": 2,
+    "commercialAreas": 5,
+    "residentialBuildings": 111,
+    "industrialBuildings": 2
+   }
   },
   "Vitezova Karađorđeve zvezde|Mirijevo|Beograd": {
    "geocoded": {
@@ -1115,7 +1507,15 @@
     "parking": 1
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.791601,20.522217)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.791601,20.522217)[\"shop\"];);out count;(nwr(around:300,44.791601,20.522217)[\"office\"];);out count;(nwr(around:300,44.791601,20.522217)[\"craft\"];);out count;(node(around:300,44.791601,20.522217)[\"highway\"=\"bus_stop\"];node(around:300,44.791601,20.522217)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.791601,20.522217)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.791601,20.522217)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:43:41.294Z"
+   "fetchedAt": "2026-11-27T09:43:41.294Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 0,
+    "industrialAreas": 0,
+    "commercialAreas": 0,
+    "residentialBuildings": 356,
+    "industrialBuildings": 0
+   }
   },
   "Vojvode Stepe|Voždovac|Beograd": {
    "geocoded": {
@@ -1136,7 +1536,15 @@
     "parking": 10
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.749932,20.495034)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.749932,20.495034)[\"shop\"];);out count;(nwr(around:300,44.749932,20.495034)[\"office\"];);out count;(nwr(around:300,44.749932,20.495034)[\"craft\"];);out count;(node(around:300,44.749932,20.495034)[\"highway\"=\"bus_stop\"];node(around:300,44.749932,20.495034)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.749932,20.495034)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.749932,20.495034)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:43:50.881Z"
+   "fetchedAt": "2026-11-27T09:43:50.881Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 2,
+    "industrialAreas": 0,
+    "commercialAreas": 0,
+    "residentialBuildings": 166,
+    "industrialBuildings": 0
+   }
   },
   "Zmaj Jovina|Centar|Novi Sad": {
    "geocoded": {
@@ -1157,7 +1565,15 @@
     "parking": 20
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.256067,19.846864)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.256067,19.846864)[\"shop\"];);out count;(nwr(around:300,45.256067,19.846864)[\"office\"];);out count;(nwr(around:300,45.256067,19.846864)[\"craft\"];);out count;(node(around:300,45.256067,19.846864)[\"highway\"=\"bus_stop\"];node(around:300,45.256067,19.846864)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.256067,19.846864)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.256067,19.846864)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:43:56.759Z"
+   "fetchedAt": "2026-11-27T09:43:56.759Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 2,
+    "industrialAreas": 0,
+    "commercialAreas": 2,
+    "residentialBuildings": 98,
+    "industrialBuildings": 0
+   }
   },
   "Ćirpanova|Liman 1|Novi Sad": {
    "geocoded": {
@@ -1178,7 +1594,15 @@
     "parking": 28
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.252595,19.832990)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.252595,19.832990)[\"shop\"];);out count;(nwr(around:300,45.252595,19.832990)[\"office\"];);out count;(nwr(around:300,45.252595,19.832990)[\"craft\"];);out count;(node(around:300,45.252595,19.832990)[\"highway\"=\"bus_stop\"];node(around:300,45.252595,19.832990)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.252595,19.832990)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.252595,19.832990)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:44:03.620Z"
+   "fetchedAt": "2026-11-27T09:44:03.620Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 4,
+    "industrialAreas": 0,
+    "commercialAreas": 1,
+    "residentialBuildings": 271,
+    "industrialBuildings": 0
+   }
   },
   "Čika Ljubina|Stari grad|Beograd": {
    "geocoded": {
@@ -1199,7 +1623,15 @@
     "parking": 3
    },
    "query": "[out:json][timeout:25];(nwr(around:300,44.817314,20.458540)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.817314,20.458540)[\"shop\"];);out count;(nwr(around:300,44.817314,20.458540)[\"office\"];);out count;(nwr(around:300,44.817314,20.458540)[\"craft\"];);out count;(node(around:300,44.817314,20.458540)[\"highway\"=\"bus_stop\"];node(around:300,44.817314,20.458540)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.817314,20.458540)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.817314,20.458540)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:44:18.332Z"
+   "fetchedAt": "2026-11-27T09:44:18.332Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 11,
+    "industrialAreas": 0,
+    "commercialAreas": 2,
+    "residentialBuildings": 197,
+    "industrialBuildings": 0
+   }
   },
   "Đorđa Rajkovića|Podbara|Novi Sad": {
    "geocoded": {
@@ -1220,7 +1652,15 @@
     "parking": 4
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.266610,19.847850)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.266610,19.847850)[\"shop\"];);out count;(nwr(around:300,45.266610,19.847850)[\"office\"];);out count;(nwr(around:300,45.266610,19.847850)[\"craft\"];);out count;(node(around:300,45.266610,19.847850)[\"highway\"=\"bus_stop\"];node(around:300,45.266610,19.847850)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.266610,19.847850)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.266610,19.847850)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:44:27.340Z"
+   "fetchedAt": "2026-11-27T09:44:27.340Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 1,
+    "industrialAreas": 0,
+    "commercialAreas": 4,
+    "residentialBuildings": 185,
+    "industrialBuildings": 4
+   }
   },
   "Šekspirova|Grbavica|Novi Sad": {
    "geocoded": {
@@ -1241,7 +1681,15 @@
     "parking": 35
    },
    "query": "[out:json][timeout:25];(nwr(around:300,45.239455,19.838330)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.239455,19.838330)[\"shop\"];);out count;(nwr(around:300,45.239455,19.838330)[\"office\"];);out count;(nwr(around:300,45.239455,19.838330)[\"craft\"];);out count;(node(around:300,45.239455,19.838330)[\"highway\"=\"bus_stop\"];node(around:300,45.239455,19.838330)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.239455,19.838330)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.239455,19.838330)[\"amenity\"=\"parking\"];);out count;",
-   "fetchedAt": "2026-11-27T09:44:35.050Z"
+   "fetchedAt": "2026-11-27T09:44:35.050Z",
+   "landuse": {
+    "atPoint": [],
+    "residentialAreas": 3,
+    "industrialAreas": 0,
+    "commercialAreas": 1,
+    "residentialBuildings": 31,
+    "industrialBuildings": 0
+   }
   }
  },
  "listings": {
