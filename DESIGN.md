@@ -273,6 +273,19 @@ Note: "Check before signing" is a **view group**, not a domain status. The domai
 Candidate (name + area, m2, floor) / Monthly cost / Rent share of revenue / Exit cost after 12 months / Flags /
 Agents (live chips) / Score / more. Reports drop the Agents column and add Rank.
 
+### 7.5 Sign in page (concept 27 Nov, not built)
+Files: `design/login/suitespot-login-mockup.png` (static mockup) and `design/login/suitespot-login-animacija.mp4`
+(the animation).
+- **Left:** a white glass card. Logo + "SuiteSpot" top left; "Welcome back" with "Sign in to save spaces and publish
+  your listings."; Email and Password fields; black "Sign in" button; white "Continue as guest" button; "Don't have
+  an account? Sign up"; footer "© 2026 SuiteSpot · Not financial or legal advice". No "Remember me" and no "Forgot
+  password" until we check that our Supabase sign in supports them.
+- **Right:** an animated map in the DESIGN.md colours that slides slowly; the magnifying glass from the logo stops
+  over the coral dots (listings), the building from the logo pops up with a pill naming the listing (for example
+  "Liman 1 · 77 m2"); pills "Demo data" and "100 synthetic listings" at the bottom.
+- **Build suggestion:** SVG + CSS/JS animation; with `prefers-reduced-motion` a static image. The existing auth
+  routes and logic do not change.
+
 ## 8. Motion
 - Every interactive element (buttons, links, inputs, tabs) transitions background, colour, border, shadow, opacity and
   transform in **200 ms** with the iOS ease `cubic-bezier(0.2, 0, 0, 1)`; buttons scale to 0.97 while pressed.
