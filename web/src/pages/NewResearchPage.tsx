@@ -88,7 +88,9 @@ function profileFromForm(form: ProfileForm): { profile: Partial<ProfileInput> } 
 
 export function NewResearchPage({ config }: { config: Config | null }) {
   const { search } = useLocation()
-  const mode: Mode = search.get("mode") === "find" ? "find" : "evaluate"
+  // "Find spaces" is the default tab; "Evaluate a space" also opens from "Evaluate for my business" on a listing.
+  const modeParam = search.get("mode")
+  const mode: Mode = modeParam === "evaluate" || (modeParam !== "find" && search.get("listing")) ? "evaluate" : "find"
   // "Evaluate for my business" on a listing page: evaluate that one SuiteSpot listing.
   const listingId = mode === "evaluate" ? search.get("listing") : null
   const settings = useSettings()
@@ -151,8 +153,8 @@ export function NewResearchPage({ config }: { config: Config | null }) {
   return (
     <div className="flex flex-col gap-4">
       <div role="tablist" aria-label="Research mode" className="grid gap-3 md:grid-cols-2">
-        <ModeTab active={mode === "evaluate"} icon={FileSearch} title="Evaluate an outside listing" text="A space you found elsewhere: type in its terms" onSelect={() => setSearchParam("mode", "evaluate")} />
-        <ModeTab active={mode === "find"} icon={Search} title="Find spaces" text="SuiteSpot finds the spaces that fit" onSelect={() => setSearchParam("mode", "find")} />
+        <ModeTab active={mode === "find"} icon={Search} title="Find spaces" text="SuiteSpot finds the spaces that fit your business" onSelect={() => setSearchParam("mode", "find")} />
+        <ModeTab active={mode === "evaluate"} icon={FileSearch} title="Evaluate a space" text="One space, from SuiteSpot or found elsewhere" onSelect={() => setSearchParam("mode", "evaluate")} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">

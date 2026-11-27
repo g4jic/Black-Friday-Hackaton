@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { AssumptionsScreen } from "./Assumptions"
+import { HowItWorksPage } from "./HowItWorks"
 import { startResearch, useResearch } from "./app/research-store"
 import { navigate, paths, useLocation, useRoute, type Route } from "./app/router"
 import { Shell } from "./app/Shell"
@@ -26,7 +26,7 @@ const TITLES: Record<Route["name"], string> = {
   results: "Results",
   candidate: "Candidate",
   history: "History",
-  assumptions: "Assumptions",
+  howItWorks: "How it works",
   settings: "Settings",
   listings: "Listings",
   listing: "Listing",
@@ -93,8 +93,8 @@ function Page({ route, config }: { route: Route; config: Config | null }) {
       return <CandidatePage key={route.candidateId} researchId={route.researchId} candidateId={route.candidateId} />
     case "history":
       return <HistoryPage />
-    case "assumptions":
-      return <AssumptionsScreen />
+    case "howItWorks":
+      return <HowItWorksPage />
     case "settings":
       return <SettingsPage />
     case "listings":

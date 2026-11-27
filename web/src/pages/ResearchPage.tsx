@@ -3,7 +3,6 @@ import { useEffect, useState } from "react"
 import { useResearch, type RunSnapshot } from "../app/research-store"
 import { Link, paths, setSearchParam, useLocation } from "../app/router"
 import { EmptyState } from "../app/Shell"
-import { MetricsStrip } from "../results/MetricsStrip"
 import { ResultsList } from "../results/ResultsList"
 import { ReportsScreen } from "../Reports"
 import { Timeline } from "../Timeline"
@@ -31,7 +30,7 @@ export function useRunClock(snapshot: RunSnapshot): number {
 export function ResearchMissing() {
   return (
     <EmptyState
-      text="This research is not available any more: the server was restarted and the run was not kept in this tab's history."
+      text="This research is not available any more. Open your history to see the runs kept in this browser."
       action={
         <Link to={paths.history()} className="inline-flex h-10 items-center rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e]">
           Open history
@@ -41,7 +40,7 @@ export function ResearchMissing() {
   )
 }
 
-/** The results of one run: the ranked List (default), the audited Report, or the Timeline with "Under the hood". */
+/** The results of one run: the ranked List (default), the checked Report, or the Timeline of how the run went. */
 export function ResearchPage({ researchId }: { researchId: string }) {
   const snapshot = useResearch(researchId)
   const { search } = useLocation()
@@ -55,13 +54,7 @@ export function ResearchPage({ researchId }: { researchId: string }) {
         <ResearchTabs tab={tab} />
       </div>
       {tab === "timeline" ? (
-        <div className="flex flex-col gap-4">
-          <Timeline s={state} now={now} />
-          <section aria-label="Under the hood">
-            <h2 className="mb-2 text-sm font-semibold text-ink">Under the hood</h2>
-            <MetricsStrip s={state} />
-          </section>
-        </div>
+        <Timeline s={state} now={now} />
       ) : tab === "report" ? (
         <ReportsScreen s={state} />
       ) : (

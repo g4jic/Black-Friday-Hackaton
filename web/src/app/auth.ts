@@ -121,6 +121,11 @@ export async function logOut(): Promise<void> {
   applySession(null)
 }
 
+/** The signed-in account right now (outside React). */
+export function currentAccount(): Landlord | null {
+  return state.landlord
+}
+
 export function useAuth(): AuthState {
   return useSyncExternalStore(
     (listener) => {
