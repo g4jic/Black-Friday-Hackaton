@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { useSyncExternalStore } from "react"
 import { setAuthHeaders } from "../listings/listings-api"
+import { onboardingFromMetadata } from "./onboarding-gate"
 
 /**
  * Accounts. Every user signs in (there is no guest mode). With Supabase on the server: email and password through
@@ -50,8 +51,7 @@ function applySession(session: SessionLike): void {
   const meta = user?.user_metadata ?? {}
   const name = typeof meta.display_name === "string" ? meta.display_name.trim() : ""
   // Option B of the onboarding plan: role and onboarded_at live in Supabase user_metadata, next to display_name.
-  const role = isRole(meta.role) ? meta.role : null
-  const onboardedAt = typeof meta.onboarded_at === "string" ? meta.onboarded_at : null
+  const { role, onboardedAt } = onboardingFromMetadata(meta)
   set({ status: "ready", landlord: user ? { id: user.id, email: user.email ?? "", displayName: name || user.email || "Account", role, onboardedAt } : null })
 }
 

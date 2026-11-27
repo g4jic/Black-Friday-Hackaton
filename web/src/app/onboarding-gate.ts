@@ -4,6 +4,19 @@
  */
 
 const HOME = "/"
+const ROLE_VALUES = ["owner", "seeker", "both"] as const
+export type AccountRole = (typeof ROLE_VALUES)[number]
+
+/**
+ * The onboarding answers from Supabase user_metadata (role, onboarded_at). Anything missing or unknown counts as not
+ * given, so an account without a role (made before the onboarding, or between the role backfill and a deploy) goes
+ * to the role choice instead of breaking.
+ */
+export function onboardingFromMetadata(meta: Record<string, unknown> | null | undefined): { role: AccountRole | null; onboardedAt: string | null } {
+  const role = ROLE_VALUES.includes(meta?.role as AccountRole) ? (meta!.role as AccountRole) : null
+  const onboardedAt = typeof meta?.onboarded_at === "string" && meta.onboarded_at ? meta.onboarded_at : null
+  return { role, onboardedAt }
+}
 const ONBOARDING = "/onboarding"
 
 /** Where to go after signing in (and after the onboarding): the page the user wanted (a path inside the app), else Home. */
