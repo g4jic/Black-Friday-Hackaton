@@ -2,6 +2,7 @@
 
 The single source of truth for how SuiteSpot looks. If code and this file disagree, this file wins; change this file
 first, then the code. Decided 26 Nov 2026 by Aleksa (Era and Spade concepts in `design/concepts/` are superseded).
+Logo decided 27 Nov 2026 by Aleksa.
 
 **Writing rule:** no long dashes anywhere (UI text, docs, comments). Use a plain hyphen `-` or rewrite the sentence.
 
@@ -119,7 +120,9 @@ Colour is never the only signal: every flag pill also has an icon and a word ("H
 +--------+--------------------------------------------------------------+
 ```
 - **Sidebar:** floating white panel, 88 px wide, radius 28, 16 px from the window edges, full height, `shadow-soft`.
-  Top: the SuiteSpot mark (a simple coral monogram "S" in a 48 px circle, our own, no photo). Then the nav buttons,
+  Top: the SuiteSpot mark: a magnifying glass with a short handle (coral ring, black handle) and an isometric
+  commercial building inside the lens, our own, no photo; file `design/brand/suitespot-logo.svg`. Not wired into the
+  app yet. Then the nav buttons,
   44 px strong-glass circles with an ink icon, 16 px apart. **Active:** filled `brand`, white icon (an icon, 3:1 is enough). Hover: white.
   Each button has a tooltip and an `aria-label` with its name. Bottom: a round "collapse" chevron button.
 - **Header (top left):** breadcrumb in `text-small`, `ink-2`, with a `>` chevron; under it the page title in
@@ -279,7 +282,9 @@ Agents (live chips) / Score / more. Reports drop the Agents column and add Rank.
   Icon names in this file follow lucide.dev; a few were renamed between lucide versions, so check each name against
   the installed version and keep the closest match.
 - Font: Hanken Grotesk via Google Fonts (OFL 1.1).
-- No photos of people, no stock images. Agents are icons, the brand is a monogram.
+- No photos of people, no stock images. Agents are icons. The brand files are in `design/brand/`:
+  `suitespot-logo.svg` (the logo), `suitespot-logo-1024.png` (PNG, 1024 px), `favicon-64.png` (favicon, 64 px) and
+  `suitespot-logo-reveal.mp4` (logo reveal video, 1920x1080, 30 fps, 7 s, for the demo video).
 - Credit both in the README.
 
 ## 10. Tokens for Tailwind 4
