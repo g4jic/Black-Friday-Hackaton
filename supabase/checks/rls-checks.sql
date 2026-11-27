@@ -90,7 +90,7 @@ insert into public.tenancies (id, offer_id, listing_id, listing_title, is_demo_l
    'Tenant', '00000000-0000-4000-8000-0000000000a1', 650, 'EUR', '2027-01-01', 12, now());
 insert into public.rent_payments (id, tenancy_id, period, amount, currency, method, reference, paid_at) values
   ('payment-rls', 'tenancy-rls', '2027-01', 650, 'EUR', 'simulated', 'simulated:rls', now());
-do $
+do $$
 begin
   if exists (select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace
              where n.nspname = 'public' and c.relname in ('offers', 'tenancies', 'rent_payments') and not c.relrowsecurity) then
@@ -102,12 +102,12 @@ begin
     raise exception 'a live Stripe reference was accepted';
   exception when check_violation then null; -- expected: test or simulated references only
   end;
-end $;
+end $$;
 
 set local role authenticated;
 -- the tenant and the landlord each read the offer, the tenancy and the payment
 set local request.jwt.claims = '{"sub": "00000000-0000-4000-8000-0000000000b2", "role": "authenticated"}';
-do $
+do $$
 begin
   if (select count(*) from public.offers where id = 'offer-rls') <> 1 then raise exception 'the tenant cannot read their offer'; end if;
   if (select count(*) from public.tenancies where id = 'tenancy-rls') <> 1 then raise exception 'the tenant cannot read their tenancy'; end if;
@@ -123,30 +123,30 @@ begin
     raise exception 'a signed-in user changed an offer directly';
   exception when insufficient_privilege then null;
   end;
-end $;
+end $$;
 set local request.jwt.claims = '{"sub": "00000000-0000-4000-8000-0000000000a1", "role": "authenticated"}';
-do $
+do $$
 begin
   if (select count(*) from public.tenancies where id = 'tenancy-rls') <> 1 then raise exception 'the landlord cannot read the tenancy'; end if;
   if (select count(*) from public.rent_payments where id = 'payment-rls') <> 1 then raise exception 'the landlord cannot read the payment'; end if;
-end $;
+end $$;
 -- a third user reads nothing
 set local request.jwt.claims = '{"sub": "00000000-0000-4000-8000-0000000000c3", "role": "authenticated"}';
-do $
+do $$
 begin
   if exists (select 1 from public.offers) or exists (select 1 from public.tenancies) or exists (select 1 from public.rent_payments)
     then raise exception 'a third user reads someone else''s deal'; end if;
-end $;
+end $$;
 reset role;
 set local role anon;
-do $
+do $$
 begin
   begin
     perform 1 from public.offers;
     raise exception 'anon can read offers';
   exception when insufficient_privilege then null;
   end;
-end $;
+end $$;
 reset role;
 
 select 'all RLS checks passed' as result;

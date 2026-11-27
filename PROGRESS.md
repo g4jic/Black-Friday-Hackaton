@@ -3,6 +3,61 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
+## HANDOFF (27 Nov 2026, evening, Andrej + Claude): READ THIS FIRST
+Supersedes every handoff below. Blocks A, B and D of the work order are done and merged; block C (deploy, README,
+submission text) is in progress. Submissions close at midnight CET.
+
+### Exact state
+- **main** holds everything (merges e5a1a61 wip/agents, 97ddfb5 wip/ui, e742e02 wip/deals). Typecheck clean, 227
+  tests in 31 files pass. The wip/* branches are merged and need no more work.
+- **Block A (agents):** rent share of revenue rule, noise vs land use (OSM land use in `fixtures/osm/seed-areas.json`,
+  56 of 59 addresses), bad year / good year, lease or buy (`src/domain/lease-or-buy.ts`). Demo runs re-recorded with
+  the real model (`fixtures/recordings/*.json`). `npx tsx scripts/cut-report.ts` prints the hard flag cuts and the
+  audit counts; "For the video" below has the table.
+- **Block B (UI):** sign in required (local accounts in `data/local-accounts.json` when SUPABASE_* are empty, Supabase
+  otherwise), How it works page (replaces Assumptions), one Research menu (Find spaces default tab, Evaluate a space),
+  plain texts, "How your research ran" timeline, run animation, dropdowns, login zoom, lens cursor.
+- **Block D (deals):** offer, accept or decline, lease with rent due dates on both sides, rent payment through one port
+  (`src/application/payments/payment-gateway.ts`) with two adapters: Stripe Checkout in test mode when
+  `STRIPE_SECRET_KEY=sk_test_...` and `STRIPE_PUBLISHABLE_KEY=pk_test_...` are set (live keys refused), otherwise a
+  simulated checkout labelled "Simulated payment, no real money" (reference `simulated:<uuid>`). On a demo listing the
+  tenant answers the offer as the simulated demo landlord, so the jury can run the whole loop alone with no key.
+  Domain in `src/domain/deal.ts`, service `src/application/deals/deal-service.ts`, routes
+  `src/adapters/server/deal-routes.ts`, UI `web/src/deals/`.
+- **Supabase:** migration `supabase/migrations/20261127150000_offers_tenancies_payments.sql` is APPLIED (Andrej, 27 Nov
+  evening) and `supabase/checks/rls-checks.sql` passed ("all RLS checks passed"). Its `do $$ ... end $$;` blocks from
+  line 93 were fixed (they had a single `$`).
+- **Railway:** `railway.json` committed (build `npm run build`, start `npm start`, healthcheck `/api/health`). Not
+  deployed yet: the Railway CLI (`npx @railway/cli`, 5.76.2) needs `npx @railway/cli login` in Andrej's own terminal.
+- **Mozaik Cloud screenshot:** `design/screenshots/mozaik-cloud.png` is the older one (before Location analyst and
+  Premises inspector). A new one needs a sign in at app.jigjoy.ai; optional.
+
+### Keyless run metrics (replayed 27 Nov evening, no key)
+| Scenario | Duration | Agent loops | Peak in parallel | Rejected | Loops cut | Audit |
+|---|---|---|---|---|---|---|
+| Cafe in Novi Sad | 12.6 s | 31 | 27 | 2 | 6 | 11 checked, 0 corrected, 0 removed |
+| Office in Beograd | 10.0 s | 32 | 30 | 2 | 5 | 10 checked, 0 corrected, 0 removed |
+| Shop in Novi Sad | 7.3 s | 29 | 28 | 4 | 10 | 10 checked, 0 corrected, 0 removed |
+
+### Next steps, in order (block C)
+1. **C2 README:** new features (sign in, How it works, rent share, noise and land use, bad year / good year, lease or
+   buy, Location analyst and Premises inspector rows in the agent table, deals with payment), the metrics table above,
+   the keyless jury walkthrough (offer, accept as demo landlord, lease, simulated payment, status on both sides), the
+   sentence "Stripe test mode demonstrates the flow; Stripe does not support businesses registered in Serbia, so
+   production would use a local payment processor", the deals migration in the Supabase steps, "Payments: not built"
+   and the "Not built: OpenStreetMap, offers, payments" lines removed, npm 11 install scripts note in Troubleshooting.
+2. **C1 Railway (Andrej does the manual parts):** set an Anthropic spending limit first; `npx @railway/cli login`;
+   variables ANTHROPIC_API_KEY, SUITESPOT_ACCESS_CODE, SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
+   (optional STRIPE_* test keys); Supabase Auth: Site URL and redirect URL = the Railway address, and turn off
+   "Confirm email" (the default Supabase mail sender would block jury sign ups); then check the full deal loop on the
+   deploy and put the link in the README.
+3. Fresh clone test (no .env, then with a key), Mozaik Cloud screenshot if time allows.
+4. **C3** submission text (name, repo, description, how the agents run concurrently). **C4** final handoff and push.
+
+### Run without a key (PowerShell)
+`$env:ANTHROPIC_API_KEY=' '; npm run dev` (with the key in `.env`, plain `npm run dev` runs LIVE and costs money).
+Rook (another project) may hold ports 3000 and 5173; close it first.
+
 ## HANDOFF (27 Nov 2026, ~13:00, Aleksa -> Andrej): READ THIS FIRST
 Supersedes the "main is untouched (2db1917)" line in the handoff below; the phase details below are still valid.
 
