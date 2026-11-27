@@ -1,0 +1,1349 @@
+{
+ "attribution": "© OpenStreetMap contributors, ODbL (https://www.openstreetmap.org/copyright)",
+ "note": "Counts of mapped OpenStreetMap features around each seeded listing's street (public data). Fetched by scripts/fetch-osm.ts.",
+ "radiusM": 300,
+ "fetchedAt": "2026-11-27T09:44:35.052Z",
+ "areas": {
+  "Braće Jerković|Voždovac|Beograd": {
+   "geocoded": {
+    "lat": 44.7674454,
+    "lon": 20.5003871,
+    "osmType": "way",
+    "osmId": 1278519095,
+    "displayName": "Браће Јерковић, МЗ Митрово брдо, Београд (Вождовац), Градска општина Вождовац, Град Београд, Централна Србија, 11040, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 6,
+    "shops": 13,
+    "offices": 0,
+    "crafts": 1,
+    "transit": 8,
+    "schools": 0,
+    "parking": 20
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.767445,20.500387)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.767445,20.500387)[\"shop\"];);out count;(nwr(around:300,44.767445,20.500387)[\"office\"];);out count;(nwr(around:300,44.767445,20.500387)[\"craft\"];);out count;(node(around:300,44.767445,20.500387)[\"highway\"=\"bus_stop\"];node(around:300,44.767445,20.500387)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.767445,20.500387)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.767445,20.500387)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:21.838Z"
+  },
+  "Bulevar Mihajla Pupina|Novi Beograd|Beograd": {
+   "geocoded": {
+    "lat": 44.8183312,
+    "lon": 20.4264388,
+    "osmType": "way",
+    "osmId": 196297236,
+    "displayName": "Булевар Михајла Пупина, МЗ Дунавски кеј, Градска општина Нови Београд, Београд, Град Београд, Централна Србија, 11000, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 5,
+    "shops": 3,
+    "offices": 66,
+    "crafts": 0,
+    "transit": 5,
+    "schools": 1,
+    "parking": 12
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.818331,20.426439)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.818331,20.426439)[\"shop\"];);out count;(nwr(around:300,44.818331,20.426439)[\"office\"];);out count;(nwr(around:300,44.818331,20.426439)[\"craft\"];);out count;(node(around:300,44.818331,20.426439)[\"highway\"=\"bus_stop\"];node(around:300,44.818331,20.426439)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.818331,20.426439)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.818331,20.426439)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:22.852Z"
+  },
+  "Bulevar Slobodana Jovanovića|Novo naselje|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2528984,
+    "lon": 19.8043607,
+    "osmType": "way",
+    "osmId": 1339387081,
+    "displayName": "Булевар Слободана Јовановића, Савина, Бистрица, МЗ Гаврило Принцип, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21137, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 8,
+    "shops": 14,
+    "offices": 3,
+    "crafts": 0,
+    "transit": 6,
+    "schools": 0,
+    "parking": 38
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.252898,19.804361)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.252898,19.804361)[\"shop\"];);out count;(nwr(around:300,45.252898,19.804361)[\"office\"];);out count;(nwr(around:300,45.252898,19.804361)[\"craft\"];);out count;(node(around:300,45.252898,19.804361)[\"highway\"=\"bus_stop\"];node(around:300,45.252898,19.804361)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.252898,19.804361)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.252898,19.804361)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:23.956Z"
+  },
+  "Bulevar kralja Aleksandra|Zvezdara|Beograd": {
+   "geocoded": {
+    "lat": 44.8057932,
+    "lon": 20.4747554,
+    "osmType": "way",
+    "osmId": 841047451,
+    "displayName": "Булевар краља Александра, Крунски венац, Београд (Врачар), Градска општина Врачар, Град Београд, Централна Србија, 11120, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 29,
+    "shops": 81,
+    "offices": 14,
+    "crafts": 3,
+    "transit": 13,
+    "schools": 10,
+    "parking": 6
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.805793,20.474755)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.805793,20.474755)[\"shop\"];);out count;(nwr(around:300,44.805793,20.474755)[\"office\"];);out count;(nwr(around:300,44.805793,20.474755)[\"craft\"];);out count;(node(around:300,44.805793,20.474755)[\"highway\"=\"bus_stop\"];node(around:300,44.805793,20.474755)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.805793,20.474755)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.805793,20.474755)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:25.104Z"
+  },
+  "Cara Dušana|Adice|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2445181,
+    "lon": 19.8251433,
+    "osmType": "way",
+    "osmId": 1292684146,
+    "displayName": "Цара Душана, Адамовићево насеље, МЗ 7. Јули, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21102, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 3,
+    "shops": 13,
+    "offices": 1,
+    "crafts": 1,
+    "transit": 2,
+    "schools": 2,
+    "parking": 12
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.244518,19.825143)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.244518,19.825143)[\"shop\"];);out count;(nwr(around:300,45.244518,19.825143)[\"office\"];);out count;(nwr(around:300,45.244518,19.825143)[\"craft\"];);out count;(node(around:300,45.244518,19.825143)[\"highway\"=\"bus_stop\"];node(around:300,45.244518,19.825143)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.244518,19.825143)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.244518,19.825143)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:26.148Z"
+  },
+  "Dimitrija Tucovića|Zvezdara|Beograd": {
+   "geocoded": {
+    "lat": 44.8058947,
+    "lon": 20.4840082,
+    "osmType": "way",
+    "osmId": 36947117,
+    "displayName": "Димитрија Туцовића, МЗ Булбулдер, Београд (Звездара), Градска општина Звездара, Град Београд, Централна Србија, 11120, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 12,
+    "shops": 26,
+    "offices": 6,
+    "crafts": 1,
+    "transit": 4,
+    "schools": 2,
+    "parking": 3
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.805895,20.484008)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.805895,20.484008)[\"shop\"];);out count;(nwr(around:300,44.805895,20.484008)[\"office\"];);out count;(nwr(around:300,44.805895,20.484008)[\"craft\"];);out count;(node(around:300,44.805895,20.484008)[\"highway\"=\"bus_stop\"];node(around:300,44.805895,20.484008)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.805895,20.484008)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.805895,20.484008)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:27.379Z"
+  },
+  "Fruškogorska|Liman 1|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2437618,
+    "lon": 19.8486304,
+    "osmType": "way",
+    "osmId": 1548520689,
+    "displayName": "Фрушкогорска, МЗ Лиман, Лиман, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21111, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 20,
+    "shops": 55,
+    "offices": 3,
+    "crafts": 0,
+    "transit": 4,
+    "schools": 4,
+    "parking": 55
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.243762,19.848630)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.243762,19.848630)[\"shop\"];);out count;(nwr(around:300,45.243762,19.848630)[\"office\"];);out count;(nwr(around:300,45.243762,19.848630)[\"craft\"];);out count;(node(around:300,45.243762,19.848630)[\"highway\"=\"bus_stop\"];node(around:300,45.243762,19.848630)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.243762,19.848630)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.243762,19.848630)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:28.484Z"
+  },
+  "Gagarinova|Novo naselje|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2602395,
+    "lon": 19.829504,
+    "osmType": "way",
+    "osmId": 106940053,
+    "displayName": "Гагаринова, Банатић, МЗ Омалдински покрет, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21103, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 15,
+    "shops": 46,
+    "offices": 2,
+    "crafts": 1,
+    "transit": 7,
+    "schools": 3,
+    "parking": 32
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.260239,19.829504)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.260239,19.829504)[\"shop\"];);out count;(nwr(around:300,45.260239,19.829504)[\"office\"];);out count;(nwr(around:300,45.260239,19.829504)[\"craft\"];);out count;(node(around:300,45.260239,19.829504)[\"highway\"=\"bus_stop\"];node(around:300,45.260239,19.829504)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.260239,19.829504)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.260239,19.829504)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:30.031Z"
+  },
+  "Gogoljeva|Grbavica|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2470718,
+    "lon": 19.8327415,
+    "osmType": "way",
+    "osmId": 402379309,
+    "displayName": "Гогољева, Грбавица, МЗ 7. Јули, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21102, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 23,
+    "shops": 48,
+    "offices": 5,
+    "crafts": 4,
+    "transit": 1,
+    "schools": 5,
+    "parking": 48
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.247072,19.832742)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.247072,19.832742)[\"shop\"];);out count;(nwr(around:300,45.247072,19.832742)[\"office\"];);out count;(nwr(around:300,45.247072,19.832742)[\"craft\"];);out count;(node(around:300,45.247072,19.832742)[\"highway\"=\"bus_stop\"];node(around:300,45.247072,19.832742)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.247072,19.832742)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.247072,19.832742)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:30.741Z"
+  },
+  "Gospodar Jevremova|Dorćol|Beograd": {
+   "geocoded": {
+    "lat": 44.818267,
+    "lon": 20.4639572,
+    "osmType": "way",
+    "osmId": 186198188,
+    "displayName": "Господар Јевремова, Скадарлија, Дорћол, Београд (Стари град), Београд, Градска општина Стари град, Град Београд, Централна Србија, 11000, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 132,
+    "shops": 124,
+    "offices": 15,
+    "crafts": 1,
+    "transit": 7,
+    "schools": 4,
+    "parking": 8
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.818267,20.463957)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.818267,20.463957)[\"shop\"];);out count;(nwr(around:300,44.818267,20.463957)[\"office\"];);out count;(nwr(around:300,44.818267,20.463957)[\"craft\"];);out count;(node(around:300,44.818267,20.463957)[\"highway\"=\"bus_stop\"];node(around:300,44.818267,20.463957)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.818267,20.463957)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.818267,20.463957)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:31.634Z"
+  },
+  "Gospodska|Zemun|Beograd": {
+   "geocoded": {
+    "lat": 44.8460873,
+    "lon": 20.414935,
+    "osmType": "way",
+    "osmId": 24781248,
+    "displayName": "Господска, Гардош, Београд (Земун), Градска општина Земун, Град Београд, Централна Србија, 11182, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 52,
+    "shops": 42,
+    "offices": 7,
+    "crafts": 4,
+    "transit": 2,
+    "schools": 1,
+    "parking": 4
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.846087,20.414935)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.846087,20.414935)[\"shop\"];);out count;(nwr(around:300,44.846087,20.414935)[\"office\"];);out count;(nwr(around:300,44.846087,20.414935)[\"craft\"];);out count;(node(around:300,44.846087,20.414935)[\"highway\"=\"bus_stop\"];node(around:300,44.846087,20.414935)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.846087,20.414935)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.846087,20.414935)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:32.886Z"
+  },
+  "Ignjata Pavlasa|Stari grad|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2550462,
+    "lon": 19.8490909,
+    "osmType": "way",
+    "osmId": 23117962,
+    "displayName": "Игњата Павласа, Стари град, МЗ Стари град, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21101, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 82,
+    "shops": 77,
+    "offices": 30,
+    "crafts": 3,
+    "transit": 2,
+    "schools": 1,
+    "parking": 21
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.255046,19.849091)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.255046,19.849091)[\"shop\"];);out count;(nwr(around:300,45.255046,19.849091)[\"office\"];);out count;(nwr(around:300,45.255046,19.849091)[\"craft\"];);out count;(node(around:300,45.255046,19.849091)[\"highway\"=\"bus_stop\"];node(around:300,45.255046,19.849091)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.255046,19.849091)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.255046,19.849091)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:34.024Z"
+  },
+  "Ilije Ognjanovića|Liman 2|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2548781,
+    "lon": 19.8474085,
+    "osmType": "way",
+    "osmId": 1565672673,
+    "displayName": "Илије Огњановића Абуказема, Стари град, МЗ Стари град, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21101, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 101,
+    "shops": 90,
+    "offices": 34,
+    "crafts": 3,
+    "transit": 3,
+    "schools": 1,
+    "parking": 20
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.254878,19.847409)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.254878,19.847409)[\"shop\"];);out count;(nwr(around:300,45.254878,19.847409)[\"office\"];);out count;(nwr(around:300,45.254878,19.847409)[\"craft\"];);out count;(node(around:300,45.254878,19.847409)[\"highway\"=\"bus_stop\"];node(around:300,45.254878,19.847409)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.254878,19.847409)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.254878,19.847409)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:35.037Z"
+  },
+  "Ivana Milutinovića|Karaburma|Beograd": {
+   "geocoded": {
+    "lat": 44.8767047,
+    "lon": 20.464358,
+    "osmType": "way",
+    "osmId": 427088596,
+    "displayName": "Ивана Милутиновића, Центар I, Стара Борча, Борча, Градска општина Палилула, Град Београд, Централна Србија, 11000, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 2,
+    "shops": 16,
+    "offices": 0,
+    "crafts": 0,
+    "transit": 6,
+    "schools": 0,
+    "parking": 0
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.876705,20.464358)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.876705,20.464358)[\"shop\"];);out count;(nwr(around:300,44.876705,20.464358)[\"office\"];);out count;(nwr(around:300,44.876705,20.464358)[\"craft\"];);out count;(node(around:300,44.876705,20.464358)[\"highway\"=\"bus_stop\"];node(around:300,44.876705,20.464358)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.876705,20.464358)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.876705,20.464358)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:36.062Z"
+  },
+  "Ive Andrića|Telep|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2078392,
+    "lon": 19.8462186,
+    "osmType": "way",
+    "osmId": 135579403,
+    "displayName": "Иве Андрића, Чардак, МЗ Сремска Каменица, Сремска Каменица, Град Нови Сад, Јужнобачки управни округ, Војводина, 21208, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 2,
+    "shops": 0,
+    "offices": 0,
+    "crafts": 0,
+    "transit": 0,
+    "schools": 0,
+    "parking": 0
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.207839,19.846219)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.207839,19.846219)[\"shop\"];);out count;(nwr(around:300,45.207839,19.846219)[\"office\"];);out count;(nwr(around:300,45.207839,19.846219)[\"craft\"];);out count;(node(around:300,45.207839,19.846219)[\"highway\"=\"bus_stop\"];node(around:300,45.207839,19.846219)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.207839,19.846219)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.207839,19.846219)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:37.202Z"
+  },
+  "Ive Lole Ribara|Grbavica|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2551125,
+    "lon": 19.8528402,
+    "osmType": "way",
+    "osmId": 725791064,
+    "displayName": "Иве Лоле Рибара, Стари град, МЗ Стари град, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21101, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 19,
+    "shops": 17,
+    "offices": 5,
+    "crafts": 3,
+    "transit": 3,
+    "schools": 0,
+    "parking": 21
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.255113,19.852840)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.255113,19.852840)[\"shop\"];);out count;(nwr(around:300,45.255113,19.852840)[\"office\"];);out count;(nwr(around:300,45.255113,19.852840)[\"craft\"];);out count;(node(around:300,45.255113,19.852840)[\"highway\"=\"bus_stop\"];node(around:300,45.255113,19.852840)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.255113,19.852840)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.255113,19.852840)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:38.328Z"
+  },
+  "Janka Čmelika|Detelinara|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2580087,
+    "lon": 19.8130827,
+    "osmType": "way",
+    "osmId": 32563203,
+    "displayName": "Јанка Чмелика, Нова Детелинара, Детелинара, МЗ Детелинара, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21137, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 5,
+    "shops": 16,
+    "offices": 1,
+    "crafts": 1,
+    "transit": 6,
+    "schools": 1,
+    "parking": 28
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.258009,19.813083)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.258009,19.813083)[\"shop\"];);out count;(nwr(around:300,45.258009,19.813083)[\"office\"];);out count;(nwr(around:300,45.258009,19.813083)[\"craft\"];);out count;(node(around:300,45.258009,19.813083)[\"highway\"=\"bus_stop\"];node(around:300,45.258009,19.813083)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.258009,19.813083)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.258009,19.813083)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:40.097Z"
+  },
+  "Jevrejska|Stari grad|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2542024,
+    "lon": 19.8423215,
+    "osmType": "way",
+    "osmId": 43900282,
+    "displayName": "Јеврејска, МЗ Прва војвођанска бригада, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21000, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 50,
+    "shops": 78,
+    "offices": 13,
+    "crafts": 5,
+    "transit": 9,
+    "schools": 5,
+    "parking": 17
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.254202,19.842322)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.254202,19.842322)[\"shop\"];);out count;(nwr(around:300,45.254202,19.842322)[\"office\"];);out count;(nwr(around:300,45.254202,19.842322)[\"craft\"];);out count;(node(around:300,45.254202,19.842322)[\"highway\"=\"bus_stop\"];node(around:300,45.254202,19.842322)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.254202,19.842322)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.254202,19.842322)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:40.635Z"
+  },
+  "Jurija Gagarina|Novi Beograd|Beograd": {
+   "geocoded": {
+    "lat": 44.8011384,
+    "lon": 20.3745216,
+    "osmType": "way",
+    "osmId": 514821717,
+    "displayName": "Јурија Гагарина, МЗ Бежанијски блокови, Градска општина Нови Београд, Београд, Град Београд, Централна Србија, 11000, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 7,
+    "shops": 37,
+    "offices": 3,
+    "crafts": 1,
+    "transit": 8,
+    "schools": 0,
+    "parking": 4
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.801138,20.374522)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.801138,20.374522)[\"shop\"];);out count;(nwr(around:300,44.801138,20.374522)[\"office\"];);out count;(nwr(around:300,44.801138,20.374522)[\"craft\"];);out count;(node(around:300,44.801138,20.374522)[\"highway\"=\"bus_stop\"];node(around:300,44.801138,20.374522)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.801138,20.374522)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.801138,20.374522)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:41.721Z"
+  },
+  "Kalenićeva|Vračar|Beograd": {
+   "geocoded": {
+    "lat": 44.8006892,
+    "lon": 20.4766455,
+    "osmType": "way",
+    "osmId": 24415030,
+    "displayName": "Каленићева, Чубура, Београд (Врачар), Градска општина Врачар, Град Београд, Централна Србија, 11000, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 51,
+    "shops": 254,
+    "offices": 29,
+    "crafts": 14,
+    "transit": 5,
+    "schools": 2,
+    "parking": 4
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.800689,20.476646)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.800689,20.476646)[\"shop\"];);out count;(nwr(around:300,44.800689,20.476646)[\"office\"];);out count;(nwr(around:300,44.800689,20.476646)[\"craft\"];);out count;(node(around:300,44.800689,20.476646)[\"highway\"=\"bus_stop\"];node(around:300,44.800689,20.476646)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.800689,20.476646)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.800689,20.476646)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:42.819Z"
+  },
+  "Kisačka|Rotkvarija|Novi Sad": {
+   "geocoded": {
+    "lat": 45.265578,
+    "lon": 19.8358409,
+    "osmType": "way",
+    "osmId": 725787061,
+    "displayName": "Кисачка, Первазово насеље, МЗ Салајка, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21101, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 3,
+    "shops": 4,
+    "offices": 1,
+    "crafts": 0,
+    "transit": 4,
+    "schools": 1,
+    "parking": 10
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.265578,19.835841)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.265578,19.835841)[\"shop\"];);out count;(nwr(around:300,45.265578,19.835841)[\"office\"];);out count;(nwr(around:300,45.265578,19.835841)[\"craft\"];);out count;(node(around:300,45.265578,19.835841)[\"highway\"=\"bus_stop\"];node(around:300,45.265578,19.835841)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.265578,19.835841)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.265578,19.835841)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:43.883Z"
+  },
+  "Kopaonička|Adice|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2371923,
+    "lon": 19.7877485,
+    "osmType": "relation",
+    "osmId": 11607341,
+    "displayName": "Адице, МЗ Адице, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21124, Србија",
+    "precision": "district"
+   },
+   "counts": {
+    "food": 0,
+    "shops": 3,
+    "offices": 0,
+    "crafts": 0,
+    "transit": 0,
+    "schools": 0,
+    "parking": 0
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.237192,19.787748)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.237192,19.787748)[\"shop\"];);out count;(nwr(around:300,45.237192,19.787748)[\"office\"];);out count;(nwr(around:300,45.237192,19.787748)[\"craft\"];);out count;(node(around:300,45.237192,19.787748)[\"highway\"=\"bus_stop\"];node(around:300,45.237192,19.787748)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.237192,19.787748)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.237192,19.787748)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:46.198Z"
+  },
+  "Kosančićev venac|Stari grad|Beograd": {
+   "geocoded": {
+    "lat": 44.8175833,
+    "lon": 20.4508815,
+    "osmType": "way",
+    "osmId": 595233196,
+    "displayName": "Косанчићев венац, Дорћол, Београд (Стари град), Београд, Градска општина Стари град, Град Београд, Централна Србија, 11000, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 48,
+    "shops": 54,
+    "offices": 13,
+    "crafts": 1,
+    "transit": 6,
+    "schools": 4,
+    "parking": 4
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.817583,20.450882)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.817583,20.450882)[\"shop\"];);out count;(nwr(around:300,44.817583,20.450882)[\"office\"];);out count;(nwr(around:300,44.817583,20.450882)[\"craft\"];);out count;(node(around:300,44.817583,20.450882)[\"highway\"=\"bus_stop\"];node(around:300,44.817583,20.450882)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.817583,20.450882)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.817583,20.450882)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:47.120Z"
+  },
+  "Kosovska|Podbara|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2628343,
+    "lon": 19.8503556,
+    "osmType": "way",
+    "osmId": 867729513,
+    "displayName": "Косовска, Алмашки крај, Подбара, МЗ Подбара, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21101, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 11,
+    "shops": 28,
+    "offices": 6,
+    "crafts": 2,
+    "transit": 7,
+    "schools": 3,
+    "parking": 24
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.262834,19.850356)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.262834,19.850356)[\"shop\"];);out count;(nwr(around:300,45.262834,19.850356)[\"office\"];);out count;(nwr(around:300,45.262834,19.850356)[\"craft\"];);out count;(node(around:300,45.262834,19.850356)[\"highway\"=\"bus_stop\"];node(around:300,45.262834,19.850356)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.262834,19.850356)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.262834,19.850356)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:48.144Z"
+  },
+  "Kralja Petra|Stari grad|Beograd": {
+   "geocoded": {
+    "lat": 44.817959,
+    "lon": 20.4526485,
+    "osmType": "way",
+    "osmId": 43998449,
+    "displayName": "Краља Петра, Дорћол, Београд (Стари град), Београд, Градска општина Стари град, Град Београд, Централна Србија, 11000, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 84,
+    "shops": 103,
+    "offices": 13,
+    "crafts": 3,
+    "transit": 3,
+    "schools": 4,
+    "parking": 6
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.817959,20.452648)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.817959,20.452648)[\"shop\"];);out count;(nwr(around:300,44.817959,20.452648)[\"office\"];);out count;(nwr(around:300,44.817959,20.452648)[\"craft\"];);out count;(node(around:300,44.817959,20.452648)[\"highway\"=\"bus_stop\"];node(around:300,44.817959,20.452648)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.817959,20.452648)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.817959,20.452648)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:49.577Z"
+  },
+  "Kursulina|Vračar|Beograd": {
+   "geocoded": {
+    "lat": 44.8000912,
+    "lon": 20.4727829,
+    "osmType": "way",
+    "osmId": 30424275,
+    "displayName": "Курсулина, Чубура, Београд (Врачар), Градска општина Врачар, Град Београд, Централна Србија, 11000, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 76,
+    "shops": 262,
+    "offices": 64,
+    "crafts": 10,
+    "transit": 7,
+    "schools": 1,
+    "parking": 4
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.800091,20.472783)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.800091,20.472783)[\"shop\"];);out count;(nwr(around:300,44.800091,20.472783)[\"office\"];);out count;(nwr(around:300,44.800091,20.472783)[\"craft\"];);out count;(node(around:300,44.800091,20.472783)[\"highway\"=\"bus_stop\"];node(around:300,44.800091,20.472783)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.800091,20.472783)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.800091,20.472783)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:50.405Z"
+  },
+  "Laze Telečkog|Centar|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2566182,
+    "lon": 19.8456423,
+    "osmType": "way",
+    "osmId": 37184698,
+    "displayName": "Лазе Телечког, Стари град, МЗ Стари град, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21101, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 104,
+    "shops": 93,
+    "offices": 13,
+    "crafts": 1,
+    "transit": 0,
+    "schools": 5,
+    "parking": 13
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.256618,19.845642)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.256618,19.845642)[\"shop\"];);out count;(nwr(around:300,45.256618,19.845642)[\"office\"];);out count;(nwr(around:300,45.256618,19.845642)[\"craft\"];);out count;(node(around:300,45.256618,19.845642)[\"highway\"=\"bus_stop\"];node(around:300,45.256618,19.845642)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.256618,19.845642)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.256618,19.845642)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:51.523Z"
+  },
+  "Maksima Gorkog|Vračar|Beograd": {
+   "geocoded": {
+    "lat": 44.8589019,
+    "lon": 20.5277722,
+    "osmType": "way",
+    "osmId": 674284096,
+    "displayName": "Максима Горког, Бара рева, Себеш Овчански, Београд (Палилула), Градска општина Палилула, Град Београд, Централна Србија, 11060, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 0,
+    "shops": 0,
+    "offices": 0,
+    "crafts": 0,
+    "transit": 0,
+    "schools": 0,
+    "parking": 0
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.858902,20.527772)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.858902,20.527772)[\"shop\"];);out count;(nwr(around:300,44.858902,20.527772)[\"office\"];);out count;(nwr(around:300,44.858902,20.527772)[\"craft\"];);out count;(node(around:300,44.858902,20.527772)[\"highway\"=\"bus_stop\"];node(around:300,44.858902,20.527772)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.858902,20.527772)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.858902,20.527772)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:52.753Z"
+  },
+  "Marijane Gregoran|Karaburma|Beograd": {
+   "geocoded": {
+    "lat": 44.8132384,
+    "lon": 20.5067834,
+    "osmType": "way",
+    "osmId": 39596311,
+    "displayName": "Маријане Грегоран, Карабурма, МЗ Стеван Христић, Београд (Палилула), Градска општина Палилула, Град Београд, Централна Србија, 11060, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 1,
+    "shops": 12,
+    "offices": 0,
+    "crafts": 0,
+    "transit": 5,
+    "schools": 1,
+    "parking": 4
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.813238,20.506783)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.813238,20.506783)[\"shop\"];);out count;(nwr(around:300,44.813238,20.506783)[\"office\"];);out count;(nwr(around:300,44.813238,20.506783)[\"craft\"];);out count;(node(around:300,44.813238,20.506783)[\"highway\"=\"bus_stop\"];node(around:300,44.813238,20.506783)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.813238,20.506783)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.813238,20.506783)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:54.288Z"
+  },
+  "Matice srpske|Mirijevo|Beograd": {
+   "geocoded": {
+    "lat": 44.7897472,
+    "lon": 20.5241466,
+    "osmType": "way",
+    "osmId": 406659367,
+    "displayName": "Матице српске, Ново Миријево, Београд (Звездара), Градска општина Звездара, Град Београд, Централна Србија, 11050, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 3,
+    "shops": 7,
+    "offices": 1,
+    "crafts": 0,
+    "transit": 9,
+    "schools": 0,
+    "parking": 8
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.789747,20.524147)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.789747,20.524147)[\"shop\"];);out count;(nwr(around:300,44.789747,20.524147)[\"office\"];);out count;(nwr(around:300,44.789747,20.524147)[\"craft\"];);out count;(node(around:300,44.789747,20.524147)[\"highway\"=\"bus_stop\"];node(around:300,44.789747,20.524147)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.789747,20.524147)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.789747,20.524147)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:54.800Z"
+  },
+  "Mileve Marić|Telep|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2511828,
+    "lon": 19.7868617,
+    "osmType": "way",
+    "osmId": 143927073,
+    "displayName": "Милеве Марић, Шаренград, Бистрица, МЗ Бистрица, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21107, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 1,
+    "shops": 3,
+    "offices": 2,
+    "crafts": 0,
+    "transit": 1,
+    "schools": 0,
+    "parking": 18
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.251183,19.786862)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.251183,19.786862)[\"shop\"];);out count;(nwr(around:300,45.251183,19.786862)[\"office\"];);out count;(nwr(around:300,45.251183,19.786862)[\"craft\"];);out count;(node(around:300,45.251183,19.786862)[\"highway\"=\"bus_stop\"];node(around:300,45.251183,19.786862)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.251183,19.786862)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.251183,19.786862)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:56.036Z"
+  },
+  "Mirijevski bulevar|Mirijevo|Beograd": {
+   "geocoded": {
+    "lat": 44.8018965,
+    "lon": 20.5263804,
+    "osmType": "way",
+    "osmId": 677163241,
+    "displayName": "Миријевски булевар, Старо Миријево, Миријево, Београд (Звездара), Градска општина Звездара, Град Београд, Централна Србија, 11050, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 0,
+    "shops": 1,
+    "offices": 0,
+    "crafts": 0,
+    "transit": 6,
+    "schools": 1,
+    "parking": 2
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.801896,20.526380)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.801896,20.526380)[\"shop\"];);out count;(nwr(around:300,44.801896,20.526380)[\"office\"];);out count;(nwr(around:300,44.801896,20.526380)[\"craft\"];);out count;(node(around:300,44.801896,20.526380)[\"highway\"=\"bus_stop\"];node(around:300,44.801896,20.526380)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.801896,20.526380)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.801896,20.526380)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:57.073Z"
+  },
+  "Narodnog fronta|Liman 2|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2422533,
+    "lon": 19.8452734,
+    "osmType": "way",
+    "osmId": 192584750,
+    "displayName": "Народног фронта, МЗ Бошко Буха, Лиман, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21102, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 24,
+    "shops": 62,
+    "offices": 6,
+    "crafts": 0,
+    "transit": 8,
+    "schools": 3,
+    "parking": 50
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.242253,19.845273)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.242253,19.845273)[\"shop\"];);out count;(nwr(around:300,45.242253,19.845273)[\"office\"];);out count;(nwr(around:300,45.242253,19.845273)[\"craft\"];);out count;(node(around:300,45.242253,19.845273)[\"highway\"=\"bus_stop\"];node(around:300,45.242253,19.845273)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.242253,19.845273)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.242253,19.845273)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:58.040Z"
+  },
+  "Nehruova|Novi Beograd|Beograd": {
+   "geocoded": {
+    "lat": 44.7969475,
+    "lon": 20.3839357,
+    "osmType": "way",
+    "osmId": 1053996708,
+    "displayName": "Нехруова, Блок 45, МЗ Сава, Градска општина Нови Београд, Београд, Град Београд, Централна Србија, 11000, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 0,
+    "shops": 9,
+    "offices": 0,
+    "crafts": 0,
+    "transit": 4,
+    "schools": 1,
+    "parking": 1
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.796948,20.383936)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.796948,20.383936)[\"shop\"];);out count;(nwr(around:300,44.796948,20.383936)[\"office\"];);out count;(nwr(around:300,44.796948,20.383936)[\"craft\"];);out count;(node(around:300,44.796948,20.383936)[\"highway\"=\"bus_stop\"];node(around:300,44.796948,20.383936)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.796948,20.383936)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.796948,20.383936)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:41:59.305Z"
+  },
+  "Njegoševa|Vračar|Beograd": {
+   "geocoded": {
+    "lat": 44.8026913,
+    "lon": 20.4704787,
+    "osmType": "way",
+    "osmId": 1125213443,
+    "displayName": "Његошева, Крунски венац, Београд (Врачар), Градска општина Врачар, Град Београд, Централна Србија, 11000, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 48,
+    "shops": 95,
+    "offices": 26,
+    "crafts": 2,
+    "transit": 5,
+    "schools": 1,
+    "parking": 6
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.802691,20.470479)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.802691,20.470479)[\"shop\"];);out count;(nwr(around:300,44.802691,20.470479)[\"office\"];);out count;(nwr(around:300,44.802691,20.470479)[\"craft\"];);out count;(node(around:300,44.802691,20.470479)[\"highway\"=\"bus_stop\"];node(around:300,44.802691,20.470479)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.802691,20.470479)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.802691,20.470479)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:42:00.329Z"
+  },
+  "Omladinskih brigada|Novi Beograd|Beograd": {
+   "geocoded": {
+    "lat": 44.7495752,
+    "lon": 20.5746581,
+    "osmType": "way",
+    "osmId": 260671088,
+    "displayName": "Омладинских бригада, Чардак, Калуђерица, Градска општина Гроцка, Град Београд, Централна Србија, 11130, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 0,
+    "shops": 0,
+    "offices": 0,
+    "crafts": 0,
+    "transit": 0,
+    "schools": 0,
+    "parking": 0
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.749575,20.574658)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.749575,20.574658)[\"shop\"];);out count;(nwr(around:300,44.749575,20.574658)[\"office\"];);out count;(nwr(around:300,44.749575,20.574658)[\"craft\"];);out count;(node(around:300,44.749575,20.574658)[\"highway\"=\"bus_stop\"];node(around:300,44.749575,20.574658)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.749575,20.574658)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.749575,20.574658)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:42:01.354Z"
+  },
+  "Partizanska|Klisa|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2679385,
+    "lon": 19.8236461,
+    "osmType": "way",
+    "osmId": 1192845531,
+    "displayName": "Партизанска, Индустријска зона Југ, МЗ Раднички, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21000, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 1,
+    "shops": 5,
+    "offices": 0,
+    "crafts": 0,
+    "transit": 2,
+    "schools": 0,
+    "parking": 3
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.267938,19.823646)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.267938,19.823646)[\"shop\"];);out count;(nwr(around:300,45.267938,19.823646)[\"office\"];);out count;(nwr(around:300,45.267938,19.823646)[\"craft\"];);out count;(node(around:300,45.267938,19.823646)[\"highway\"=\"bus_stop\"];node(around:300,45.267938,19.823646)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.267938,19.823646)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.267938,19.823646)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:42:02.479Z"
+  },
+  "Pašićeva|Centar|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2584887,
+    "lon": 19.846017,
+    "osmType": "way",
+    "osmId": 151235446,
+    "displayName": "Николе Пашића, Алмашки крај, Стари град, МЗ Подбара, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21101, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 80,
+    "shops": 54,
+    "offices": 12,
+    "crafts": 2,
+    "transit": 0,
+    "schools": 5,
+    "parking": 10
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.258489,19.846017)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.258489,19.846017)[\"shop\"];);out count;(nwr(around:300,45.258489,19.846017)[\"office\"];);out count;(nwr(around:300,45.258489,19.846017)[\"craft\"];);out count;(node(around:300,45.258489,19.846017)[\"highway\"=\"bus_stop\"];node(around:300,45.258489,19.846017)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.258489,19.846017)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.258489,19.846017)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:42:03.617Z"
+  },
+  "Pere Velimirovića|Banovo brdo|Beograd": {
+   "geocoded": {
+    "lat": 44.7568975,
+    "lon": 20.4465051,
+    "osmType": "way",
+    "osmId": 52567031,
+    "displayName": "Пере Велимировића, Миљаковац, Београд (Раковица), Градска општина Раковица, Град Београд, Централна Србија, 11090, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 2,
+    "shops": 2,
+    "offices": 0,
+    "crafts": 0,
+    "transit": 6,
+    "schools": 0,
+    "parking": 0
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.756898,20.446505)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.756898,20.446505)[\"shop\"];);out count;(nwr(around:300,44.756898,20.446505)[\"office\"];);out count;(nwr(around:300,44.756898,20.446505)[\"craft\"];);out count;(node(around:300,44.756898,20.446505)[\"highway\"=\"bus_stop\"];node(around:300,44.756898,20.446505)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.756898,20.446505)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.756898,20.446505)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:42:04.655Z"
+  },
+  "Požeška|Banovo brdo|Beograd": {
+   "geocoded": {
+    "lat": 44.7669236,
+    "lon": 20.4129889,
+    "osmType": "way",
+    "osmId": 196715592,
+    "displayName": "Пожешка, Михајловац, Баново брдо, Београд (Чукарица), Градска општина Чукарица, Град Београд, Централна Србија, 11030, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 2,
+    "shops": 4,
+    "offices": 1,
+    "crafts": 0,
+    "transit": 6,
+    "schools": 0,
+    "parking": 9
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.766924,20.412989)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.766924,20.412989)[\"shop\"];);out count;(nwr(around:300,44.766924,20.412989)[\"office\"];);out count;(nwr(around:300,44.766924,20.412989)[\"craft\"];);out count;(node(around:300,44.766924,20.412989)[\"highway\"=\"bus_stop\"];node(around:300,44.766924,20.412989)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.766924,20.412989)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.766924,20.412989)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:42:05.757Z"
+  },
+  "Prvomajska|Zemun|Beograd": {
+   "geocoded": {
+    "lat": 44.8428508,
+    "lon": 20.3785593,
+    "osmType": "way",
+    "osmId": 194799548,
+    "displayName": "Првомајска, Нови град, Београд (Земун), Градска општина Земун, Град Београд, Централна Србија, 11080, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 9,
+    "shops": 26,
+    "offices": 5,
+    "crafts": 2,
+    "transit": 4,
+    "schools": 1,
+    "parking": 2
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.842851,20.378559)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.842851,20.378559)[\"shop\"];);out count;(nwr(around:300,44.842851,20.378559)[\"office\"];);out count;(nwr(around:300,44.842851,20.378559)[\"craft\"];);out count;(node(around:300,44.842851,20.378559)[\"highway\"=\"bus_stop\"];node(around:300,44.842851,20.378559)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.842851,20.378559)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.842851,20.378559)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:42:06.851Z"
+  },
+  "Rumenačka|Detelinara|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2652818,
+    "lon": 19.8155513,
+    "osmType": "way",
+    "osmId": 1341932024,
+    "displayName": "Руменачка, Детелинара, МЗ Раднички, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21113, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 6,
+    "shops": 11,
+    "offices": 1,
+    "crafts": 2,
+    "transit": 5,
+    "schools": 1,
+    "parking": 30
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.265282,19.815551)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.265282,19.815551)[\"shop\"];);out count;(nwr(around:300,45.265282,19.815551)[\"office\"];);out count;(nwr(around:300,45.265282,19.815551)[\"craft\"];);out count;(node(around:300,45.265282,19.815551)[\"highway\"=\"bus_stop\"];node(around:300,45.265282,19.815551)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.265282,19.815551)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.265282,19.815551)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:42:08.009Z"
+  },
+  "Seljačkih buna|Novo naselje|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2531068,
+    "lon": 19.79272,
+    "osmType": "way",
+    "osmId": 1280828743,
+    "displayName": "Сељачких буна, Шаренград, Бистрица, МЗ Бистрица, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21137, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 1,
+    "shops": 9,
+    "offices": 3,
+    "crafts": 0,
+    "transit": 4,
+    "schools": 1,
+    "parking": 23
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.253107,19.792720)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.253107,19.792720)[\"shop\"];);out count;(nwr(around:300,45.253107,19.792720)[\"office\"];);out count;(nwr(around:300,45.253107,19.792720)[\"craft\"];);out count;(node(around:300,45.253107,19.792720)[\"highway\"=\"bus_stop\"];node(around:300,45.253107,19.792720)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.253107,19.792720)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.253107,19.792720)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:42:09.136Z"
+  },
+  "Seljačkih buna|Satelit|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2531068,
+    "lon": 19.79272,
+    "osmType": "way",
+    "osmId": 1280828743,
+    "displayName": "Сељачких буна, Шаренград, Бистрица, МЗ Бистрица, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21137, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 1,
+    "shops": 9,
+    "offices": 3,
+    "crafts": 0,
+    "transit": 4,
+    "schools": 1,
+    "parking": 23
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.253107,19.792720)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.253107,19.792720)[\"shop\"];);out count;(nwr(around:300,45.253107,19.792720)[\"office\"];);out count;(nwr(around:300,45.253107,19.792720)[\"craft\"];);out count;(node(around:300,45.253107,19.792720)[\"highway\"=\"bus_stop\"];node(around:300,45.253107,19.792720)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.253107,19.792720)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.253107,19.792720)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:42:10.160Z"
+  },
+  "Starine Novaka|Palilula|Beograd": {
+   "geocoded": {
+    "lat": 44.8094763,
+    "lon": 20.4751371,
+    "osmType": "way",
+    "osmId": 521052116,
+    "displayName": "Старине Новака, МЗ Ташмајдан, Београд (Палилула), Градска општина Палилула, Град Београд, Централна Србија, 11060, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 39,
+    "shops": 68,
+    "offices": 8,
+    "crafts": 0,
+    "transit": 7,
+    "schools": 7,
+    "parking": 6
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.809476,20.475137)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.809476,20.475137)[\"shop\"];);out count;(nwr(around:300,44.809476,20.475137)[\"office\"];);out count;(nwr(around:300,44.809476,20.475137)[\"craft\"];);out count;(node(around:300,44.809476,20.475137)[\"highway\"=\"bus_stop\"];node(around:300,44.809476,20.475137)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.809476,20.475137)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.809476,20.475137)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:42:20.685Z"
+  },
+  "Strahinjića bana|Dorćol|Beograd": {
+   "geocoded": {
+    "lat": 44.8246899,
+    "lon": 20.4557715,
+    "osmType": "way",
+    "osmId": 1114907639,
+    "displayName": "Страхињића Бана, Дорћол, Београд (Стари град), Београд, Градска општина Стари град, Град Београд, Централна Србија, 11000, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 36,
+    "shops": 30,
+    "offices": 7,
+    "crafts": 0,
+    "transit": 6,
+    "schools": 5,
+    "parking": 16
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.824690,20.455772)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.824690,20.455772)[\"shop\"];);out count;(nwr(around:300,44.824690,20.455772)[\"office\"];);out count;(nwr(around:300,44.824690,20.455772)[\"craft\"];);out count;(node(around:300,44.824690,20.455772)[\"highway\"=\"bus_stop\"];node(around:300,44.824690,20.455772)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.824690,20.455772)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.824690,20.455772)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:42:28.080Z"
+  },
+  "Svetozara Miletića|Stari grad|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2567206,
+    "lon": 19.846756,
+    "osmType": "way",
+    "osmId": 23116914,
+    "displayName": "Светозара Милетића, Стари град, МЗ Стари град, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21111, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 120,
+    "shops": 102,
+    "offices": 15,
+    "crafts": 5,
+    "transit": 0,
+    "schools": 5,
+    "parking": 18
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.256721,19.846756)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.256721,19.846756)[\"shop\"];);out count;(nwr(around:300,45.256721,19.846756)[\"office\"];);out count;(nwr(around:300,45.256721,19.846756)[\"craft\"];);out count;(node(around:300,45.256721,19.846756)[\"highway\"=\"bus_stop\"];node(around:300,45.256721,19.846756)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.256721,19.846756)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.256721,19.846756)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:42:34.840Z"
+  },
+  "Temerinska|Rotkvarija|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2753715,
+    "lon": 19.839709,
+    "osmType": "way",
+    "osmId": 1391863644,
+    "displayName": "Темеринска, Салајка, МЗ Салајка, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21138, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 0,
+    "shops": 3,
+    "offices": 0,
+    "crafts": 0,
+    "transit": 1,
+    "schools": 1,
+    "parking": 1
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.275371,19.839709)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.275371,19.839709)[\"shop\"];);out count;(nwr(around:300,45.275371,19.839709)[\"office\"];);out count;(nwr(around:300,45.275371,19.839709)[\"craft\"];);out count;(node(around:300,45.275371,19.839709)[\"highway\"=\"bus_stop\"];node(around:300,45.275371,19.839709)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.275371,19.839709)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.275371,19.839709)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:42:44.274Z"
+  },
+  "Trgovačka|Banovo brdo|Beograd": {
+   "geocoded": {
+    "lat": 44.7571947,
+    "lon": 20.4150796,
+    "osmType": "way",
+    "osmId": 196715512,
+    "displayName": "Трговачка, Жарково, Београд (Чукарица), Градска општина Чукарица, Град Београд, Централна Србија, 11147, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 5,
+    "shops": 19,
+    "offices": 0,
+    "crafts": 0,
+    "transit": 4,
+    "schools": 1,
+    "parking": 9
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.757195,20.415080)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.757195,20.415080)[\"shop\"];);out count;(nwr(around:300,44.757195,20.415080)[\"office\"];);out count;(nwr(around:300,44.757195,20.415080)[\"craft\"];);out count;(node(around:300,44.757195,20.415080)[\"highway\"=\"bus_stop\"];node(around:300,44.757195,20.415080)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.757195,20.415080)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.757195,20.415080)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:43:04.113Z"
+  },
+  "Ugrinovačka|Zemun|Beograd": {
+   "geocoded": {
+    "lat": 44.8499818,
+    "lon": 20.3861522,
+    "osmType": "way",
+    "osmId": 676832328,
+    "displayName": "Угриновачка, Сутјеска, Београд (Земун), Градска општина Земун, Град Београд, Централна Србија, 11080, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 7,
+    "shops": 39,
+    "offices": 2,
+    "crafts": 3,
+    "transit": 6,
+    "schools": 1,
+    "parking": 12
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.849982,20.386152)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.849982,20.386152)[\"shop\"];);out count;(nwr(around:300,44.849982,20.386152)[\"office\"];);out count;(nwr(around:300,44.849982,20.386152)[\"craft\"];);out count;(node(around:300,44.849982,20.386152)[\"highway\"=\"bus_stop\"];node(around:300,44.849982,20.386152)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.849982,20.386152)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.849982,20.386152)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:43:09.450Z"
+  },
+  "Ustanička|Voždovac|Beograd": {
+   "geocoded": {
+    "lat": 44.7824529,
+    "lon": 20.5094351,
+    "osmType": "way",
+    "osmId": 1118157548,
+    "displayName": "Устаничка, Коњарник, МЗ Војвода Путник, Београд (Звездара), Градска општина Звездара, Град Београд, Централна Србија, 11050, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 7,
+    "shops": 43,
+    "offices": 2,
+    "crafts": 0,
+    "transit": 7,
+    "schools": 1,
+    "parking": 13
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.782453,20.509435)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.782453,20.509435)[\"shop\"];);out count;(nwr(around:300,44.782453,20.509435)[\"office\"];);out count;(nwr(around:300,44.782453,20.509435)[\"craft\"];);out count;(node(around:300,44.782453,20.509435)[\"highway\"=\"bus_stop\"];node(around:300,44.782453,20.509435)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.782453,20.509435)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.782453,20.509435)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:43:21.532Z"
+  },
+  "Vere Pavlović|Satelit|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2450325,
+    "lon": 19.8372321,
+    "osmType": "way",
+    "osmId": 145057878,
+    "displayName": "Вере Павловић, Грбавица, МЗ Вера Павловић, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21102, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 17,
+    "shops": 32,
+    "offices": 3,
+    "crafts": 4,
+    "transit": 2,
+    "schools": 1,
+    "parking": 34
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.245033,19.837232)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.245033,19.837232)[\"shop\"];);out count;(nwr(around:300,45.245033,19.837232)[\"office\"];);out count;(nwr(around:300,45.245033,19.837232)[\"craft\"];);out count;(node(around:300,45.245033,19.837232)[\"highway\"=\"bus_stop\"];node(around:300,45.245033,19.837232)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.245033,19.837232)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.245033,19.837232)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:43:32.910Z"
+  },
+  "Vitezova Karađorđeve zvezde|Mirijevo|Beograd": {
+   "geocoded": {
+    "lat": 44.791601,
+    "lon": 20.5222169,
+    "osmType": "way",
+    "osmId": 406806080,
+    "displayName": "Витезова Карађорђеве звезде, Ћуртово брдо, Миријево, Београд (Звездара), Градска општина Звездара, Град Београд, Централна Србија, 11050, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 1,
+    "shops": 9,
+    "offices": 0,
+    "crafts": 0,
+    "transit": 6,
+    "schools": 0,
+    "parking": 1
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.791601,20.522217)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.791601,20.522217)[\"shop\"];);out count;(nwr(around:300,44.791601,20.522217)[\"office\"];);out count;(nwr(around:300,44.791601,20.522217)[\"craft\"];);out count;(node(around:300,44.791601,20.522217)[\"highway\"=\"bus_stop\"];node(around:300,44.791601,20.522217)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.791601,20.522217)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.791601,20.522217)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:43:41.294Z"
+  },
+  "Vojvode Stepe|Voždovac|Beograd": {
+   "geocoded": {
+    "lat": 44.7499323,
+    "lon": 20.4950336,
+    "osmType": "way",
+    "osmId": 672325734,
+    "displayName": "Војводе Степе, Кумодраж 2, Кумодраж, Београд (Вождовац), Градска општина Вождовац, Град Београд, Централна Србија, 11040, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 1,
+    "shops": 3,
+    "offices": 1,
+    "crafts": 0,
+    "transit": 3,
+    "schools": 2,
+    "parking": 10
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.749932,20.495034)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.749932,20.495034)[\"shop\"];);out count;(nwr(around:300,44.749932,20.495034)[\"office\"];);out count;(nwr(around:300,44.749932,20.495034)[\"craft\"];);out count;(node(around:300,44.749932,20.495034)[\"highway\"=\"bus_stop\"];node(around:300,44.749932,20.495034)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.749932,20.495034)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.749932,20.495034)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:43:50.881Z"
+  },
+  "Zmaj Jovina|Centar|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2560666,
+    "lon": 19.846864,
+    "osmType": "way",
+    "osmId": 23126573,
+    "displayName": "Змај Јовина, Стари град, МЗ Стари град, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21101, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 119,
+    "shops": 100,
+    "offices": 17,
+    "crafts": 4,
+    "transit": 0,
+    "schools": 1,
+    "parking": 20
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.256067,19.846864)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.256067,19.846864)[\"shop\"];);out count;(nwr(around:300,45.256067,19.846864)[\"office\"];);out count;(nwr(around:300,45.256067,19.846864)[\"craft\"];);out count;(node(around:300,45.256067,19.846864)[\"highway\"=\"bus_stop\"];node(around:300,45.256067,19.846864)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.256067,19.846864)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.256067,19.846864)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:43:56.759Z"
+  },
+  "Ćirpanova|Liman 1|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2525953,
+    "lon": 19.8329895,
+    "osmType": "way",
+    "osmId": 8096320,
+    "displayName": "Ћирпанова, МЗ Народни хероји, Сајмиште, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21101, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 20,
+    "shops": 46,
+    "offices": 3,
+    "crafts": 0,
+    "transit": 5,
+    "schools": 5,
+    "parking": 28
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.252595,19.832990)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.252595,19.832990)[\"shop\"];);out count;(nwr(around:300,45.252595,19.832990)[\"office\"];);out count;(nwr(around:300,45.252595,19.832990)[\"craft\"];);out count;(node(around:300,45.252595,19.832990)[\"highway\"=\"bus_stop\"];node(around:300,45.252595,19.832990)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.252595,19.832990)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.252595,19.832990)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:44:03.620Z"
+  },
+  "Čika Ljubina|Stari grad|Beograd": {
+   "geocoded": {
+    "lat": 44.817314,
+    "lon": 20.4585398,
+    "osmType": "way",
+    "osmId": 567945750,
+    "displayName": "Чика Љубина, Скадарлија, Дорћол, Београд (Стари град), Београд, Градска општина Стари град, Град Београд, Централна Србија, 11000, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 118,
+    "shops": 219,
+    "offices": 26,
+    "crafts": 5,
+    "transit": 15,
+    "schools": 13,
+    "parking": 3
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,44.817314,20.458540)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,44.817314,20.458540)[\"shop\"];);out count;(nwr(around:300,44.817314,20.458540)[\"office\"];);out count;(nwr(around:300,44.817314,20.458540)[\"craft\"];);out count;(node(around:300,44.817314,20.458540)[\"highway\"=\"bus_stop\"];node(around:300,44.817314,20.458540)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,44.817314,20.458540)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,44.817314,20.458540)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:44:18.332Z"
+  },
+  "Đorđa Rajkovića|Podbara|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2666102,
+    "lon": 19.84785,
+    "osmType": "way",
+    "osmId": 723410669,
+    "displayName": "Ђорђа Рајковића, Подбара, МЗ Подбара, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21101, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 0,
+    "shops": 15,
+    "offices": 0,
+    "crafts": 1,
+    "transit": 2,
+    "schools": 1,
+    "parking": 4
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.266610,19.847850)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.266610,19.847850)[\"shop\"];);out count;(nwr(around:300,45.266610,19.847850)[\"office\"];);out count;(nwr(around:300,45.266610,19.847850)[\"craft\"];);out count;(node(around:300,45.266610,19.847850)[\"highway\"=\"bus_stop\"];node(around:300,45.266610,19.847850)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.266610,19.847850)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.266610,19.847850)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:44:27.340Z"
+  },
+  "Šekspirova|Grbavica|Novi Sad": {
+   "geocoded": {
+    "lat": 45.2394551,
+    "lon": 19.83833,
+    "osmType": "way",
+    "osmId": 1282370247,
+    "displayName": "Шекспирова, МЗ Лиман 3, Лиман, Нови Сад, Град Нови Сад, Јужнобачки управни округ, Војводина, 21102, Србија",
+    "precision": "street"
+   },
+   "counts": {
+    "food": 6,
+    "shops": 17,
+    "offices": 6,
+    "crafts": 1,
+    "transit": 3,
+    "schools": 1,
+    "parking": 35
+   },
+   "query": "[out:json][timeout:25];(nwr(around:300,45.239455,19.838330)[\"amenity\"~\"^(cafe|restaurant|fast_food|bar|pub|ice_cream)$\"];);out count;(nwr(around:300,45.239455,19.838330)[\"shop\"];);out count;(nwr(around:300,45.239455,19.838330)[\"office\"];);out count;(nwr(around:300,45.239455,19.838330)[\"craft\"];);out count;(node(around:300,45.239455,19.838330)[\"highway\"=\"bus_stop\"];node(around:300,45.239455,19.838330)[\"railway\"=\"tram_stop\"];);out count;(nwr(around:300,45.239455,19.838330)[\"amenity\"~\"^(school|college|university)$\"];);out count;(nwr(around:300,45.239455,19.838330)[\"amenity\"=\"parking\"];);out count;",
+   "fetchedAt": "2026-11-27T09:44:35.050Z"
+  }
+ },
+ "listings": {
+  "listing-ns001": "Ignjata Pavlasa|Stari grad|Novi Sad",
+  "listing-ns002": "Laze Telečkog|Centar|Novi Sad",
+  "listing-ns003": "Narodnog fronta|Liman 2|Novi Sad",
+  "listing-ns004": "Gagarinova|Novo naselje|Novi Sad",
+  "listing-ns005": "Ilije Ognjanovića|Liman 2|Novi Sad",
+  "listing-ns006": "Zmaj Jovina|Centar|Novi Sad",
+  "listing-ns007": "Pašićeva|Centar|Novi Sad",
+  "listing-ns008": "Ćirpanova|Liman 1|Novi Sad",
+  "listing-ns009": "Kopaonička|Adice|Novi Sad",
+  "listing-ns010": "Temerinska|Rotkvarija|Novi Sad",
+  "listing-ns011": "Vere Pavlović|Satelit|Novi Sad",
+  "listing-ns012": "Seljačkih buna|Novo naselje|Novi Sad",
+  "listing-ns013": "Ignjata Pavlasa|Stari grad|Novi Sad",
+  "listing-ns014": "Mileve Marić|Telep|Novi Sad",
+  "listing-ns015": "Ilije Ognjanovića|Liman 2|Novi Sad",
+  "listing-ns016": "Ive Lole Ribara|Grbavica|Novi Sad",
+  "listing-ns017": "Cara Dušana|Adice|Novi Sad",
+  "listing-ns018": "Ignjata Pavlasa|Stari grad|Novi Sad",
+  "listing-ns019": "Svetozara Miletića|Stari grad|Novi Sad",
+  "listing-ns020": "Fruškogorska|Liman 1|Novi Sad",
+  "listing-ns021": "Bulevar Slobodana Jovanovića|Novo naselje|Novi Sad",
+  "listing-ns022": "Ive Andrića|Telep|Novi Sad",
+  "listing-ns023": "Janka Čmelika|Detelinara|Novi Sad",
+  "listing-ns024": "Rumenačka|Detelinara|Novi Sad",
+  "listing-ns025": "Jevrejska|Stari grad|Novi Sad",
+  "listing-ns026": "Janka Čmelika|Detelinara|Novi Sad",
+  "listing-ns027": "Partizanska|Klisa|Novi Sad",
+  "listing-ns028": "Gogoljeva|Grbavica|Novi Sad",
+  "listing-ns029": "Kosovska|Podbara|Novi Sad",
+  "listing-ns030": "Narodnog fronta|Liman 2|Novi Sad",
+  "listing-ns031": "Ćirpanova|Liman 1|Novi Sad",
+  "listing-ns032": "Ive Lole Ribara|Grbavica|Novi Sad",
+  "listing-ns033": "Ćirpanova|Liman 1|Novi Sad",
+  "listing-ns034": "Ignjata Pavlasa|Stari grad|Novi Sad",
+  "listing-ns035": "Rumenačka|Detelinara|Novi Sad",
+  "listing-ns036": "Seljačkih buna|Novo naselje|Novi Sad",
+  "listing-ns037": "Jevrejska|Stari grad|Novi Sad",
+  "listing-ns038": "Kisačka|Rotkvarija|Novi Sad",
+  "listing-ns039": "Svetozara Miletića|Stari grad|Novi Sad",
+  "listing-ns040": "Kopaonička|Adice|Novi Sad",
+  "listing-ns041": "Đorđa Rajkovića|Podbara|Novi Sad",
+  "listing-ns042": "Mileve Marić|Telep|Novi Sad",
+  "listing-ns043": "Jevrejska|Stari grad|Novi Sad",
+  "listing-ns044": "Fruškogorska|Liman 1|Novi Sad",
+  "listing-ns045": "Fruškogorska|Liman 1|Novi Sad",
+  "listing-ns046": "Laze Telečkog|Centar|Novi Sad",
+  "listing-ns047": "Janka Čmelika|Detelinara|Novi Sad",
+  "listing-ns048": "Seljačkih buna|Satelit|Novi Sad",
+  "listing-ns049": "Ćirpanova|Liman 1|Novi Sad",
+  "listing-ns050": "Šekspirova|Grbavica|Novi Sad",
+  "listing-bg001": "Pere Velimirovića|Banovo brdo|Beograd",
+  "listing-bg002": "Trgovačka|Banovo brdo|Beograd",
+  "listing-bg003": "Ustanička|Voždovac|Beograd",
+  "listing-bg004": "Vojvode Stepe|Voždovac|Beograd",
+  "listing-bg005": "Kosančićev venac|Stari grad|Beograd",
+  "listing-bg006": "Kralja Petra|Stari grad|Beograd",
+  "listing-bg007": "Njegoševa|Vračar|Beograd",
+  "listing-bg008": "Vitezova Karađorđeve zvezde|Mirijevo|Beograd",
+  "listing-bg009": "Vitezova Karađorđeve zvezde|Mirijevo|Beograd",
+  "listing-bg010": "Nehruova|Novi Beograd|Beograd",
+  "listing-bg011": "Trgovačka|Banovo brdo|Beograd",
+  "listing-bg012": "Čika Ljubina|Stari grad|Beograd",
+  "listing-bg013": "Bulevar Mihajla Pupina|Novi Beograd|Beograd",
+  "listing-bg014": "Požeška|Banovo brdo|Beograd",
+  "listing-bg015": "Trgovačka|Banovo brdo|Beograd",
+  "listing-bg016": "Starine Novaka|Palilula|Beograd",
+  "listing-bg017": "Strahinjića bana|Dorćol|Beograd",
+  "listing-bg018": "Gospodska|Zemun|Beograd",
+  "listing-bg019": "Jurija Gagarina|Novi Beograd|Beograd",
+  "listing-bg020": "Dimitrija Tucovića|Zvezdara|Beograd",
+  "listing-bg021": "Gospodska|Zemun|Beograd",
+  "listing-bg022": "Čika Ljubina|Stari grad|Beograd",
+  "listing-bg023": "Ivana Milutinovića|Karaburma|Beograd",
+  "listing-bg024": "Jurija Gagarina|Novi Beograd|Beograd",
+  "listing-bg025": "Požeška|Banovo brdo|Beograd",
+  "listing-bg026": "Mirijevski bulevar|Mirijevo|Beograd",
+  "listing-bg027": "Omladinskih brigada|Novi Beograd|Beograd",
+  "listing-bg028": "Kursulina|Vračar|Beograd",
+  "listing-bg029": "Vitezova Karađorđeve zvezde|Mirijevo|Beograd",
+  "listing-bg030": "Ustanička|Voždovac|Beograd",
+  "listing-bg031": "Marijane Gregoran|Karaburma|Beograd",
+  "listing-bg032": "Matice srpske|Mirijevo|Beograd",
+  "listing-bg033": "Mirijevski bulevar|Mirijevo|Beograd",
+  "listing-bg034": "Kosančićev venac|Stari grad|Beograd",
+  "listing-bg035": "Braće Jerković|Voždovac|Beograd",
+  "listing-bg036": "Vitezova Karađorđeve zvezde|Mirijevo|Beograd",
+  "listing-bg037": "Jurija Gagarina|Novi Beograd|Beograd",
+  "listing-bg038": "Prvomajska|Zemun|Beograd",
+  "listing-bg039": "Ugrinovačka|Zemun|Beograd",
+  "listing-bg040": "Kralja Petra|Stari grad|Beograd",
+  "listing-bg041": "Marijane Gregoran|Karaburma|Beograd",
+  "listing-bg042": "Gospodar Jevremova|Dorćol|Beograd",
+  "listing-bg043": "Ugrinovačka|Zemun|Beograd",
+  "listing-bg044": "Kralja Petra|Stari grad|Beograd",
+  "listing-bg045": "Kalenićeva|Vračar|Beograd",
+  "listing-bg046": "Nehruova|Novi Beograd|Beograd",
+  "listing-bg047": "Maksima Gorkog|Vračar|Beograd",
+  "listing-bg048": "Bulevar kralja Aleksandra|Zvezdara|Beograd",
+  "listing-bg049": "Jurija Gagarina|Novi Beograd|Beograd",
+  "listing-bg050": "Pere Velimirovića|Banovo brdo|Beograd"
+ }
+}

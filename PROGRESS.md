@@ -65,6 +65,8 @@ pass, with a PROGRESS entry; if a phase fails, revert it)
   requests that are not in the recordings. Fix: after the fixture exists, `npm run record:demo` (about $0.30,
   needs ANTHROPIC_API_KEY), then run all tests. Typecheck is clean for phase 1 alone.
 
+**Update (27 Nov): the OSM fixture `fixtures/osm/seed-areas.json` is now COMPLETE (59 of 59 seed addresses, all 100 listings; the resumable `scripts/fetch-osm.ts` reused the 44 logged counts and fetched the last 15), and `tests/location.test.ts` passes 10 of 10 including the fixture coverage test; the recorded-demo test still fails until `npm run record:demo` after phase 2.**
+
 **Phase 2: files written, NOT wired, does not compile yet.**
 - `src/domain/premises.ts` (PREMISES_FIELDS with quotes, buildPremises, evaluatePremises per business type, soft
   concerns only, score range low/high, PREMISES_CONCERN_RULES), `src/application/agents/premises-inspector.ts`
