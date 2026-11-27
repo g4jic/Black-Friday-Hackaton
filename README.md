@@ -11,7 +11,7 @@ in code stops the agents still working on a deal breaker, and every number on th
 
 - Demo video: **[link coming]** (2-3 min)
 - Live deployment: **[link coming]**
-- Mozaik Cloud trace of a run: **[link coming]**
+- Mozaik Cloud: [screenshot of a live run](#how-the-agents-run-concurrently) (the Cloud project is private)
 
 ## Contents
 - [The problem](#the-problem)
@@ -184,12 +184,18 @@ number of loops in parallel. The three recorded scenarios, replayed without a ke
 
 ![Timeline: one lane per agent loop, calculator calls, loops cut by a hard flag](design/screenshots/timeline.png)
 
-Each run also appears in Mozaik Cloud, one session per agent loop (the 3 recordings gave 42 loop sessions). The core
-sends every loop event once the machine is paired with `npx @mozaik-ai/cloud-sdk pair`; without pairing it prints
-"telemetry disabled" and runs normally:
+Each run also appears in Mozaik Cloud, one session per agent loop. The core sends every loop event when it finds a
+key (`MOZAIK_API_KEY` in `.env`, or a machine paired once with `npx @mozaik-ai/cloud-sdk pair`); without one it
+prints "telemetry disabled" and runs normally. One live run of the cafe scenario (27 Nov 2026, claude-haiku-4-5,
+22.7 s, about $0.06) in our Cloud project:
 
-<!-- MOZAIK CLOUD: add design/screenshots/mozaik-cloud.png and the shared run link here -->
-- Mozaik Cloud trace: **[link coming]**
+![Mozaik Cloud: Finance analyst 9 loops (21 inferences, 14 tool calls), Lease reader 4 loops, Report writer 1 loop](design/screenshots/mozaik-cloud.png)
+
+- **Finance analyst, 9 loops**: one per candidate (8), plus one retry after code rejected an explanation. Two of
+  them were cut by a hard flag before their first model call. 21 inferences, 14 calculator calls.
+- **Lease reader, 4 loops**: one per lease draft (3), plus one retry after code rejected an extraction.
+- **Report writer, 1 loop**: the audit passed the first draft (14 claims checked, 0 corrected, 0 removed).
+- Ranker, Auditor and the catalogue match are plain code, so they have no loops in Cloud.
 
 Mechanisms, with the file that implements each:
 
@@ -290,7 +296,8 @@ npm test
 ```powershell
 npm run typecheck
 ```
-178 tests in 24 files, no key needed: every domain rule and invariant (with the violation it rejects), the schema
+180 tests in 25 files, no key and no network needed (`tests/setup.ts` turns Mozaik Cloud off and blocks any request
+to another host): every domain rule and invariant (with the violation it rejects), the schema
 rules for every structured output, cancellation mid-run, a failing agent that does not stop the others, the server
 and its cost guards, the three recorded scenarios replayed end to end to an audited report, and the frozen seed.
 
