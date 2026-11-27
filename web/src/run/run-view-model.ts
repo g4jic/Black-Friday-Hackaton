@@ -1,4 +1,4 @@
-import { candidateShortName } from "../candidate-label"
+import { candidateShortName, withCandidateNames } from "../candidate-label"
 import type { ResearchState } from "../research-state"
 
 /**
@@ -117,6 +117,11 @@ export function candidateLabel(s: ResearchState, candidateId: string): string {
   const index = [...new Set([...s.submitted, ...s.order])].indexOf(candidateId)
   if (index < 0) return candidateId
   return candidateShortName(s.candidates[candidateId], index + 1)
+}
+
+/** A text for the screen (a report sentence, a fact) with the candidates of this research named, not numbered by id. */
+export function namedText(s: ResearchState, text: string): string {
+  return withCandidateNames(text, (id) => (s.candidates[id] ? candidateLabel(s, id) : null))
 }
 
 /** The one-line live status in the centre, from the latest event that says what is happening. */

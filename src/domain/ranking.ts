@@ -6,6 +6,7 @@ import { isMissingData, type MissingData } from "./missing.js"
 import type { Money } from "./money.js"
 import type { BusinessProfile } from "./profile.js"
 import { calc, validateSource, type SourceRef, type Sourced } from "./source.js"
+import { verdictFor, type Verdict } from "./verdict.js"
 
 /**
  * The Ranker's rules: plain code, no model. Shown to the user on the Assumptions screen (served from this object, so
@@ -42,7 +43,8 @@ export const RANKING_ASSUMPTIONS = {
   missingDataDetail: "A part without data gives a score range: the low end counts it as 0, the high end as full. The rank uses the low end; the confidence says how much is unknown.",
   confidence: { high: "no key input missing", medium: "one key input missing (area or verified lease terms; terms only from the listing form count as not verified) or an unverified field", low: "the rent is missing, or two or more key inputs are missing" },
   order: [
-    "Candidates with a stated rent, by the low end of their score (worst case)",
+    "First by verdict: Good, then Check before signing, then Not recommended, so the best option never has a weaker verdict than another candidate",
+    "Inside a verdict: candidates with a stated rent, by the low end of their score (worst case)",
     "Then candidates without a stated rent: they can never rank first",
     "Ties: higher confidence first, then candidate id",
   ],
@@ -245,10 +247,16 @@ export function scoreCandidate(input: RankingInput): CandidateScore {
 }
 
 const CONFIDENCE_ORDER: Record<Confidence, number> = { high: 0, medium: 1, low: 2 }
+const VERDICT_ORDER: Record<Verdict, number> = { good: 0, check_before_signing: 1, not_recommended: 2 }
 
-/** Orders the scored candidates: tier (no rent last), then the low end of the score (worst case), then confidence, then id. */
+/**
+ * Orders the scored candidates: the verdict first (Good, then Check before signing, then Not recommended), so the
+ * first place never has a weaker verdict than another candidate; inside a verdict: tier (no rent last), the low end of
+ * the score (worst case), confidence, then id.
+ */
 export function rankCandidates(scores: readonly CandidateScore[]): RankedCandidate[] {
+  const verdictRank = (s: CandidateScore) => VERDICT_ORDER[verdictFor(s, false).verdict]
   return [...scores]
-    .sort((a, b) => a.tier - b.tier || b.score - a.score || CONFIDENCE_ORDER[a.confidence] - CONFIDENCE_ORDER[b.confidence] || a.candidateId.localeCompare(b.candidateId))
+    .sort((a, b) => verdictRank(a) - verdictRank(b) || a.tier - b.tier || b.score - a.score || CONFIDENCE_ORDER[a.confidence] - CONFIDENCE_ORDER[b.confidence] || a.candidateId.localeCompare(b.candidateId))
     .map((s, i) => Object.freeze({ ...s, rank: i + 1 }))
 }

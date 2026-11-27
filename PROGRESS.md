@@ -3,6 +3,29 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
+## 27 Nov 2026, morning (Aleksa + Claude): README, auditor ids, rank by verdict, re-recorded demos
+- **README written** (scored): pitch, hero, keyless quick start, live and Supabase, concurrency table + Mermaid +
+  recorded metrics, care with financial data, P4 table, real/recorded/scripted, limits, troubleshooting, credits.
+  Placeholders left: demo video link, live deployment link, Mozaik Cloud screenshot
+  (`design/screenshots/mozaik-cloud.png`) and its link. Fresh-clone test (no .env): npm install, npm run dev, Find
+  spaces, all 3 scenarios work the first time; npm ci also works.
+- **Auditor fix** (`src/domain/report.ts`): digits inside the EXACT id of a known candidate (any letter case,
+  "Listing-ns020") are not read as numbers; every other number is checked as before (tests in `report.test.ts`).
+  Before the fix the recorded cafe report lost 5 of 11 sentences, all three recommendations included.
+- **Rank by verdict first** (`src/domain/ranking.ts`): Good, then Check before signing, then Not recommended; inside
+  a verdict the low end of the score. The web list follows the rank from the Ranker (it used to re-sort by score), so
+  the best option never has a weaker verdict than another candidate. Assumptions screen and README updated.
+- **Re-recorded the 3 demo scenarios** (needed: the rank facts changed the Report writer requests): cafe 23, office
+  27, shop 21 model calls; every report passes the audit on the first draft with 0 removed (the test now requires it).
+- **The UI shows candidate names, not ids**, in the Report tab and the Timeline (`withCandidateNames` in
+  `web/src/candidate-label.ts`); the report and the audit keep the real ids. Hard flag labels in the Timeline stack
+  in rows. Source hovers still show the listing id as the source reference.
+- **Mozaik Cloud paired** on the machine of Aleksa (project "default"); every agent loop is its own Cloud session (42
+  for the 3 recordings). Supabase checked with the real keys: listings from the database, contacts refused to anon; a
+  temporary account signed up, saved a space, saw it in My spaces, signed out and in, and was deleted with its row
+  (the view counter of listing-ns032 went up by our visits).
+- Tests: 24 files, 178 tests pass; typecheck clean.
+
 ## HANDOFF (27 Nov 2026, after midnight, Andrej's second night shift): READ THIS FIRST
 Whoever continues starts a new session without this context. Read this section, then CLAUDE.md. The sections below
 (P4 table, the earlier 27 Nov handoff, the 26 Nov handoff) are still true unless this one says otherwise.

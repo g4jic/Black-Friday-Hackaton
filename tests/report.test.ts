@@ -99,4 +99,31 @@ describe("Report writer + Auditor (keyless)", () => {
     expect(messages).toContain("recommendation: recommends listing-07, which was rejected by a hard flag")
     expect(messages).toContain("unknowns: states a number or names a candidate without citing a fact")
   })
+
+  describe("digits inside a candidate id", () => {
+    const facts = [createFact({ id: "F1", kind: "figure", candidateId: "listing-ns020", text: "listing-ns020 has 77 m2 at 920 EUR per month.", source: { kind: "profile", ref: "questionnaire", field: "monthlyBudget" } })]
+    const audit = (text: string) => {
+      const draft: ReportDraft = { recommended: ["listing-ns020"], recommendation: [{ text, facts: ["F1"] }], checkBeforeSigning: [], rejected: [], unknowns: [] }
+      return auditReport(draft, facts, ["listing-ns020"], ["listing-ns024"]).problems.map((p) => p.message)
+    }
+
+    it("the exact id of a known candidate passes, in any letter case", () => {
+      expect(audit("Listing-ns020 offers 77 m² at 920 EUR monthly.")).toEqual([])
+      expect(audit("listing-ns020 offers 77 m² at 920 EUR monthly.")).toEqual([])
+    })
+
+    it("an invented number next to a known id still fails", () => {
+      expect(audit("Listing-ns020 offers 77 m² at 999 EUR monthly.")).toEqual(["numbers not in the cited facts: 999"])
+    })
+
+    it("a number written right next to the id is still checked", () => {
+      expect(audit("Listing-ns020:777 EUR deposit.")).toEqual(["numbers not in the cited facts: 777"])
+      expect(audit("Listing-ns020 (2026) offers 77 m².")).toEqual(["numbers not in the cited facts: 2026"])
+    })
+
+    it("an id that is not in the state is not skipped: it fails as an unknown candidate", () => {
+      expect(audit("Listing-ns099 offers 77 m² at 920 EUR monthly.")).toEqual(["names candidates that do not exist: listing-ns099"])
+      expect(audit("Listing-ns0201 offers 77 m².")).toEqual(["names candidates that do not exist: listing-ns0201"])
+    })
+  })
 })

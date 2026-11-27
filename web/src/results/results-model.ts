@@ -118,14 +118,14 @@ function entryFor(c: CandidateDTO, listingNumber: number): ListEntry {
   }
 }
 
-/** One list, highest score first (ties: the Ranker's order). Rejected candidates are separate, for the bottom block. */
+/** One list in the Ranker's order (verdict first, then the worst-case score). Rejected candidates are separate, for the bottom block. */
 export function resultsList(s: ResearchState): { ranked: ListEntry[]; rejected: ListEntry[] } {
   const numberOf = listingNumbers(s)
   const candidates = s.order.map((id) => s.candidates[id]).filter((c): c is CandidateDTO => Boolean(c))
   const ranked = candidates
     .filter((c) => c.status !== "rejected")
     .map((c) => entryFor(c, numberOf(c.id)))
-    .sort((a, b) => (b.score ?? -1) - (a.score ?? -1) || (a.candidate.ranking?.rank ?? 99) - (b.candidate.ranking?.rank ?? 99))
+    .sort((a, b) => (a.candidate.ranking?.rank ?? Number.MAX_SAFE_INTEGER) - (b.candidate.ranking?.rank ?? Number.MAX_SAFE_INTEGER))
   const rejected = candidates.filter((c) => c.status === "rejected").map((c) => entryFor(c, numberOf(c.id)))
   return { ranked, rejected }
 }

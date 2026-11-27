@@ -42,17 +42,25 @@ const snapshot = (c: CandidateDTO): WireEvent => ({ seq: ++seq, at: seq, type: "
 const play = (...cs: CandidateDTO[]): ResearchState =>
   [{ seq: ++seq, at: 0, type: "listings.submitted", data: { listingIds: cs.map((c) => c.id) } } as WireEvent, ...cs.map(snapshot)].reduce(applyEvent, initialResearch("r1"))
 
-describe("results list (one list, highest score first)", () => {
-  const top = candidate("listing-01", "Liman 2, Narodnog fronta", 72, { ranking: ranking({ rank: 2, score: 80 }) })
-  const second = candidate("listing-06", "Podbara", 50, { ranking: ranking({ rank: 1, score: 61, scoreHigh: 81, confidence: "medium", verdict: { verdict: "check_before_signing", why: "Ranked, but some inputs are unknown" }, components: [{ name: "cost", weight: 45, value: 0.9 }, { name: "area", weight: 20, value: 0.7 }, { name: "lease", weight: 20, value: null }, { name: "checks", weight: 15, value: 1 }] }) })
+describe("results list (one list, in the Ranker order)", () => {
+  const top = candidate("listing-01", "Liman 2, Narodnog fronta", 72, { ranking: ranking({ rank: 1, score: 80 }) })
+  const second = candidate("listing-06", "Podbara", 50, { ranking: ranking({ rank: 2, score: 61, scoreHigh: 81, confidence: "medium", verdict: { verdict: "check_before_signing", why: "Ranked, but some inputs are unknown" }, components: [{ name: "cost", weight: 45, value: 0.9 }, { name: "area", weight: 20, value: 0.7 }, { name: "lease", weight: 20, value: null }, { name: "checks", weight: 15, value: 1 }] }) })
   const rejected = candidate("listing-02", "Zmaj Jovina", 58, { status: "rejected", rejection: { rule: "budget", reason: "Monthly cost is 113% over the budget", raisedBy: "Finance analyst", aspect: "finance", source: calc } })
 
-  it("sorts by the score, puts rejected candidates apart, and answers in one sentence", () => {
+  it("keeps the Ranker order, puts rejected candidates apart, and answers in one sentence", () => {
     const s = play(second, rejected, top)
     const { ranked, rejected: out } = resultsList(s)
     expect(ranked.map((e) => e.name)).toEqual(["Liman 2 · 72 m2", "Podbara · 50 m2"])
     expect(out.map((e) => [e.name, e.verdict, e.mainReason])).toEqual([["Zmaj Jovina · 58 m2", "not_recommended", "Monthly cost is 113% over the budget"]])
     expect(headline(s)).toBe("Best option: Liman 2, 72 m2 - Good, score 80.")
+  })
+
+  it("a higher score with a weaker verdict never becomes the best option (the list follows the Ranker's rank)", () => {
+    const good = candidate("listing-32", "Grbavica", 85, { ranking: ranking({ rank: 1, score: 95 }) })
+    const check = candidate("listing-20", "Liman 1", 77, { ranking: ranking({ rank: 2, score: 98, confidence: "medium", verdict: { verdict: "check_before_signing", why: "Ranked, but some inputs are unknown" } }) })
+    const s = play(check, good)
+    expect(resultsList(s).ranked.map((e) => e.name)).toEqual(["Grbavica · 85 m2", "Liman 1 · 77 m2"])
+    expect(headline(s)).toBe("Best option: Grbavica, 85 m2 - Good, score 95.")
   })
 
   it("says honestly when nothing is recommended", () => {

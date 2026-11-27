@@ -42,3 +42,15 @@ export function candidateLocation(c: CandidateDTO): string | null {
   if (place && city && place.toLowerCase() !== city.toLowerCase()) return `${place}, ${city}`
   return place ?? city
 }
+
+/** Anything shaped like a candidate id ("listing-ns020", "pasted-2"), in any letter case ("Listing-ns020" starts a sentence). */
+const CANDIDATE_ID = /\b(?:pasted|listing)-[a-z0-9]+\b/gi
+
+/**
+ * Text for the screen with every known candidate id replaced by its human name ("Grbavica · 85 m2"). The report and
+ * the audit keep the real ids (the Auditor checks them); this only changes what the user reads. An id that nameOf does
+ * not know stays as it is, so nothing is hidden.
+ */
+export function withCandidateNames(text: string, nameOf: (id: string) => string | null): string {
+  return text.replace(CANDIDATE_ID, (id) => nameOf(id.toLowerCase()) ?? id)
+}

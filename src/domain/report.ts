@@ -62,7 +62,16 @@ export function parseReportDraft(answer: unknown): ReportDraft {
   }
 }
 
-const CANDIDATE_ID = new RegExp(`\\b(?:${LISTING_ID_PREFIXES.join("|")})-[a-z0-9]+\\b`, "g")
+/** Anything shaped like a candidate id, in any letter case (a sentence may start with "Listing-ns020"). */
+const CANDIDATE_ID = new RegExp(`\\b(?:${LISTING_ID_PREFIXES.join("|")})-[a-z0-9]+\\b`, "gi")
+
+/**
+ * The sentence with the EXACT ids of known candidates blanked out, so their digits ("ns020") are not read as numbers.
+ * Anything else, including an id that does not exist and a number right next to an id, stays in and is checked.
+ */
+function withoutKnownIds(text: string, known: ReadonlySet<string>): string {
+  return text.replace(CANDIDATE_ID, (id) => (known.has(id.toLowerCase()) ? " " : id))
+}
 
 /**
  * The Auditor's rules (plain code):
@@ -74,7 +83,7 @@ const CANDIDATE_ID = new RegExp(`\\b(?:${LISTING_ID_PREFIXES.join("|")})-[a-z0-9
  */
 export function auditReport(draft: ReportDraft, facts: readonly Fact[], ranked: readonly string[], rejected: readonly string[]): AuditResult {
   const byId = new Map(facts.map((f) => [f.id, f]))
-  const known = new Set([...ranked, ...rejected])
+  const known: ReadonlySet<string> = new Set([...ranked, ...rejected].map((id) => id.toLowerCase()))
   const top = new Set(ranked.slice(0, 3))
   const problems: AuditProblem[] = []
   let checked = 0
@@ -92,17 +101,18 @@ export function auditReport(draft: ReportDraft, facts: readonly Fact[], ranked: 
       const cited = s.facts.map((id) => byId.get(id))
       const missing = s.facts.filter((id, k) => !cited[k])
       if (missing.length) return fail(`cites facts that do not exist: ${missing.join(", ")}`)
-      const ids = s.text.match(CANDIDATE_ID) ?? []
-      const hasNumber = /\d/.test(s.text.replace(CANDIDATE_ID, ""))
+      const ids = (s.text.match(CANDIDATE_ID) ?? []).map((id) => id.toLowerCase())
+      const text = withoutKnownIds(s.text, known)
+      const hasNumber = /\d/.test(text)
       if ((hasNumber || ids.length) && s.facts.length === 0) return fail("states a number or names a candidate without citing a fact")
       const unknownIds = ids.filter((id) => !known.has(id))
       if (unknownIds.length) return fail(`names candidates that do not exist: ${unknownIds.join(", ")}`)
       if (section === "recommendation") {
-        const bad = ids.filter((id) => rejected.includes(id))
+        const bad = ids.filter((id) => rejected.some((r) => r.toLowerCase() === id))
         if (bad.length) return fail(`recommends ${bad.join(", ")}, which was rejected by a hard flag`)
       }
       const allowed = cited.flatMap((f) => (f ? numbersOf(f.text) : []))
-      const invented = unsourcedNumbers(s.text.replace(CANDIDATE_ID, ""), allowed)
+      const invented = unsourcedNumbers(text, allowed)
       if (invented.length) fail(`numbers not in the cited facts: ${invented.join(", ")}`)
     })
   }

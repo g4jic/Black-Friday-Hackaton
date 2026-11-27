@@ -1,5 +1,6 @@
 import { Info, ShieldCheck } from "lucide-react"
 import type { ResearchState } from "./research-state"
+import { candidateLabel, namedText } from "./run/run-view-model"
 import type { ReportSentenceDTO } from "./types"
 import { Pill, SourceLabel, cx } from "./ui"
 
@@ -40,7 +41,7 @@ export function ReportsScreen({ s }: { s: ResearchState }) {
               const c = s.candidates[id]
               return (
                 <Pill key={id} variant="brand" icon={false} title="Recommended to look at first (from the ranking)">
-                  {i + 1}. {id}
+                  {i + 1}. {candidateLabel(s, id)}
                   {c?.ranking ? ` · ${c.ranking.scoreHigh > c.ranking.score ? `${c.ranking.score}-${c.ranking.scoreHigh}` : c.ranking.score}` : ""}
                 </Pill>
               )
@@ -55,7 +56,7 @@ export function ReportsScreen({ s }: { s: ResearchState }) {
                 ) : (
                   <ul className="flex flex-col gap-3">
                     {r.sections[key].map((sentence, i) => (
-                      <Sentence key={i} sentence={sentence} />
+                      <Sentence key={i} sentence={sentence} name={(text) => namedText(s, text)} />
                     ))}
                   </ul>
                 )}
@@ -68,18 +69,19 @@ export function ReportsScreen({ s }: { s: ResearchState }) {
   )
 }
 
-function Sentence({ sentence }: { sentence: ReportSentenceDTO }) {
+/** name: puts the candidates' human names in place of their ids (the audit itself checked the real ids). */
+function Sentence({ sentence, name }: { sentence: ReportSentenceDTO; name: (text: string) => string }) {
   const removed = sentence.status === "removed"
   return (
     <li className={cx("leading-6", removed ? "text-ink-3" : "text-ink")}>
-      <span className={cx(removed && "line-through")}>{sentence.text}</span>
+      <span className={cx(removed && "line-through")}>{name(sentence.text)}</span>
       {sentence.facts.map((f) => (
-        <SourceLabel key={f.id} source={{ ...f.source, ref: `${f.source.ref}\nfact ${f.id}: ${f.text}` }} />
+        <SourceLabel key={f.id} source={{ ...f.source, ref: `${f.source.ref}\nfact ${f.id}: ${name(f.text)}` }} />
       ))}
       {removed && (
         <div className="mt-1">
-          <Pill variant="soft" title={sentence.note}>
-            {sentence.note}
+          <Pill variant="soft" title={sentence.note ? name(sentence.note) : sentence.note}>
+            {sentence.note ? name(sentence.note) : sentence.note}
           </Pill>
         </div>
       )}

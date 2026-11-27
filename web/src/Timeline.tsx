@@ -1,9 +1,27 @@
 import { OctagonAlert, X } from "lucide-react"
-import type { LoopView, ResearchState } from "./research-state"
+import type { LoopView, Rejection, ResearchState } from "./research-state"
+import { candidateLabel } from "./run/run-view-model"
 import { AGENTS, Pill, agentIcon, cx } from "./ui"
 
 const LANE_H = 28
 const LABEL_W = 200
+/** About how much of the time axis one "Hard flag: <name> rejected" label covers. */
+const FLAG_LABEL_SHARE = 0.3
+
+/** Hard flag labels in rows, so two rejections close in time never cover each other (earliest first). */
+function labelRows(rejections: readonly Rejection[], span: number): { rows: number; placed: { r: Rejection; row: number }[] } {
+  const lastInRow: number[] = []
+  const placed = [...rejections]
+    .sort((a, b) => a.at - b.at)
+    .map((r) => {
+      const share = Math.min(r.at, span) / span
+      let row = lastInRow.findIndex((last) => share - last >= FLAG_LABEL_SHARE)
+      if (row < 0) row = lastInRow.length
+      lastInRow[row] = share
+      return { r, row }
+    })
+  return { rows: Math.max(1, lastInRow.length), placed }
+}
 
 /**
  * Agent lanes over time (DESIGN.md 6.10). One lane per loop, grouped by agent. Everything is drawn from events:
@@ -47,12 +65,19 @@ export function Timeline({ s, now }: { s: ResearchState; now: number }) {
       ) : (
         <div className="relative">
           {/* rejection labels get their own row, so they never cover the time axis */}
-          <div className="relative mb-1 h-6" style={{ marginLeft: LABEL_W }}>
-            {rejections.map((r) => (
-              <span key={r.candidateId} className="absolute top-0 inline-flex -translate-x-1/2 items-center gap-1 rounded-full bg-hard px-2 py-0.5 text-[11px] font-medium whitespace-nowrap text-white" style={{ left: x(r.at) }}>
-                <OctagonAlert size={12} strokeWidth={2} aria-hidden /> Hard flag: {r.candidateId} rejected
-              </span>
-            ))}
+          <div className="relative mb-1" style={{ marginLeft: LABEL_W, height: labelRows(rejections, span).rows * 24 }}>
+            {labelRows(rejections, span).placed.map(({ r, row }) => {
+              const share = Math.min(r.at, span) / span
+              return (
+                <span
+                  key={r.candidateId}
+                  className={cx("absolute inline-flex items-center gap-1 rounded-full bg-hard px-2 py-0.5 text-[11px] font-medium whitespace-nowrap text-white", share > 0.7 && "-translate-x-full")}
+                  style={{ left: x(r.at), top: row * 24 }}
+                >
+                  <OctagonAlert size={12} strokeWidth={2} aria-hidden /> Hard flag: {candidateLabel(s, r.candidateId)} rejected
+                </span>
+              )
+            })}
           </div>
           {/* time axis */}
           <div className="relative mb-1 h-5" style={{ marginLeft: LABEL_W }}>
@@ -82,7 +107,7 @@ export function Timeline({ s, now }: { s: ResearchState; now: number }) {
                     <Icon size={14} strokeWidth={1.75} /> {g.agent}
                   </div>
                   {g.loops.map((l) => (
-                    <Lane key={l.key} l={l} now={end} x={x} w={w} />
+                    <Lane key={l.key} l={l} now={end} x={x} w={w} label={(id) => candidateLabel(s, id)} />
                   ))}
                 </div>
               )
@@ -94,13 +119,14 @@ export function Timeline({ s, now }: { s: ResearchState; now: number }) {
   )
 }
 
-function Lane({ l, now, x, w }: { l: LoopView; now: number; x: (t: number) => string; w: (a: number, b: number) => string }) {
-  const [, candidate, attempt] = l.key.split(":")
+function Lane({ l, now, x, w, label }: { l: LoopView; now: number; x: (t: number) => string; w: (a: number, b: number) => string; label: (candidateId: string) => string }) {
+  const [, candidateId = "", attempt] = l.key.split(":")
+  const candidate = label(candidateId)
   const stop = l.end ?? now
   const cut = l.cancelledAt !== undefined
   return (
     <div className="flex items-center" style={{ height: LANE_H }}>
-      <div className="flex shrink-0 items-center gap-1.5 truncate pr-3 text-[13px] text-ink" style={{ width: LABEL_W }} title={l.key}>
+      <div className="flex shrink-0 items-center gap-1.5 truncate pr-3 text-[13px] text-ink" style={{ width: LABEL_W }} title={candidate}>
         <span className="tnum">{candidate}</span>
         {attempt && attempt !== "1" && <span className="text-ink-3">try {attempt}</span>}
         {cut && <span className="text-xs font-medium text-hard">cut</span>}

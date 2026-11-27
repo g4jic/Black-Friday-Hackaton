@@ -22,9 +22,11 @@ describe("recorded demo scenarios (keyless replay of real model runs)", () => {
       expect({ answers, mode }).toEqual({ answers: "recorded", mode: "demo" })
       const all = events((await app.inject({ method: "GET", url: `/api/research/${id}/events` })).body)
       expect(all.at(-1)?.type).toBe("research.done")
-      const ready = all.find((e) => e.type === "report.ready")?.data as { failed: unknown; audit: { problems?: unknown[] } }
+      const ready = all.find((e) => e.type === "report.ready")?.data as { failed: unknown; audit: { problems?: unknown[]; removed?: number } }
       expect(ready.failed).toBeFalsy()
       expect(ready.audit.problems ?? []).toEqual([])
+      // The jury reads this report: no sentence may be removed by the Auditor (candidate ids are not numbers).
+      expect(ready.audit.removed ?? 0).toBe(0)
       expect(JSON.stringify(all)).not.toContain("not in the recording")
       expect(all.filter((e) => e.type === "candidate.scored").length).toBeGreaterThan(0)
       await app.close()

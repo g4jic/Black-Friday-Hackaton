@@ -22,6 +22,7 @@ import {
   scoreCandidate,
   sourced,
   validateSource,
+  verdictFor,
   type CandidateScore,
   type RankingInput,
   type Sourced,
@@ -154,6 +155,17 @@ describe("score rules (domain)", () => {
     expect(noRent.scoreHigh).toBeGreaterThan(weak.score)
     expect(rankCandidates([noRent, weak]).map((r) => r.candidateId)).toEqual(["x-weak", "x-no-rent"])
     expect(noRent.reasons.some((r) => r.text.includes("rent not stated: up to 45 points unknown"))).toBe(true)
+  })
+
+  it("ranks by verdict first: the first place never has a weaker verdict than another candidate", () => {
+    const full = scoreCandidate(base)
+    const good = { ...full, candidateId: "x-good", score: 75, scoreHigh: 75 }
+    const checkHigh = { ...full, candidateId: "x-check-98", score: 98, scoreHigh: 98, confidence: "medium" as const }
+    const checkLow = { ...full, candidateId: "x-check-90", score: 90, scoreHigh: 95, confidence: "medium" as const }
+    const low = { ...full, candidateId: "x-low", score: 40, scoreHigh: 40 }
+    expect([good, checkHigh, checkLow, low].map((s) => verdictFor(s, false).verdict)).toEqual(["good", "check_before_signing", "check_before_signing", "not_recommended"])
+    // A higher score does not jump a better verdict; inside a verdict the low end decides.
+    expect(rankCandidates([low, checkLow, checkHigh, good]).map((r) => [r.candidateId, r.rank])).toEqual([["x-good", 1], ["x-check-98", 2], ["x-check-90", 3], ["x-low", 4]])
   })
 
   it("the same input gives the same order (pure function, any input order)", () => {
