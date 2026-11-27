@@ -13,7 +13,7 @@ in code stops the agents still working on a deal breaker, and every number on th
 - Live deployment: **https://suitespot-production.up.railway.app** (sign up, then Research: every feature is open,
   with the live model claude-haiku-4-5 on our key; spending is capped by a usage limit in the Anthropic Console, and
   the server runs one live research at a time)
-- Mozaik Cloud: [screenshot of a live run](#how-the-agents-run-concurrently) (the Cloud project is private)
+- Mozaik Cloud: [screenshot of the project](#how-the-agents-run-concurrently) with the loops of every agent (the Cloud project is private)
 
 ## Contents
 - [The problem](#the-problem)
@@ -227,18 +227,28 @@ moment (about 3.7 s). `npx tsx scripts/cut-report.ts` prints every cut.
 
 ![Timeline: one lane per agent loop, calculator calls, loops cut by a hard flag](design/screenshots/timeline.png)
 
-Each run also appears in Mozaik Cloud, one session per agent loop (the screenshot below is from before the Location
-analyst and the Premises inspector joined, so it shows three AI roles). The core sends every loop event when it finds a
+Each run also appears in Mozaik Cloud, one session per agent loop. The core sends every loop event when it finds a
 key (`MOZAIK_API_KEY` in `.env`, or a machine paired once with `npx @mozaik-ai/cloud-sdk pair`); without one it
-prints "telemetry disabled" and runs normally. One live run of the cafe scenario (27 Nov 2026, claude-haiku-4-5,
-22.7 s, about $0.06) in our Cloud project:
+prints "telemetry disabled" and runs normally. Our Cloud project after the work of 27 Nov 2026:
 
-![Mozaik Cloud: Finance analyst 9 loops (21 inferences, 14 tool calls), Lease reader 4 loops, Report writer 1 loop](design/screenshots/mozaik-cloud.png)
+![Mozaik Cloud, project SuiteSpot: the five AI agents with their loop counts, the sum of every live run and recording of 27 Nov 2026](design/screenshots/mozaik-cloud.png)
 
-- **Finance analyst, 9 loops**: one per candidate (8), plus one retry after code rejected an explanation. Two of
-  them were cut by a hard flag before their first model call. 21 inferences, 14 calculator calls.
-- **Lease reader, 4 loops**: one per lease draft (3), plus one retry after code rejected an extraction.
-- **Report writer, 1 loop**: the audit passed the first draft (14 claims checked, 0 corrected, 0 removed).
+The screenshot shows the five AI agents: **Report writer, Finance analyst, Lease reader, Location analyst and
+Premises inspector**. Its numbers (for example Finance analyst 227 loops, Report writer 27) are the **sum of every live
+run and every demo recording in the project on 27 Nov 2026**, not one run: the Report writer has one loop per
+finished research, so the day had about 27 complete researches.
+
+One run on its own, the **Cafe in Novi Sad** scenario live (27 Nov 2026, claude-haiku-4-5, 8 candidates, 15.8 s,
+$0.098): **31 loops, peak 27 in parallel, 6 loops cut** by hard flags.
+
+| Agent | Loops | Cut by a hard flag |
+|---|---|---|
+| Finance analyst | 8 (one per candidate) | 2 |
+| Location analyst | 9 (one per candidate, plus one retry) | 2 |
+| Premises inspector | 8 (one per candidate) | 2 |
+| Lease reader | 5 (one per lease draft) | 0 |
+| Report writer | 1 (the audited report) | 0 |
+
 - Ranker, Auditor and the catalogue match are plain code, so they have no loops in Cloud.
 
 Mechanisms, with the file that implements each:

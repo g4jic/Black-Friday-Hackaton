@@ -5,6 +5,7 @@ import { safeNext } from "../app/onboarding-gate"
 import { holdWelcome, useWelcomeHold } from "../app/welcome"
 import { INPUT, LABEL } from "./SettingsPage"
 import { Logo } from "../Logo"
+import { AUTH_BUILDINGS } from "./auth-buildings"
 
 /**
  * Sign in and sign up (DESIGN.md 7.5): a white glass card on the left, an animated map on the right where the
@@ -229,6 +230,8 @@ function MapPanel({ lensRef, welcome }: { lensRef: RefObject<HTMLDivElement>; we
   const blocks = useMemo(cityBlocks, [])
   const labels = useListingLabels()
   const [stop, setStop] = useState(0)
+  // Every stop of the lens counts one visit; the visit picks the building (round the list, the logo's first).
+  const [visit, setVisit] = useState(0)
   const [shown, setShown] = useState(true)
   useEffect(() => {
     // The welcome: the lens stops touring and settles in the middle with its building shown.
@@ -239,7 +242,9 @@ function MapPanel({ lensRef, welcome }: { lensRef: RefObject<HTMLDivElement>; we
     const hop = () => {
       setShown(false)
       timer = setTimeout(() => {
+        // The next stop and the next building change while the old building is hidden, then it pops in.
         setStop((s) => (s + 1) % STOPS.length)
+        setVisit((v) => v + 1)
         timer = setTimeout(() => {
           setShown(true)
           timer = setTimeout(hop, LENS_DWELL_MS)
@@ -250,6 +255,8 @@ function MapPanel({ lensRef, welcome }: { lensRef: RefObject<HTMLDivElement>; we
     return () => clearTimeout(timer)
   }, [welcome])
   const here = welcome ? WELCOME_STOP : STOPS[stop]!
+  // The welcome zoom (and reduced motion, where visit stays 0) always shows the building from the logo.
+  const building = AUTH_BUILDINGS[welcome ? 0 : visit % AUTH_BUILDINGS.length]!
   const label = labels[stop]
   return (
     <section aria-hidden className="auth-map relative hidden flex-1 overflow-hidden rounded-[32px] border border-white/70 bg-[#F6EEF6] lg:block">
@@ -283,15 +290,9 @@ function MapPanel({ lensRef, welcome }: { lensRef: RefObject<HTMLDivElement>; we
             <line x1="337.9" y1="337.9" x2="398" y2="398" stroke="#0B0B0F" strokeWidth={64} strokeLinecap="round" />
             <circle cx="212" cy="212" r="164" fill="url(#authLens)" />
             <g className={`auth-building ${shown ? "is-shown" : ""}`}>
-              <polygon points="191.1,314.2 125.6,276.4 125.6,179.8 191.1,217.6" fill="#D9BFF4" />
-              <polygon points="178.4,258.5 162.0,249.1 162.0,223.9 178.4,233.3" fill="#8F5FD0" />
-              <polygon points="152.9,243.8 136.5,234.4 136.5,209.2 152.9,218.6" fill="#8F5FD0" />
-              <polygon points="191.1,314.2 298.4,252.2 298.4,155.6 191.1,217.6" fill="#FFFFFF" />
-              <polygon points="198.4,310.0 291.1,256.4 291.1,210.2 198.4,263.8" fill="#C19BE9" />
-              <polygon points="211.1,302.6 231.1,291.1 231.1,249.1 211.1,260.6" fill="#0B0B0F" />
-              <polygon points="194.7,265.9 294.7,208.1 294.7,197.6 194.7,255.4" fill="#F25C54" />
-              <polygon points="191.1,217.6 298.4,155.6 232.9,117.8 125.6,179.8" fill="#F25C54" />
-              <polygon points="191.1,208.1 282.0,155.6 232.9,127.3 142.0,179.8" fill="#F7A48C" />
+              {building.polygons.map(([points, fill], i) => (
+                <polygon key={`${building.id}-${i}`} points={points} fill={fill} />
+              ))}
             </g>
             <circle cx="212" cy="212" r="164" fill="none" stroke="url(#authCoral)" strokeWidth={40} />
           </svg>
