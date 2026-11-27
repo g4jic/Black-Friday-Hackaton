@@ -369,3 +369,54 @@ button:active {
     transform: none;
   }
 }
+
+/* Sign in map (DESIGN.md 7.5): slow pan, the lens glides between listings, the building and its pill pop in.
+   Transform and opacity only. */
+.auth-map-pan {
+  animation: auth-pan 48s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes auth-pan {
+  from { transform: translate3d(-3%, 2%, 0); }
+  to { transform: translate3d(3%, -2%, 0); }
+}
+.auth-lens-move {
+  transition: transform 1.3s var(--ease-ios);
+  will-change: transform;
+}
+.auth-pill {
+  opacity: 0;
+  transform: translate(-50%, 6px) scale(0.96);
+  transition: opacity 240ms var(--ease-ios), transform 240ms var(--ease-ios);
+}
+.auth-pill.is-shown {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+.auth-building {
+  transform-box: fill-box;
+  transform-origin: 50% 80%;
+  opacity: 0;
+  transform: scale(0.6) translateY(16px);
+  transition: opacity 280ms var(--ease-ios), transform 420ms cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+.auth-building.is-shown {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+.auth-lens {
+  filter: drop-shadow(0 12px 24px rgba(11, 11, 15, 0.18));
+}
+/* B7: the lens copy that grows over the whole screen after signing in. */
+.auth-zoom {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+}
+.auth-zoom .auth-building { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .auth-map-pan { animation: none; }
+  .auth-lens-move, .auth-pill, .auth-building { transition: none; }
+}

@@ -13,7 +13,9 @@ import { BrowseListingsPage, ListingDetailPage, MyListingsPage } from "./listing
 import { MySpacesPage } from "./pages/MySpacesPage"
 import { CandidatePage } from "./results/CandidatePage"
 import { DashboardPage, NotFoundPage } from "./pages/SimplePages"
-import { LoginPage, RequireLandlord, SignupPage } from "./pages/AuthPages"
+import { RequireLandlord } from "./pages/AuthPages"
+import { AuthRoute, AuthScreen } from "./pages/AuthScreen"
+import { useAuth } from "./app/auth"
 import type { Config } from "./types"
 import { Pill } from "./ui"
 
@@ -60,6 +62,13 @@ export function App() {
   useEffect(() => {
     document.title = `${TITLES[route.name]} - SuiteSpot`
   }, [route.name])
+
+  const auth = useAuth()
+  const { pathname } = useLocation()
+  // No guest mode: /login and /signup stand alone; every other page needs a signed-in user, who comes back to it after.
+  if (route.name === "login" || route.name === "signup") return <AuthRoute mode={route.name === "login" ? "signin" : "signup"} />
+  if (auth.status === "loading") return <div className="min-h-dvh" aria-busy="true" />
+  if (!auth.landlord) return <AuthScreen mode="signin" next={pathname + (search.toString() ? `?${search}` : "")} />
 
   const titleExtra = route.name === "run" || route.name === "results" || route.name === "candidate" ? <DemoDataPill researchId={route.researchId} /> : null
 
@@ -117,9 +126,8 @@ function Page({ route, config }: { route: Route; config: Config | null }) {
         </RequireLandlord>
       )
     case "login":
-      return <LoginPage />
     case "signup":
-      return <SignupPage />
+      return null
     case "notFound":
       return <NotFoundPage path={route.path} />
   }

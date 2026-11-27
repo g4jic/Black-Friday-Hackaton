@@ -10,7 +10,8 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     port: 5173,
-    proxy: { "/api": "http://localhost:3000" },
+    // SUITESPOT_API_PORT: run the API on another port when 3000 is taken (the web port is set with --port).
+    proxy: { "/api": `http://localhost:${process.env.SUITESPOT_API_PORT ?? 3000}` },
   },
   build: { outDir: "dist", emptyOutDir: true },
 })
