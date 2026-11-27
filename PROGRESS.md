@@ -3,6 +3,21 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
+## Update (27 Nov 2026, late evening, Aleksa + Claude): logo, lens buildings, Cloud screenshot, deployed (a9b357c)
+- **Logo hover:** the mark is an inline SVG component (`web/src/Logo.tsx`, same drawing as the favicon file); on hover
+  the handle and ring turn 12 degrees counter-clockwise around the ring centre (300 ms, soft spring back), the building
+  stays still; none with reduced motion. Used in the sidebar, sign in and onboarding.
+- **Sign in map:** seven buildings in `web/src/pages/auth-buildings.ts` (the logo's first); each lens stop shows the
+  next. The welcome zoom and reduced motion keep the logo's building. All points stay within 112 of the lens centre
+  (the ring starts at 144).
+- **Mozaik Cloud screenshot** (`design/screenshots/mozaik-cloud.png`, account row cut off): the five AI agents with the
+  sum of every live run and recording of 27 Nov. README also gives one live Cafe in Novi Sad run: 31 loops, peak 27,
+  6 cut, $0.098 (Finance 8, Location 9, Premises 8, Lease 5, Report writer 1; no Scout in Find spaces).
+- **Stripe on the deploy:** Pay rent opens a real Stripe Checkout in test mode (cs_test, "Sandbox"); no card entered;
+  the test account and its offer and lease were deleted.
+- **Deployed a9b357c** from a clean main and checked: logo hover, buildings changing, sign up to the role choice, a
+  recorded scenario; the test account was deleted.
+
 ## HANDOFF (27 Nov 2026, evening, Aleksa + Claude): onboarding with roles MERGED and DEPLOYED
 - **main = 941d17b** (merge of `origin/wip/stripe`, Andrej's Stripe sandbox key change, fast-forward, then
   `wip/onboarding`, no conflicts). On main: typecheck clean, 262 tests in 34 files pass, including the recorded demo.
