@@ -86,7 +86,7 @@ export function HowItWorksPage() {
           Every listing, landlord, contact and business on SuiteSpot in this version is synthetic: 100 generated listings in Novi Sad and Beograd,
           made for this prototype. Prices per m2 follow public 2025-2026 ranges; area data is real public OpenStreetMap data. Offers, leases and
           rent payments are real records in the app, but no real money moves: payments are simulated, or Stripe in test mode. Before launch, the
-          founders agree the first listings with landlords so the platform is not empty. Not financial or legal advice.
+          founders agree the first listings with landlords so the platform is not empty.
         </p>
       </Card>
       <Card title="Your score, out of 100">

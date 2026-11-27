@@ -175,18 +175,12 @@ export function NewResearchPage({ config }: { config: Config | null }) {
                 Without an AI model key on the server, runs use the locked profile of the demo scenario.
               </span>
             </div>
-          ) : (
-            <p className="mb-4">Prefilled from your Settings and an example; change anything. Every number here is shown as "your questionnaire" next to the results.</p>
-          )}
+          ) : null}
           <ProfileFields form={shownForm} locked={profileLocked} onChange={(patch) => setForm({ ...form, ...patch })} />
         </Card>
 
         {mode === "find" ? (
           <Card title="Find spaces">
-            <p>
-              SuiteSpot searches every space published on SuiteSpot for the ones that fit your city, area, budget and type of business. The agents then evaluate the
-              best matches at the same time, and every number shows its source.
-            </p>
             {demoOnly && <NoKeyNotice />}
             {demoOnly && scenarios.length > 0 && (
               <div className="mt-4" role="radiogroup" aria-label="Demo scenario">

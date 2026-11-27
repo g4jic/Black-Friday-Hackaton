@@ -1,4 +1,4 @@
-import { Info, ShieldCheck } from "lucide-react"
+import { ShieldCheck } from "lucide-react"
 import type { ResearchState } from "./research-state"
 import { candidateLabel, namedText } from "./run/run-view-model"
 import type { ReportSentenceDTO } from "./types"
@@ -11,16 +11,12 @@ const SECTIONS: { key: "recommendation" | "checkBeforeSigning" | "rejected" | "u
   { key: "unknowns", title: "What we do not know" },
 ]
 
-const NOT_ADVICE = "Not financial or legal advice. SuiteSpot shows numbers with their sources; the decision is yours."
 
 /** The audited report (DESIGN.md 6.11): every sentence with the source labels of the facts it cites. */
 export function ReportsScreen({ s }: { s: ResearchState }) {
   const r = s.report
   return (
     <div className="flex flex-col gap-4">
-      <p className="inline-flex items-center gap-2 self-start rounded-full glass-strong px-4 py-2 text-[13px] text-ink-2">
-        <Info size={16} className="text-ink" aria-hidden /> {NOT_ADVICE}
-      </p>
       {!s.id ? (
         <Card title="Report">Run a research under New research; the report appears here when the agents are done.</Card>
       ) : !r ? (

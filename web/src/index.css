@@ -42,7 +42,7 @@
  */
 html {
   min-height: 100%;
-  /* no layout shift when content grows past the window height */
+  /* no layout shift when content grows past the window height (the 10 px it reserves are part of the right page gap, see Shell) */
   scrollbar-gutter: stable;
   background-color: #f6cfd2;
   background-image:
@@ -455,6 +455,21 @@ button:active {
   z-index: 60;
   pointer-events: none;
   background: #fbf1f8;
+  will-change: opacity;
+}
+/* Smooth welcome: the zoom layer is promoted before the zoom starts, so the browser scales one rasterized texture
+   instead of repainting the map at up to 16x; the lens drops its drop-shadow filter (expensive when scaled), the map
+   stops panning and the folding form stops blurring what is behind it. */
+.auth-shell.is-welcome .auth-map-zoom { will-change: transform; }
+.auth-shell.is-welcome .auth-lens { filter: none; }
+.auth-shell.is-welcome .auth-map-pan { animation-play-state: paused; }
+.auth-shell.is-welcome .auth-form { -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* While the veil fades away on the app, glass skips its blur for those half a second (the veil hides the change). */
+html.is-revealing .glass,
+html.is-revealing .glass-strong,
+html.is-revealing .surface {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .auth-map-pan, .auth-lens-float { animation: none; }
@@ -477,6 +492,15 @@ a:focus-visible > .ss-logo .ss-logo-lens {
   .ss-logo-lens { transition: none; }
   .ss-logo:hover .ss-logo-lens,
   a:focus-visible > .ss-logo .ss-logo-lens { transform: none; }
+}
+
+/* The page frame (Shell.tsx): on wider screens the right padding is 24 px minus the space the page keeps for its
+   scrollbar (100vw - 100% is that space), so the content ends 24 px from the window edge, as it starts 24 px after the
+   sidebar. */
+@media (min-width: 40rem) {
+  .page-frame {
+    padding-right: calc(24px - (100vw - 100%));
+  }
 }
 
 /* Sidebar items (and the avatar) lift a little under the pointer or keyboard focus, then spring back. */

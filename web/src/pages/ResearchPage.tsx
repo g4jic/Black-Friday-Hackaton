@@ -2,7 +2,7 @@ import { ChartLine, FileChartColumn, List, type LucideIcon } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useResearch, type RunSnapshot } from "../app/research-store"
 import { Link, paths, setSearchParam, useLocation } from "../app/router"
-import { EmptyState } from "../app/Shell"
+import { AdviceNote, EmptyState } from "../app/Shell"
 import { ResultsList } from "../results/ResultsList"
 import { ReportsScreen } from "../Reports"
 import { Timeline } from "../Timeline"
@@ -60,6 +60,7 @@ export function ResearchPage({ researchId }: { researchId: string }) {
       ) : (
         <ResultsList s={state} researchId={researchId} />
       )}
+      {tab !== "timeline" && <AdviceNote />}
     </>
   )
 }

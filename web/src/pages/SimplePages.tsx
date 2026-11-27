@@ -30,14 +30,14 @@ export function DashboardPage() {
         </div>
       )}
       {role === "owner" ? (
-        <OwnerOverview showIntro />
+        <OwnerOverview />
       ) : (
         <>
           <SeekerHome />
           {role === "both" && (
             <section className="mt-2 flex flex-col gap-3">
               <h2 className="text-xl leading-7 font-semibold tracking-[-0.015em] text-ink">Your spaces</h2>
-              <OwnerOverview showIntro />
+              <OwnerOverview />
             </section>
           )}
         </>
@@ -53,12 +53,19 @@ function SeekerHome() {
     <div className="flex flex-col gap-4">
       <section className="glass rounded-[28px] p-7">
         <h2 className="text-xl leading-7 font-semibold tracking-[-0.015em] text-ink">Is this lease a good financial decision for my business?</h2>
-        <p className="mt-2 max-w-[720px] text-sm leading-5 text-ink-2">
-          Agents read every listing and lease at the same time, code does the math, and every number points to its source.
-        </p>
-        <div className="mt-6 grid gap-3 md:grid-cols-2">
-          <ModeCard to={paths.findSpaces()} icon={Search} title="Find spaces" text="Tell SuiteSpot about your business; it finds the spaces on SuiteSpot that fit and evaluates them." />
-          <ModeCard to={paths.evaluateSpace()} icon={FileSearch} title="Evaluate a space" text="One space, from SuiteSpot or found elsewhere: check the lease and the numbers before you sign." />
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+          <ModeCard
+            to={paths.findSpaces()}
+            icon={Search}
+            title="Find spaces"
+            text="Tell SuiteSpot about your business; it finds the spaces on SuiteSpot that fit and evaluates them."
+          />
+          <ModeCard
+            to={paths.evaluateSpace()}
+            icon={FileSearch}
+            title="Evaluate a space"
+            text="One space, from SuiteSpot or found elsewhere: check the lease and the numbers before you sign."
+          />
         </div>
       </section>
       <section className="glass rounded-[28px] p-6">

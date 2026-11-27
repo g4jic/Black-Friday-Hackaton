@@ -2,7 +2,7 @@ import { ArrowLeft, Check, ExternalLink, OctagonAlert, TriangleAlert } from "luc
 import type { ReactNode } from "react"
 import { useResearch } from "../app/research-store"
 import { Link, paths } from "../app/router"
-import { EmptyState } from "../app/Shell"
+import { AdviceNote, EmptyState } from "../app/Shell"
 import { candidateLocation, candidateShortName } from "../candidate-label"
 import { ResearchMissing } from "../pages/ResearchPage"
 import type { CandidateDTO } from "../types"
@@ -48,6 +48,7 @@ export function CandidatePage({ researchId, candidateId }: { researchId: string;
         <UnknownsCard candidate={candidate} />
       </div>
       <SourcesCard candidate={candidate} />
+      <AdviceNote />
     </div>
   )
 }

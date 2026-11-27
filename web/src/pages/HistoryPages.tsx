@@ -60,7 +60,6 @@ export function HistoryPage() {
   }
   return (
     <section className="glass rounded-[28px] p-6">
-      <p className="mb-4 text-[13px] text-ink-2">Your last 20 runs in this browser, newest first.</p>
       <ul className="flex flex-col gap-2.5">
         {records.map((record) => (
           <RunRow key={record.id} record={record} />

@@ -139,7 +139,7 @@ function RoleStep({ next }: { next: string | null }) {
       </main>
 
       <footer className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[13px] text-ink-2">
-        <span>Not financial or legal advice. Demo data is synthetic.</span>
+        <span>Demo data is synthetic.</span>
         <button type="button" onClick={() => void logOut()} className="font-medium text-ink underline underline-offset-4">
           Sign out
         </button>
@@ -348,7 +348,7 @@ function SeekerStep({
           onBack={onBack}
           primary={saveLabel}
           busy={busy === "save"}
-          note="You can change this profile later in Settings. Not financial or legal advice."
+          note="You can change this profile later in Settings."
         />
       </form>
     </FormStepFrame>

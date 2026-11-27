@@ -1,91 +1,80 @@
-import { Building2, Plus } from "lucide-react"
+import { ArrowRight, CalendarClock, HandCoins } from "lucide-react"
 import { Link, paths } from "../app/router"
-import { Card, EmptyState } from "../app/Shell"
-import { dealsApi } from "../deals/deals-api"
-import { LandlordDeals } from "../deals/DealViews"
+import { Card } from "../app/Shell"
+import { dealsApi, monthLabel } from "../deals/deals-api"
+import { DueStatus, Empty, LandlordDeals, OfferRow } from "../deals/DealViews"
 import { formatMoney } from "../format"
-import { floorLabel, listingsApi, useLoad } from "../listings/listings-api"
+import { listingsApi, useLoad } from "../listings/listings-api"
 
-const PRIMARY = "inline-flex h-10 items-center gap-2 rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e]"
+const SECONDARY = "inline-flex h-9 items-center gap-1.5 rounded-full glass-strong px-4 text-[13px] font-medium text-ink hover:bg-white"
 
 /**
- * Home for a space owner (and the owner half of Home for "both"): what seekers see, how many opened each listing
- * and who made an offer. Every number is counted from SuiteSpot's own records (the listings, their page views and
- * the offers), and each tile says what it counts.
+ * Home for a space owner (and the owner half of Home for "both"): a short overview, not the list of spaces (that is
+ * My listings). Three counts, the offers waiting for an answer (answer them here) and the next rent each lease is
+ * due. Every number is counted from SuiteSpot's own records: the listings, their page views and the deals.
  */
-export function OwnerOverview({ showIntro }: { showIntro: boolean }) {
+export function OwnerOverview() {
   const listings = useLoad("my-listings", listingsApi.mine)
   const deals = useLoad("deals-landlord", dealsApi.overview)
   const views = listings.data?.reduce((sum, l) => sum + l.views, 0)
-  const openOffers = deals.data?.offersReceived.filter((o) => o.status === "pending").length
-  // A listing with a lease (the owner is its landlord) shows "Leased" instead of "Published".
-  const leased = new Set(deals.data?.tenancies.filter((t) => t.role === "landlord").map((t) => t.tenancy.listingId) ?? [])
+  const waiting = deals.data?.offersReceived.filter((o) => o.status === "pending") ?? []
+  const leases = deals.data?.tenancies.filter((t) => t.role === "landlord" && t.nextDue) ?? []
   return (
     <div className="flex flex-col gap-4">
-      {showIntro && <p className="text-[15px] text-ink-2">What seekers see, how many viewed it and who made an offer.</p>}
       <div className="grid gap-4 sm:grid-cols-3">
         <Stat label="Published spaces" value={listings.data?.length} note="Your listings on SuiteSpot" />
         <Stat label="Views" value={views} note="Openings of your listing pages, all time" />
-        <Stat label="Open offers" value={openOffers} note="Offers waiting for your answer" />
+        <Stat label="Open offers" value={deals.data ? waiting.length : undefined} note="Offers waiting for your answer" />
       </div>
-      <Card title="My listings" collapsible id="owner-home-listings" count={listings.data?.length}>
-        <div className="flex flex-col gap-3.5">
-          {listings.error && (
-            <p role="alert" className="text-[13px] text-hard">
-              {listings.error}
+      <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+        <Card
+          title="Offers waiting"
+          collapsible
+          id="owner-home-offers"
+          count={deals.data ? waiting.length : undefined}
+          action={
+            <Link to={paths.offers()} className={SECONDARY}>
+              All offers <ArrowRight size={14} aria-hidden />
+            </Link>
+          }
+        >
+          {deals.error && (
+            <p role="alert" className="text-hard">
+              {deals.error}
             </p>
           )}
-          {!listings.data && !listings.error && <p className="text-sm text-ink-2">Loading...</p>}
-          {listings.data && listings.data.length === 0 && (
-            <EmptyState
-              text="You have not listed a space yet. Add one and seekers can find it and evaluate it for their business."
-              action={
-                <Link to={paths.newListing()} className={PRIMARY}>
-                  <Plus size={16} aria-hidden /> Add a space
-                </Link>
-              }
-            />
+          {!deals.data && !deals.error && <p>Loading...</p>}
+          {deals.data && waiting.length === 0 && (
+            <Empty icon={<HandCoins size={16} className="text-ink" aria-hidden />}>No offers waiting for an answer.</Empty>
           )}
-          {listings.data && listings.data.length > 0 && (
-            <div role="table" aria-label="My listings" className="flex flex-col gap-2">
-              <div role="row" className="grid grid-cols-[minmax(0,3fr)_repeat(3,minmax(0,1fr))] gap-3 px-3 text-xs font-medium text-ink-3">
-                <span role="columnheader">Space</span>
-                <span role="columnheader">Monthly rent</span>
-                <span role="columnheader">Views</span>
-                <span role="columnheader">Status</span>
-              </div>
-              {listings.data.map((l) => (
-                <Link
-                  key={l.id}
-                  to={paths.listing(l.id)}
-                  role="row"
-                  className="grid grid-cols-[minmax(0,3fr)_repeat(3,minmax(0,1fr))] items-center gap-3 rounded-[16px] bg-white/70 px-3 py-3.5 text-[15px] text-ink hover:bg-white"
-                >
-                  <span role="cell" className="flex min-w-0 items-center gap-2.5 font-semibold">
-                    <Building2 size={18} className="shrink-0 text-ink-2" aria-hidden />
-                    <span className="truncate">
-                      {l.district} · {l.areaM2} m², {floorLabel(l.floor).toLowerCase()}
+          {waiting.length > 0 && (
+            <ul className="flex flex-col gap-2.5">
+              {waiting.map((o) => (
+                <OfferRow key={o.id} offer={o} side="landlord" onChange={deals.reload} />
+              ))}
+            </ul>
+          )}
+        </Card>
+        <Card title="Next rent due" collapsible id="owner-home-rent" count={deals.data ? leases.length : undefined}>
+          {!deals.data && !deals.error && <p>Loading...</p>}
+          {deals.data && leases.length === 0 && <Empty icon={<CalendarClock size={16} className="text-ink" aria-hidden />}>No leased spaces yet.</Empty>}
+          {leases.length > 0 && (
+            <ul className="flex flex-col gap-2.5">
+              {leases.map((v) => (
+                <li key={v.tenancy.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-[16px] bg-white/70 px-4 py-3">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-ink">{v.tenancy.listingTitle}</span>
+                    <span className="tnum block text-[13px] text-ink-2">
+                      {formatMoney(v.nextDue!.amount, "EUR")} for {monthLabel(v.nextDue!.period)} · rented by {v.tenancy.tenantName}
                     </span>
                   </span>
-                  <span role="cell" className="tnum">
-                    {formatMoney(l.rentMonthly, "EUR")}
-                  </span>
-                  <span role="cell" className="tnum">
-                    {l.views}
-                  </span>
-                  <span role="cell">
-                    {leased.has(l.id) ? (
-                      <span className="rounded-full bg-lilac-100 px-3 py-1 text-[13px] font-semibold text-ink">Leased</span>
-                    ) : (
-                      <span className="rounded-full bg-green-50 px-3 py-1 text-[13px] font-semibold text-green-700">Published</span>
-                    )}
-                  </span>
-                </Link>
+                  <DueStatus due={v.nextDue!} />
+                </li>
               ))}
-            </div>
+            </ul>
           )}
-        </div>
-      </Card>
+        </Card>
+      </div>
     </div>
   )
 }
@@ -103,7 +92,7 @@ function Stat({ label, value, note }: { label: string; value: number | undefined
 /** Offers: the offers on the owner's listings and the spaces they lease out, with the tenants' rent status. */
 export function OffersPage() {
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
       <LandlordDeals />
     </div>
   )

@@ -9,8 +9,10 @@ import { INPUT, LABEL } from "../pages/SettingsPage"
 import { Pill, cx } from "../ui"
 import { METHOD_LABEL, dateLabel, dealsApi, monthLabel, type Offer, type RentDue, type TenancyView } from "./deals-api"
 
-const PRIMARY = "inline-flex h-10 items-center justify-center gap-2 rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e] disabled:opacity-40"
-const SECONDARY = "inline-flex h-10 items-center justify-center gap-2 rounded-full glass-strong px-[18px] text-sm font-medium text-ink hover:bg-white disabled:opacity-50"
+const PRIMARY =
+  "inline-flex h-10 items-center justify-center gap-2 rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e] disabled:opacity-40"
+const SECONDARY =
+  "inline-flex h-10 items-center justify-center gap-2 rounded-full glass-strong px-[18px] text-sm font-medium text-ink hover:bg-white disabled:opacity-50"
 const ROW = "glass-strong flex flex-col gap-3 rounded-[24px] p-4"
 
 const errorText = (e: unknown) => (e instanceof Error ? e.message : "Something went wrong. Try again.")
@@ -47,7 +49,9 @@ export function OfferForm({ listing }: { listing: PublicListing }) {
     return (
       <Card title="Offer sent">
         <p>
-          {listing.isDemo ? "This listing has no real landlord yet: in My spaces you answer your own offer as the simulated landlord." : "The landlord sees your offer under Offers and answers it there."}
+          {listing.isDemo
+            ? "This listing has no real landlord yet: in My spaces you answer your own offer as the simulated landlord."
+            : "The landlord sees your offer under Offers and answers it there."}
         </p>
         <Link to={paths.mySpaces()} className={cx(PRIMARY, "mt-4 w-full")}>
           Open My spaces
@@ -79,7 +83,13 @@ export function OfferForm({ listing }: { listing: PublicListing }) {
         </div>
         <label>
           <span className={LABEL}>Message (optional)</span>
-          <textarea className={cx(INPUT, "h-20 py-2.5")} value={message} maxLength={1000} onChange={(e) => setMessage(e.target.value)} placeholder="What your business does, when you could move in" />
+          <textarea
+            className={cx(INPUT, "h-20 py-2.5")}
+            value={message}
+            maxLength={1000}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="What your business does, when you could move in"
+          />
         </label>
         {state.kind === "error" && (
           <p role="alert" className="text-[13px] text-hard">
@@ -89,13 +99,15 @@ export function OfferForm({ listing }: { listing: PublicListing }) {
         <button type="submit" className={PRIMARY} disabled={state.kind === "sending"}>
           <Send size={16} aria-hidden /> {state.kind === "sending" ? "Sending..." : "Send offer"}
         </button>
-        {listing.isDemo && <p className="text-[12px] leading-4 text-ink-3">This listing has no real landlord yet: you answer the offer yourself as the simulated landlord.</p>}
+        {listing.isDemo && (
+          <p className="text-[12px] leading-4 text-ink-3">This listing has no real landlord yet: you answer the offer yourself as the simulated landlord.</p>
+        )}
       </form>
     </Card>
   )
 }
 
-function DueStatus({ due }: { due: RentDue }) {
+export function DueStatus({ due }: { due: RentDue }) {
   if (due.status === "paid")
     return (
       <Pill variant="positive" icon={false} title={due.payment ? `${METHOD_LABEL[due.payment.method]}, reference ${due.payment.reference}` : undefined}>
@@ -103,7 +115,12 @@ function DueStatus({ due }: { due: RentDue }) {
       </Pill>
     )
   if (due.status === "overdue") return <Pill variant="hard">Overdue</Pill>
-  if (due.status === "due") return <Pill variant="soft" icon={false}>Due {dateLabel(due.dueDate)}</Pill>
+  if (due.status === "due")
+    return (
+      <Pill variant="soft" icon={false}>
+        Due {dateLabel(due.dueDate)}
+      </Pill>
+    )
   return <Pill icon={false}>Due {dateLabel(due.dueDate)}</Pill>
 }
 
@@ -164,7 +181,8 @@ function TenancyRow({ view, method, onPaid }: { view: TenancyView; method: "stri
       {next ? (
         <div className="flex flex-wrap items-center gap-3">
           <span className="inline-flex items-center gap-1.5 text-sm text-ink">
-            <CalendarClock size={16} aria-hidden /> Next rent: {formatMoney(next.amount, t.currency)} for {monthLabel(next.period)}, due {dateLabel(next.dueDate)}
+            <CalendarClock size={16} aria-hidden /> Next rent: {formatMoney(next.amount, t.currency)} for {monthLabel(next.period)}, due{" "}
+            {dateLabel(next.dueDate)}
             {next.status === "overdue" && <Pill variant="hard">Overdue</Pill>}
           </span>
           {view.role === "tenant" && (
@@ -189,7 +207,7 @@ function TenancyRow({ view, method, onPaid }: { view: TenancyView; method: "stri
   )
 }
 
-function OfferRow({ offer, side, onChange }: { offer: Offer; side: "tenant" | "landlord"; onChange: () => void }) {
+export function OfferRow({ offer, side, onChange }: { offer: Offer; side: "tenant" | "landlord"; onChange: () => void }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const act = async (fn: () => Promise<unknown>) => {
@@ -257,8 +275,14 @@ function OfferRow({ offer, side, onChange }: { offer: Offer; side: "tenant" | "l
   )
 }
 
-function Empty({ icon, children }: { icon: ReactNode; children: ReactNode }) {
-  return <p className="inline-flex items-center gap-2">{icon} {children}</p>
+/** An empty state inside a card: icon and text on one line, under the card's title. */
+export function Empty({ icon, children }: { icon: ReactNode; children: ReactNode }) {
+  return (
+    <p className="flex items-center gap-2">
+      <span className="shrink-0">{icon}</span>
+      <span>{children}</span>
+    </p>
+  )
 }
 
 /**
@@ -280,7 +304,14 @@ export function TenantDeals() {
     confirming.current = reference
     dealsApi.confirm(reference).then(
       (r) => {
-        setBanner(r.payment ? { ok: true, text: `Rent for ${monthLabel(r.payment.period)} paid: ${formatMoney(r.payment.amount, r.payment.currency)} (${METHOD_LABEL[r.payment.method]}).` } : { ok: false, text: "The checkout is not paid yet, so nothing was recorded." })
+        setBanner(
+          r.payment
+            ? {
+                ok: true,
+                text: `Rent for ${monthLabel(r.payment.period)} paid: ${formatMoney(r.payment.amount, r.payment.currency)} (${METHOD_LABEL[r.payment.method]}).`,
+              }
+            : { ok: false, text: "The checkout is not paid yet, so nothing was recorded." },
+        )
         setSearchParam("paid", null)
         reload()
       },
@@ -297,9 +328,17 @@ export function TenantDeals() {
         </p>
       )}
       <Card title="Spaces I rent" collapsible id="my-spaces-rent" count={data ? rented.length : undefined}>
-        {error && <p role="alert" className="text-hard">{error}</p>}
+        {error && (
+          <p role="alert" className="text-hard">
+            {error}
+          </p>
+        )}
         {!data && !error && <p>Loading...</p>}
-        {data && rented.length === 0 && <Empty icon={<KeyRound size={16} className="text-ink" aria-hidden />}>No rented spaces yet. An accepted offer becomes a lease here, with its rent dates.</Empty>}
+        {data && rented.length === 0 && (
+          <Empty icon={<KeyRound size={16} className="text-ink" aria-hidden />}>
+            No rented spaces yet. An accepted offer becomes a lease here, with its rent dates.
+          </Empty>
+        )}
         {rented.length > 0 && (
           <ul className="flex flex-col gap-2.5">
             {rented.map((v) => (
@@ -310,7 +349,9 @@ export function TenantDeals() {
         {data && <PaymentNote method={data.paymentMethod} />}
       </Card>
       <Card title="My offers" collapsible id="my-spaces-offers" count={data?.offersMade.length}>
-        {data && data.offersMade.length === 0 && <Empty icon={<HandCoins size={16} className="text-ink" aria-hidden />}>No offers yet. Open a listing and press Make an offer.</Empty>}
+        {data && data.offersMade.length === 0 && (
+          <Empty icon={<HandCoins size={16} className="text-ink" aria-hidden />}>No offers yet. Open a listing and press Make an offer.</Empty>
+        )}
         {data && data.offersMade.length > 0 && (
           <ul className="flex flex-col gap-2.5">
             {data.offersMade.map((o) => (
@@ -330,9 +371,15 @@ export function LandlordDeals() {
   return (
     <>
       <Card title="Offers received" collapsible id="offers-received" count={data?.offersReceived.length}>
-        {error && <p role="alert" className="text-hard">{error}</p>}
+        {error && (
+          <p role="alert" className="text-hard">
+            {error}
+          </p>
+        )}
         {!data && !error && <p>Loading...</p>}
-        {data && data.offersReceived.length === 0 && <Empty icon={<HandCoins size={16} className="text-ink" aria-hidden />}>No offers on your listings yet.</Empty>}
+        {data && data.offersReceived.length === 0 && (
+          <Empty icon={<HandCoins size={16} className="text-ink" aria-hidden />}>No offers on your listings yet.</Empty>
+        )}
         {data && data.offersReceived.length > 0 && (
           <ul className="flex flex-col gap-2.5">
             {data.offersReceived.map((o) => (
@@ -342,7 +389,11 @@ export function LandlordDeals() {
         )}
       </Card>
       <Card title="Leased spaces" collapsible id="offers-leased" count={data ? leased.length : undefined}>
-        {data && leased.length === 0 && <Empty icon={<KeyRound size={16} className="text-ink" aria-hidden />}>None yet. When you accept an offer, the lease and its rent dates appear here.</Empty>}
+        {data && leased.length === 0 && (
+          <Empty icon={<KeyRound size={16} className="text-ink" aria-hidden />}>
+            None yet. When you accept an offer, the lease and its rent dates appear here.
+          </Empty>
+        )}
         {leased.length > 0 && (
           <ul className="flex flex-col gap-2.5">
             {leased.map((v) => (
@@ -408,7 +459,8 @@ export function SimulatedPaymentPage({ reference }: { reference: string }) {
             <p className="tnum mt-5 text-3xl font-semibold text-ink">{formatMoney(data.amount, data.currency)}</p>
             <p className="mt-1">Rent for {monthLabel(data.period)}</p>
             <p className="mt-4 text-[13px]">
-              This copy of SuiteSpot has no payment provider keys, so this form stands in for the checkout. It records the payment the same way, marked "simulated". No card is asked for and nothing is charged.
+              This copy of SuiteSpot has no payment provider keys, so this form stands in for the checkout. It records the payment the same way, marked
+              "simulated". No card is asked for and nothing is charged.
             </p>
             {payError && (
               <p role="alert" className="mt-3 text-[13px] text-hard">
@@ -417,7 +469,8 @@ export function SimulatedPaymentPage({ reference }: { reference: string }) {
             )}
             <div className="mt-5 flex flex-col gap-2">
               <button type="button" className={PRIMARY} disabled={paying || data.paid} onClick={() => void pay()}>
-                <FlaskConical size={16} aria-hidden /> {data.paid ? "Already paid" : paying ? "Paying..." : `Pay ${formatMoney(data.amount, data.currency)} (simulated)`}
+                <FlaskConical size={16} aria-hidden />{" "}
+                {data.paid ? "Already paid" : paying ? "Paying..." : `Pay ${formatMoney(data.amount, data.currency)} (simulated)`}
               </button>
               <button type="button" className={SECONDARY} onClick={() => navigate(localPath(search.get("cancel"), `${paths.mySpaces()}?payment=cancelled`))}>
                 Cancel

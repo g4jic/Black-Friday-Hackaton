@@ -5,7 +5,6 @@ import {
   CircleHelp,
   History,
   House,
-  Info,
   LayoutList,
   LogOut,
   MessageSquare,
@@ -19,7 +18,7 @@ import { cx } from "../ui"
 import { Logo } from "../Logo"
 import { logOut, updateOnboarding, useAuth } from "./auth"
 import { onboardingPath } from "./onboarding-gate"
-import { navKeysFor, ROLE_LABELS, seeksSpaces, type NavKey } from "./roles"
+import { navKeysFor, ROLE_LABELS, type NavKey } from "./roles"
 import { Link, navigate, paths, useLocation, type Route } from "./router"
 
 /** label: under the icon (the rail is narrow); name: the full name for the tooltip and screen readers. */
@@ -67,39 +66,30 @@ export const NOT_ADVICE = "Not financial or legal advice. SuiteSpot shows number
  * The frame around every page: sidebar (a bottom bar on a phone, so pages keep the full width), page header (title,
  * optional pills, New research) and the advice footer.
  */
-const HEADER_CTA = "inline-flex h-10 items-center gap-2 rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e]"
+/** The one discreet line under a page that scores or recommends (results, the report, a candidate). */
+export function AdviceNote() {
+  return <p className="mt-8 text-center text-xs text-ink-3">{NOT_ADVICE}</p>
+}
 
+/**
+ * The frame of every page. The sidebar ends 104 px from the left (16 + 88); the content starts 24 px after it and
+ * ends 24 px before the window edge (the right padding is 24 px minus the space the page keeps for its scrollbar, see
+ * scrollbar-gutter in index.css), so the gap is the same on both sides. Above 1360 px of content the frame is centred
+ * in the space between them; the title is 24 px from the top. On a phone the sidebar is a bottom bar and the frame
+ * has 16 px on each side.
+ */
 export function Shell({ route, title, titleExtra, children }: { route: Route; title: string; titleExtra?: ReactNode; children: ReactNode }) {
-  const role = useAuth().landlord?.role ?? null
   return (
-    <div className="min-h-screen px-4 pb-28 text-ink sm:pr-6 sm:pb-6 sm:pl-[116px]">
+    <div className="min-h-screen px-4 pb-28 text-ink page-frame sm:pb-8 sm:pl-[128px]">
       <Sidebar route={route} />
-      <div className="mx-auto max-w-[1360px] pt-6">
-        <header className="flex flex-wrap items-center justify-between gap-4">
+      <div className="mx-auto w-full max-w-[1360px] pt-6">
+        <header className="flex flex-wrap items-center gap-4">
           <h1 className="flex flex-wrap items-center gap-3 text-[28px] leading-[34px] font-semibold tracking-[-0.01em]">
             {title}
             {titleExtra}
           </h1>
-          {/* One primary action per screen: New research for a seeker, Add a space for an owner only. */}
-          {seeksSpaces(role)
-            ? route.name !== "newResearch" && (
-                <Link to={paths.newResearch()} className={HEADER_CTA}>
-                  <Plus size={16} strokeWidth={2} aria-hidden /> New research
-                </Link>
-              )
-            : route.name !== "newListing" && (
-                <Link to={paths.newListing()} className={HEADER_CTA}>
-                  <Plus size={16} strokeWidth={2} aria-hidden /> Add a space
-                </Link>
-              )}
         </header>
         <main className="mt-5">{children}</main>
-        <footer className="mt-6 flex justify-center">
-          <p className="inline-flex items-center gap-2 rounded-full glass-strong px-4 py-2 text-[13px] text-ink-2">
-            <Info size={16} className="shrink-0 text-ink" aria-hidden />
-            {NOT_ADVICE}
-          </p>
-        </footer>
       </div>
     </div>
   )

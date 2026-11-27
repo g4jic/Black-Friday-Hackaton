@@ -65,7 +65,18 @@ export function AuthScreen({ mode, next }: { mode: "signin" | "signup"; next: st
       const fadeIn = veil.animate([{ opacity: 0 }, { opacity: 1 }], { duration: WELCOME.veilMs, easing: "ease-in", fill: "forwards" })
       fadeIn.onfinish = () => {
         enterApp()
-        veil.animate([{ opacity: 1 }, { opacity: 0 }], { duration: WELCOME.revealMs, easing: "ease-out", fill: "forwards" }).onfinish = () => veil.remove()
+        // The app's first render (the shell, Home and its data) happens under the opaque veil; the reveal starts two
+        // frames later, so that work never lands in the middle of the fade. While it fades, the glass surfaces skip
+        // their blur (html.is-revealing), the costliest thing to repaint under a moving veil.
+        document.documentElement.classList.add("is-revealing")
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => {
+            veil.animate([{ opacity: 1 }, { opacity: 0 }], { duration: WELCOME.revealMs, easing: "ease-out", fill: "forwards" }).onfinish = () => {
+              veil.remove()
+              document.documentElement.classList.remove("is-revealing")
+            }
+          }),
+        )
       }
     }, WELCOME.veilAtMs)
   }

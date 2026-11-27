@@ -1,6 +1,7 @@
 import { Building2, Eye, Mail, MapPin, Pencil, Phone, Play, Plus, Trash2 } from "lucide-react"
 import { SaveButton } from "./SaveButton"
 import { OfferForm } from "../deals/DealViews"
+import { dealsApi } from "../deals/deals-api"
 import { useEffect, useMemo, useState } from "react"
 import { useAuth } from "../app/auth"
 import { Link, navigate, paths } from "../app/router"
@@ -25,10 +26,7 @@ export function BrowseListingsPage() {
   const [maxCost, setMaxCost] = useState("")
   const [minArea, setMinArea] = useState("")
   const shown = useMemo(
-    () =>
-      (data ?? []).filter(
-        (l) => (!city || l.city === city) && (!maxCost || monthly(l) <= Number(maxCost)) && (!minArea || l.areaM2 >= Number(minArea)),
-      ),
+    () => (data ?? []).filter((l) => (!city || l.city === city) && (!maxCost || monthly(l) <= Number(maxCost)) && (!minArea || l.areaM2 >= Number(minArea))),
     [data, city, maxCost, minArea],
   )
   return (
@@ -36,7 +34,12 @@ export function BrowseListingsPage() {
       <section className="glass flex flex-wrap items-end gap-3 rounded-[28px] p-5">
         <label className="min-w-[160px] flex-1">
           <span className={LABEL}>City</span>
-          <Select value={city} onChange={setCity} options={[{ value: "", label: "All cities" }, ...CITIES.map((c) => ({ value: c, label: c }))]} className={INPUT} />
+          <Select
+            value={city}
+            onChange={setCity}
+            options={[{ value: "", label: "All cities" }, ...CITIES.map((c) => ({ value: c, label: c }))]}
+            className={INPUT}
+          />
         </label>
         <label className="min-w-[160px] flex-1">
           <span className={LABEL}>Max monthly cost (EUR)</span>
@@ -57,7 +60,11 @@ export function BrowseListingsPage() {
           </li>
         ))}
       </ul>
-      {data && <p className="text-center text-[13px] text-ink-3">{shown.length} of {data.length} listings</p>}
+      {data && (
+        <p className="text-center text-[13px] text-ink-3">
+          {shown.length} of {data.length} listings
+        </p>
+      )}
     </div>
   )
 }
@@ -102,7 +109,17 @@ export function ListingDetailPage({ id }: { id: string }) {
   const [contact, setContact] = useState<RevealedContact | null>(null)
   const [contactError, setContactError] = useState<string | null>(null)
   const [showLease, setShowLease] = useState(false)
-  if (error) return <EmptyState text={error} action={<Link to={paths.listings()} className={PRIMARY}>All listings</Link>} />
+  if (error)
+    return (
+      <EmptyState
+        text={error}
+        action={
+          <Link to={paths.listings()} className={PRIMARY}>
+            All listings
+          </Link>
+        }
+      />
+    )
   if (!l) return <p className="text-sm text-ink-2">Loading listing...</p>
   const reveal = () => {
     setContactError(null)
@@ -140,7 +157,9 @@ export function ListingDetailPage({ id }: { id: string }) {
               </div>
             ))}
           </dl>
-          <p className="mt-4 text-[13px] text-ink-3">The landlord typed these terms. SuiteSpot checks them against the lease draft when it evaluates the space.</p>
+          <p className="mt-4 text-[13px] text-ink-3">
+            The landlord typed these terms. SuiteSpot checks them against the lease draft when it evaluates the space.
+          </p>
         </Card>
         <Card title="Lease draft">
           {l.leaseDraft ? (
@@ -150,7 +169,11 @@ export function ListingDetailPage({ id }: { id: string }) {
                   {showLease ? "Hide the draft" : "Read the draft"}
                 </button>
               </div>
-              {showLease && <pre className="mt-4 max-h-[480px] overflow-auto rounded-[18px] bg-white/80 p-4 text-[13px] leading-5 whitespace-pre-wrap text-ink">{l.leaseDraft}</pre>}
+              {showLease && (
+                <pre className="mt-4 max-h-[480px] overflow-auto rounded-[18px] bg-white/80 p-4 text-[13px] leading-5 whitespace-pre-wrap text-ink">
+                  {l.leaseDraft}
+                </pre>
+              )}
             </>
           ) : (
             <p>The landlord has not added a lease draft. An evaluation will list the lease terms to ask about.</p>
@@ -161,7 +184,11 @@ export function ListingDetailPage({ id }: { id: string }) {
         <Card>
           <p className="tnum text-2xl font-semibold text-ink">{money(l.rentMonthly)}</p>
           <p className="text-[13px] text-ink-2">per month, plus {money(l.serviceChargeMonthly)} monthly costs</p>
-          <button type="button" onClick={() => navigate(`${paths.newResearch()}?mode=evaluate&listing=${encodeURIComponent(l.id)}`)} className={cx(PRIMARY, "mt-5 w-full justify-center")}>
+          <button
+            type="button"
+            onClick={() => navigate(`${paths.newResearch()}?mode=evaluate&listing=${encodeURIComponent(l.id)}`)}
+            className={cx(PRIMARY, "mt-5 w-full justify-center")}
+          >
             <Play size={16} aria-hidden /> Evaluate for my business
           </button>
           <SaveButton listingId={l.id} className="mt-3" />
@@ -207,9 +234,7 @@ function ContactBox({ contact }: { contact: RevealedContact }) {
   )
   return (
     <div className="flex flex-col gap-2 rounded-[18px] bg-white/80 p-4">
-      <p className="flex items-center justify-between gap-2 text-sm font-semibold text-ink">
-        {contact.name}
-      </p>
+      <p className="flex items-center justify-between gap-2 text-sm font-semibold text-ink">{contact.name}</p>
       {contact.phone && line(Phone, contact.phone, `tel:${contact.phone.replace(/\s/g, "")}`)}
       {contact.email && line(Mail, contact.email, `mailto:${contact.email}`)}
     </div>
@@ -220,6 +245,8 @@ function ContactBox({ contact }: { contact: RevealedContact }) {
 export function MyListingsPage() {
   const role = useAuth().landlord?.role ?? null
   const { data, error, reload } = useLoad("my-listings", listingsApi.mine)
+  const deals = useLoad("deals-landlord", dealsApi.overview)
+  const leased = new Set(deals.data?.tenancies.filter((t) => t.role === "landlord").map((t) => t.tenancy.listingId) ?? [])
   const [busy, setBusy] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const remove = (l: PublicListing) => {
@@ -232,50 +259,92 @@ export function MyListingsPage() {
       .finally(() => setBusy(null))
   }
   if (error) return <EmptyState text={error} />
+  const ROW = "grid grid-cols-[minmax(0,3fr)_minmax(0,1fr)_minmax(0,0.7fr)_minmax(0,0.9fr)_auto] items-center gap-3"
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-ink-2">
-          Spaces you list. Everyone sees them under Listings and can evaluate them for their business. Offers on them are under{" "}
-          <Link to={paths.offers()} className="font-medium text-ink underline underline-offset-4">
-            Offers
-          </Link>
-          .
-        </p>
-        {/* An owner has Add a space in the header; "both" has New research there, so the button sits here. */}
-        {role === "both" && (
-          <Link to={paths.newListing()} className={PRIMARY}>
-            <Plus size={16} aria-hidden /> Add a space
-          </Link>
-        )}
-      </div>
       {actionError && (
         <p role="alert" className="text-[13px] text-hard">
           {actionError}
         </p>
       )}
       {!data && <p className="text-sm text-ink-2">Loading...</p>}
-      {data && data.length === 0 && <EmptyState text="You have not listed a space yet." action={<Link to={paths.newListing()} className={PRIMARY}>Add a space</Link>} />}
-      <ul className="flex flex-col gap-2.5">
-        {data?.map((l) => (
-          <li key={l.id} className="glass flex flex-wrap items-center gap-4 rounded-[24px] p-4">
-            <Building2 size={20} className="text-ink-2" aria-hidden />
-            <Link to={paths.listing(l.id)} className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-semibold text-ink">{l.title}</span>
-              <span className="tnum block text-[13px] text-ink-2">
-                {l.district}, {l.city} · {l.areaM2} m² · {money(l.rentMonthly)} / month
+      {data && data.length === 0 && (
+        <EmptyState
+          text="You have not listed a space yet."
+          action={
+            <Link to={paths.newListing()} className={PRIMARY}>
+              <Plus size={16} aria-hidden /> Add a space
+            </Link>
+          }
+        />
+      )}
+      {data && data.length > 0 && (
+        <Card
+          title="Your spaces"
+          collapsible
+          id="my-listings-table"
+          count={data.length}
+          action={
+            // An owner has Add a space in the sidebar; "both" does not (its rail is longer), so it sits here.
+            role === "both" ? (
+              <Link
+                to={paths.newListing()}
+                className="inline-flex h-9 items-center gap-1.5 rounded-full glass-strong px-4 text-[13px] font-medium text-ink hover:bg-white"
+              >
+                <Plus size={14} aria-hidden /> Add a space
+              </Link>
+            ) : undefined
+          }
+        >
+          <div role="table" aria-label="Your spaces" className="flex flex-col gap-2">
+            <div role="row" className={cx(ROW, "px-3 text-xs font-medium text-ink-3 max-md:hidden")}>
+              <span role="columnheader">Space</span>
+              <span role="columnheader">Monthly rent</span>
+              <span role="columnheader">Views</span>
+              <span role="columnheader">Status</span>
+              <span role="columnheader" className="sr-only">
+                Actions
               </span>
-            </Link>
-            <span className="tnum inline-flex items-center gap-1.5 text-[13px] text-ink-2" title="How often the listing page was opened">
-              <Eye size={16} aria-hidden /> {l.views} {l.views === 1 ? "view" : "views"}
-            </span>
-            <Link to={paths.editListing(l.id)} className={SECONDARY}>
-              <Pencil size={16} aria-hidden /> Edit
-            </Link>
-            <ConfirmDelete disabled={busy === l.id} onConfirm={() => remove(l)} />
-          </li>
-        ))}
-      </ul>
+            </div>
+            {data.map((l) => (
+              <div
+                key={l.id}
+                role="row"
+                className={cx(ROW, "rounded-[16px] bg-white/70 px-3 py-2.5 text-sm text-ink max-md:grid-cols-[minmax(0,1fr)_auto] max-md:gap-y-1")}
+              >
+                <span role="cell" className="flex min-w-0 items-center gap-2.5">
+                  <Building2 size={18} className="shrink-0 text-ink-2" aria-hidden />
+                  <Link to={paths.listing(l.id)} className="min-w-0 hover:underline">
+                    <span className="block truncate font-semibold">{l.title}</span>
+                    <span className="tnum block truncate text-[13px] text-ink-2">
+                      {l.district}, {l.city} · {l.areaM2} m² · {floorLabel(l.floor)}
+                    </span>
+                  </Link>
+                </span>
+                <span role="cell" className="tnum max-md:hidden">
+                  {money(l.rentMonthly)}
+                </span>
+                <span role="cell" className="tnum max-md:hidden" title="How often the listing page was opened">
+                  {l.views}
+                </span>
+                <span role="cell" className="max-md:hidden">
+                  {leased.has(l.id) ? (
+                    <span className="rounded-full bg-lilac-100 px-3 py-1 text-[13px] font-semibold text-ink">Leased</span>
+                  ) : (
+                    <span className="rounded-full bg-green-50 px-3 py-1 text-[13px] font-semibold text-green-700">Published</span>
+                  )}
+                </span>
+                <span role="cell" className="flex items-center justify-end gap-2">
+                  <Link to={paths.editListing(l.id)} className={SECONDARY} aria-label={`Edit ${l.title}`}>
+                    <Pencil size={16} aria-hidden /> Edit
+                  </Link>
+                  <ConfirmDelete disabled={busy === l.id} onConfirm={() => remove(l)} />
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
     </div>
   )
 }
@@ -292,7 +361,12 @@ function ConfirmDelete({ onConfirm, disabled }: { onConfirm: () => void; disable
   return (
     <span className="inline-flex items-center gap-2">
       <span className="text-[13px] text-ink">Delete the listing and its contact?</span>
-      <button type="button" onClick={onConfirm} disabled={disabled} className="inline-flex h-10 items-center rounded-full bg-hard px-[18px] text-sm font-medium text-white disabled:opacity-50">
+      <button
+        type="button"
+        onClick={onConfirm}
+        disabled={disabled}
+        className="inline-flex h-10 items-center rounded-full bg-hard px-[18px] text-sm font-medium text-white disabled:opacity-50"
+      >
         Delete
       </button>
       <button type="button" onClick={() => setAsking(false)} className={SECONDARY}>

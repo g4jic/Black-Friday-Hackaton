@@ -24,7 +24,7 @@ const SECONDARY = "inline-flex h-10 items-center gap-2 rounded-full glass-strong
 export function SettingsPage() {
   const role = useAuth().landlord?.role ?? null
   return (
-    <div className="flex max-w-[960px] flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <AccountSection />
       <RoleSection />
       {seeksSpaces(role) && <BusinessProfileSection />}
@@ -150,7 +150,6 @@ function BusinessProfileSection() {
   return (
     <Card title="Business profile" collapsible id="settings-profile">
       <form onSubmit={submit} noValidate className="flex flex-col gap-4">
-        <p>Prefills the questionnaire for your research. Without an AI model key on the server, runs use the fixed demo profile.</p>
         <BusinessProfileFields
           fields={fields}
           set={(patch) => {
