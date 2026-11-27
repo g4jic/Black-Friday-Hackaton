@@ -14,6 +14,7 @@ type Assumptions = {
       indexation: Record<string, number>
     }
     checks: { description: string; penaltyEach: number; notCountedTwice: string[] }
+    location: { description: string }
     missingData: string
     missingDataDetail: string
     confidence: Record<string, string>
@@ -22,6 +23,7 @@ type Assumptions = {
   hardFlags: { budgetTolerance: number; maxTermWithoutExitMonths: number }
   verdict: { good: string; checkBeforeSigning: string; notRecommended: string }
   leaseConcerns: { maxNoticeMonths: number; maxFixedIndexationPercent: number }
+  location: { radiusM: number; description: string; rules: Record<string, ({ metric: string } & ({ kind: "more_is_better"; fullAt: number } | { kind: "competition"; fullAtOrBelow: number; zeroAt: number }))[]>; metricText: Record<string, string>; businessText: Record<string, string>; attribution: string }
   demoQuestionnaire: { business: string; areaM2: [number, number]; monthlyBudget: number; expectedMonthlyRevenue: number; leaseMonths: number; currency: string; grossMarginRate: number | null }
 }
 
@@ -62,12 +64,13 @@ export function AssumptionsScreen() {
           <tbody>
             {Object.entries(r.weights).map(([k, w]) => (
               <tr key={k} className="border-b border-line last:border-0">
-                <td className="py-2 pr-4 font-medium text-ink">{({ cost: "Cost", area: "Area", lease: "Lease terms", checks: "Points to check" } as Record<string, string>)[k] ?? k}</td>
+                <td className="py-2 pr-4 font-medium text-ink">{({ cost: "Cost", area: "Area", lease: "Lease terms", location: "Location", checks: "Points to check" } as Record<string, string>)[k] ?? k}</td>
                 <td className="tnum py-2 pr-4 text-right">{w}</td>
                 <td className="py-2 text-ink-2">
                   {k === "cost" && `${r.cost.description}: full score at ${pct(r.cost.fullScoreAtOrBelow)} or less, 0 at ${pct(r.cost.zeroScoreAt)}.`}
                   {k === "area" && `${r.area.description}.`}
                   {k === "lease" && `${r.lease.description}: early exit ${r.lease.earlyExit.allowed} / ${r.lease.earlyExit.notAllowed}; notice ${r.lease.noticeMonths.map((b) => `${b.upTo === null ? "more" : `up to ${b.upTo} months`} ${b.score}`).join(", ")}; indexation by index ${r.lease.indexation.cpi}, fixed up to 3% ${r.lease.indexation.fixedUpTo3}, up to 5% ${r.lease.indexation.fixedUpTo5}, above ${r.lease.indexation.fixedAbove5}.`}
+                  {k === "location" && `${r.location.description}.`}
                   {k === "checks" && `${r.checks.description} (notice and indexation are scored under lease terms, not counted twice).`}
                 </td>
               </tr>
@@ -102,6 +105,18 @@ export function AssumptionsScreen() {
           <li>Check before signing: notice longer than {a.leaseConcerns.maxNoticeMonths} months, a fixed rent increase above {a.leaseConcerns.maxFixedIndexationPercent}% a year, a personal guarantee, the tenant paying structural repairs, an early exit penalty, an unverified clause.</li>
           <li>A hard flag cancels the candidate: it is never ranked.</li>
         </ul>
+      </Card>
+      <Card title="Location rules (OpenStreetMap, plain code)">
+        <p className="mb-3">{a.location.description}</p>
+        <ul className="space-y-2">
+          {Object.entries(a.location.rules).map(([type, rules]) => (
+            <li key={type}>
+              <span className="font-medium text-ink">{a.location.businessText[type] ?? type}:</span>{" "}
+              {rules.map((rule) => (rule.kind === "more_is_better" ? `${a.location.metricText[rule.metric]} help, full at ${rule.fullAt}` : `${a.location.metricText[rule.metric]} compete, full at ${rule.fullAtOrBelow} or fewer, 0 at ${rule.zeroAt}`)).join("; ")}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-xs">{a.location.attribution}</p>
       </Card>
       <Card title="Verdict on the Decision card (plain code)">
         <ul className="list-disc space-y-1.5 pl-5">

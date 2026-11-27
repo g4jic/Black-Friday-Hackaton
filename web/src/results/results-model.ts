@@ -310,3 +310,23 @@ export function allSources(c: CandidateDTO): SourceGroup[] {
   if (c.listingUrl) add(c.listingUrl.source)
   return GROUP_ORDER.filter((g) => groups.has(g)).map((title) => ({ title, items: [...groups.get(title)!] }))
 }
+
+const LOCATION_LABEL: Record<string, string> = {
+  transit: "Bus and tram stops",
+  offices: "Offices",
+  schools: "Schools and faculties",
+  parking: "Parking areas",
+  food: "Cafes, restaurants and bars",
+  shops: "Shops",
+  crafts: "Workshops and crafts",
+}
+
+/** The Location card: OpenStreetMap counts (code), the Location analyst's explanation, and whether it was checked. */
+export function locationSection(c: CandidateDTO): { rows: { label: string; count: number }[]; explanation: string | null; checked: boolean } {
+  const rows = Object.keys(LOCATION_LABEL).flatMap((metric) => {
+    const f = c.findings.find((x) => x.id === `${c.id}:location:${metric}`)
+    return f?.value?.kind === "number" ? [{ label: LOCATION_LABEL[metric]!, count: f.value.value }] : []
+  })
+  const explanation = c.findings.find((x) => x.id === `${c.id}:location:explanation`)?.claim ?? null
+  return { rows, explanation, checked: rows.length > 0 }
+}

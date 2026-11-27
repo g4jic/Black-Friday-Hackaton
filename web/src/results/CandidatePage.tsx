@@ -7,7 +7,7 @@ import { candidateLocation, candidateShortName } from "../candidate-label"
 import { ResearchMissing } from "../pages/ResearchPage"
 import type { CandidateDTO } from "../types"
 import { cx } from "../ui"
-import { allSources, costRows, leaseSection, resultsList, strengthsAndRisks, unknowns, type PointItem } from "./results-model"
+import { allSources, costRows, leaseSection, locationSection, resultsList, strengthsAndRisks, unknowns, type PointItem } from "./results-model"
 import { ScoreBlock, VerdictBadge } from "./ResultsList"
 
 /** One candidate (/research/:id/candidate/:candidateId): separate cards with clear headings, nothing overlapping. */
@@ -41,6 +41,7 @@ export function CandidatePage({ researchId, candidateId }: { researchId: string;
         <CostsCard candidate={candidate} />
         <StrengthsRisksCard candidate={candidate} />
         <LeaseCard candidate={candidate} />
+        <LocationCard candidate={candidate} />
         <UnknownsCard candidate={candidate} />
       </div>
       <SourcesCard candidate={candidate} />
@@ -209,6 +210,31 @@ function LeaseCard({ candidate }: { candidate: CandidateDTO }) {
         </>
       )}
       <p className="mt-4 text-xs text-ink-3">Not a legal opinion. Check permitted use and every clause before signing.</p>
+    </Section>
+  )
+}
+
+function LocationCard({ candidate }: { candidate: CandidateDTO }) {
+  const loc = locationSection(candidate)
+  return (
+    <Section title="Location">
+      {loc.checked ? (
+        <>
+          <p className="mb-3 text-xs leading-5 text-ink-2">Mapped in OpenStreetMap within 300 m of the address, counted by code. It does not measure foot traffic or revenue.</p>
+          <dl className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1.5 text-sm">
+            {loc.rows.map((r) => (
+              <div key={r.label} className="contents">
+                <dt className="text-ink">{r.label}</dt>
+                <dd className="tnum text-right font-semibold text-ink">{r.count}</dd>
+              </div>
+            ))}
+          </dl>
+          {loc.explanation && <p className="mt-4 max-w-[70ch] text-sm leading-6 text-ink">{loc.explanation}</p>}
+          <p className="mt-3 text-xs text-ink-2">Source: OpenStreetMap. Data © OpenStreetMap contributors, ODbL.</p>
+        </>
+      ) : (
+        <p className="text-[13px] text-ink-3">The location was not checked: the address was not found in OpenStreetMap.</p>
+      )}
     </Section>
   )
 }

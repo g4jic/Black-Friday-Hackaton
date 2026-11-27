@@ -4,6 +4,7 @@ import {
   DomainError,
   createFinding,
   createListingBatch,
+  type AreaData,
   type BusinessProfile,
   type Finding,
   type HardFlag,
@@ -52,6 +53,16 @@ export class SuiteSpotState extends RuntimeState {
   readonly leaseTexts = new Map<string, LeaseText>()
   readonly leaseClauses = new Map<string, LeaseClauses>()
   private readonly leaseWaiters = new Map<string, { promise: Promise<LeaseClauses | null>; resolve: (c: LeaseClauses | null) => void }>()
+  /** OpenStreetMap counts around each candidate (code), read by the Location analyst's tool and by the Ranker. */
+  readonly areas = new Map<string, AreaData>()
+
+  recordArea(area: AreaData): AreaData {
+    this.candidate(area.candidateId) // unknown candidate: DomainError
+    const existing = this.areas.get(area.candidateId)
+    if (existing) return existing // idempotent: a retry never changes the data
+    this.areas.set(area.candidateId, area)
+    return area
+  }
 
   /** The report: facts written by code, the Report writer's drafts, and the audited final report. */
   reportFacts: Fact[] = []

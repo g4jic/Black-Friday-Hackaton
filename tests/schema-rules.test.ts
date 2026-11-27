@@ -26,6 +26,8 @@ describe("structured output schemas follow Anthropic's rules", () => {
       "finance-analyst.ts:CALCULATE_TOOL_SCHEMA",
       "finance-analyst.ts:FINANCE_EXPLANATION_SCHEMA",
       "lease-reader.ts:LEASE_EXTRACTION_SCHEMA",
+      "location-analyst.ts:AREA_DATA_TOOL_SCHEMA",
+      "location-analyst.ts:LOCATION_EXPLANATION_SCHEMA",
       "report-writer.ts:REPORT_SCHEMA",
       "scout.ts:LISTING_EXTRACTION_SCHEMA",
     ])

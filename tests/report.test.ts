@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { sampleAreaLookup } from "./fixtures/sample-areas.js"
 import { loadDemoQuestionnaire } from "../src/adapters/fixtures/demo-questionnaire.js"
 import { sampleLeaseAnswers, sampleLeases, sampleListings, sampleScoutAnswers } from "./fixtures/sample-listings.js"
 import { MockRunner, developerText, lastUserText, type MockScript } from "../src/adapters/inference/mock-runner.js"
@@ -10,7 +11,7 @@ import { auditReport, createFact, validateSource, type ReportDraft } from "../sr
 async function run(script?: (inner: MockScript) => MockScript) {
   const { profile, requirements } = loadDemoQuestionnaire()
   const inner = demoRoomScript({ scout: sampleScoutAnswers(), lease: sampleLeaseAnswers() }, FAST_PACE)
-  const s = new ResearchSession({ id: "t", mode: "demo", model: "mock", runner: new MockRunner({ script: script ? script(inner) : inner }), listings: sampleListings(), leases: sampleLeases(), profile, requirements })
+  const s = new ResearchSession({ id: "t", mode: "demo", model: "mock", runner: new MockRunner({ script: script ? script(inner) : inner }), listings: sampleListings(), leases: sampleLeases(), profile, requirements, areaLookup: sampleAreaLookup })
   const start = Date.now()
   while (s.status !== "done" && Date.now() - start < 10_000) await new Promise((r) => setTimeout(r, 20))
   return s

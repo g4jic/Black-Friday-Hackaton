@@ -1,0 +1,45 @@
+100 listings, 59 distinct addresses
+1/59 Braće Jerković|Voždovac|Beograd: street {"food":6,"shops":13,"offices":0,"crafts":1,"transit":8,"schools":0,"parking":20}
+2/59 Bulevar Mihajla Pupina|Novi Beograd|Beograd: street {"food":5,"shops":3,"offices":66,"crafts":0,"transit":5,"schools":1,"parking":12}
+3/59 Bulevar Slobodana Jovanovića|Novo naselje|Novi Sad: street {"food":8,"shops":14,"offices":3,"crafts":0,"transit":6,"schools":0,"parking":38}
+4/59 Bulevar kralja Aleksandra|Zvezdara|Beograd: street {"food":29,"shops":81,"offices":14,"crafts":3,"transit":13,"schools":10,"parking":6}
+5/59 Cara Dušana|Adice|Novi Sad: street {"food":3,"shops":13,"offices":1,"crafts":1,"transit":2,"schools":2,"parking":12}
+6/59 Dimitrija Tucovića|Zvezdara|Beograd: street {"food":12,"shops":26,"offices":6,"crafts":1,"transit":4,"schools":2,"parking":3}
+7/59 Fruškogorska|Liman 1|Novi Sad: street {"food":20,"shops":55,"offices":3,"crafts":0,"transit":4,"schools":4,"parking":55}
+8/59 Gagarinova|Novo naselje|Novi Sad: street {"food":15,"shops":46,"offices":2,"crafts":1,"transit":7,"schools":3,"parking":32}
+9/59 Gogoljeva|Grbavica|Novi Sad: street {"food":23,"shops":48,"offices":5,"crafts":4,"transit":1,"schools":5,"parking":48}
+10/59 Gospodar Jevremova|Dorćol|Beograd: street {"food":132,"shops":124,"offices":15,"crafts":1,"transit":7,"schools":4,"parking":8}
+11/59 Gospodska|Zemun|Beograd: street {"food":52,"shops":42,"offices":7,"crafts":4,"transit":2,"schools":1,"parking":4}
+12/59 Ignjata Pavlasa|Stari grad|Novi Sad: street {"food":82,"shops":77,"offices":30,"crafts":3,"transit":2,"schools":1,"parking":21}
+13/59 Ilije Ognjanovića|Liman 2|Novi Sad: street {"food":101,"shops":90,"offices":34,"crafts":3,"transit":3,"schools":1,"parking":20}
+14/59 Ivana Milutinovića|Karaburma|Beograd: street {"food":2,"shops":16,"offices":0,"crafts":0,"transit":6,"schools":0,"parking":0}
+15/59 Ive Andrića|Telep|Novi Sad: street {"food":2,"shops":0,"offices":0,"crafts":0,"transit":0,"schools":0,"parking":0}
+16/59 Ive Lole Ribara|Grbavica|Novi Sad: street {"food":19,"shops":17,"offices":5,"crafts":3,"transit":3,"schools":0,"parking":21}
+17/59 Janka Čmelika|Detelinara|Novi Sad: street {"food":5,"shops":16,"offices":1,"crafts":1,"transit":6,"schools":1,"parking":28}
+18/59 Jevrejska|Stari grad|Novi Sad: street {"food":50,"shops":78,"offices":13,"crafts":5,"transit":9,"schools":5,"parking":17}
+19/59 Jurija Gagarina|Novi Beograd|Beograd: street {"food":7,"shops":37,"offices":3,"crafts":1,"transit":8,"schools":0,"parking":4}
+20/59 Kalenićeva|Vračar|Beograd: street {"food":51,"shops":254,"offices":29,"crafts":14,"transit":5,"schools":2,"parking":4}
+21/59 Kisačka|Rotkvarija|Novi Sad: street {"food":3,"shops":4,"offices":1,"crafts":0,"transit":4,"schools":1,"parking":10}
+22/59 Kopaonička|Adice|Novi Sad: district {"food":0,"shops":3,"offices":0,"crafts":0,"transit":0,"schools":0,"parking":0}
+23/59 Kosančićev venac|Stari grad|Beograd: street {"food":48,"shops":54,"offices":13,"crafts":1,"transit":6,"schools":4,"parking":4}
+24/59 Kosovska|Podbara|Novi Sad: street {"food":11,"shops":28,"offices":6,"crafts":2,"transit":7,"schools":3,"parking":24}
+25/59 Kralja Petra|Stari grad|Beograd: street {"food":84,"shops":103,"offices":13,"crafts":3,"transit":3,"schools":4,"parking":6}
+26/59 Kursulina|Vračar|Beograd: street {"food":76,"shops":262,"offices":64,"crafts":10,"transit":7,"schools":1,"parking":4}
+27/59 Laze Telečkog|Centar|Novi Sad: street {"food":104,"shops":93,"offices":13,"crafts":1,"transit":0,"schools":5,"parking":13}
+28/59 Maksima Gorkog|Vračar|Beograd: street {"food":0,"shops":0,"offices":0,"crafts":0,"transit":0,"schools":0,"parking":0}
+29/59 Marijane Gregoran|Karaburma|Beograd: street {"food":1,"shops":12,"offices":0,"crafts":0,"transit":5,"schools":1,"parking":4}
+30/59 Matice srpske|Mirijevo|Beograd: street {"food":3,"shops":7,"offices":1,"crafts":0,"transit":9,"schools":0,"parking":8}
+31/59 Mileve Marić|Telep|Novi Sad: street {"food":1,"shops":3,"offices":2,"crafts":0,"transit":1,"schools":0,"parking":18}
+32/59 Mirijevski bulevar|Mirijevo|Beograd: street {"food":0,"shops":1,"offices":0,"crafts":0,"transit":6,"schools":1,"parking":2}
+33/59 Narodnog fronta|Liman 2|Novi Sad: street {"food":24,"shops":62,"offices":6,"crafts":0,"transit":8,"schools":3,"parking":50}
+34/59 Nehruova|Novi Beograd|Beograd: street {"food":0,"shops":9,"offices":0,"crafts":0,"transit":4,"schools":1,"parking":1}
+35/59 Njegoševa|Vračar|Beograd: street {"food":48,"shops":95,"offices":26,"crafts":2,"transit":5,"schools":1,"parking":6}
+36/59 Omladinskih brigada|Novi Beograd|Beograd: street {"food":0,"shops":0,"offices":0,"crafts":0,"transit":0,"schools":0,"parking":0}
+37/59 Partizanska|Klisa|Novi Sad: street {"food":1,"shops":5,"offices":0,"crafts":0,"transit":2,"schools":0,"parking":3}
+38/59 Pašićeva|Centar|Novi Sad: street {"food":80,"shops":54,"offices":12,"crafts":2,"transit":0,"schools":5,"parking":10}
+39/59 Pere Velimirovića|Banovo brdo|Beograd: street {"food":2,"shops":2,"offices":0,"crafts":0,"transit":6,"schools":0,"parking":0}
+40/59 Požeška|Banovo brdo|Beograd: street {"food":2,"shops":4,"offices":1,"crafts":0,"transit":6,"schools":0,"parking":9}
+41/59 Prvomajska|Zemun|Beograd: street {"food":9,"shops":26,"offices":5,"crafts":2,"transit":4,"schools":1,"parking":2}
+42/59 Rumenačka|Detelinara|Novi Sad: street {"food":6,"shops":11,"offices":1,"crafts":2,"transit":5,"schools":1,"parking":30}
+43/59 Seljačkih buna|Novo naselje|Novi Sad: street {"food":1,"shops":9,"offices":3,"crafts":0,"transit":4,"schools":1,"parking":23}
+44/59 Seljačkih buna|Satelit|Novi Sad: street {"food":1,"shops":9,"offices":3,"crafts":0,"transit":4,"schools":1,"parking":23}

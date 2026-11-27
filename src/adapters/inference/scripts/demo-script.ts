@@ -4,7 +4,7 @@ import { scoutDemoScript } from "./scout-script.js"
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
-export type DemoLatency = { scout?: (listingId: string) => number; leaseReader?: number; financeStep?: number; reportWriter?: number }
+export type DemoLatency = { scout?: (listingId: string) => number; leaseReader?: number; financeStep?: number; locationStep?: number; reportWriter?: number }
 
 /** Demo-mode "model" for the Lease reader: replays the scripted answer for the lease id in the message. */
 export function leaseReaderDemoScript(answers: Record<string, unknown>, latencyMs = 0): MockScript {
@@ -40,6 +40,24 @@ export function financeDemoScript(stepLatencyMs = 0): MockScript {
 }
 
 /**
+ * Demo-mode "model" for the Location analyst: calls area_data once, then copies the counts the tool returned into two
+ * sentences (no number of its own). When the address was not found, it says so.
+ */
+export function locationDemoScript(stepLatencyMs = 0): MockScript {
+  return async (input): Promise<MockReply> => {
+    if (stepLatencyMs > 0) await sleep(stepLatencyMs)
+    const outputs = toolOutputs(input)
+    if (outputs.length === 0) return { toolCall: { name: "area_data", args: {} } }
+    const out = outputs.join("\n")
+    const line = (metric: string) => new RegExp(`^${metric} = (\\d+) (.+)$`, "m").exec(out)
+    const parts = ["transit", "offices", "schools", "parking", "food", "shops"].map(line).filter((m): m is RegExpExecArray => Boolean(m))
+    if (parts.length === 0) return { text: JSON.stringify({ explanation: "The location could not be checked: the address was not found in OpenStreetMap." }) }
+    const listed = parts.slice(0, 4).map((m) => `${m[1]} ${m[2]}`).join(", ")
+    return { text: JSON.stringify({ explanation: `OpenStreetMap maps ${listed} near this address. It does not show foot traffic or revenue, so check the street at the hours you would open.` }) }
+  }
+}
+
+/**
  * Demo-mode "model" for the Report writer: builds the report only from the FACTS in its message (rank facts for the
  * top 3, then checks, rejections and unknowns), copying the fact texts, so it passes the Auditor. It computes nothing.
  */
@@ -67,12 +85,14 @@ export function demoRoomScript(answers: { scout: Record<string, unknown>; lease:
   const scout = scoutDemoScript(answers.scout, { latencyMs: latency.scout })
   const lease = leaseReaderDemoScript(answers.lease, latency.leaseReader)
   const finance = financeDemoScript(latency.financeStep)
+  const location = locationDemoScript(latency.locationStep ?? latency.financeStep)
   const report = reportWriterDemoScript(latency.reportWriter)
   return (input: InferenceInput) => {
     const role = developerText(input)
     if (role.startsWith("You are the Scout")) return scout(input)
     if (role.startsWith("You are the Lease reader")) return lease(input)
     if (role.startsWith("You are the Finance analyst")) return finance(input)
+    if (role.startsWith("You are the Location analyst")) return location(input)
     if (role.startsWith("You are the Report writer")) return report(input)
     return { text: "mock answer" }
   }

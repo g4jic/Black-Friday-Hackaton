@@ -7,13 +7,14 @@ import type { Money } from "./money.js"
 import type { BusinessProfile } from "./profile.js"
 import { calc, validateSource, type SourceRef, type Sourced } from "./source.js"
 import { verdictFor, type Verdict } from "./verdict.js"
+import { scoreLocation, type AreaData } from "./location.js"
 
 /**
  * The Ranker's rules: plain code, no model. Shown to the user on the Assumptions screen (served from this object, so
  * the screen and the code can never disagree). Labelled "SuiteSpot assumptions": they are our choices, not facts.
  */
 export const RANKING_ASSUMPTIONS = {
-  weights: { cost: 45, area: 20, lease: 20, checks: 15 },
+  weights: { cost: 40, area: 15, lease: 20, location: 10, checks: 15 },
   cost: {
     description: "Monthly cost (rent + stated service charge) as a share of the monthly budget",
     fullScoreAtOrBelow: 0.7,
@@ -32,6 +33,9 @@ export const RANKING_ASSUMPTIONS = {
       { upTo: Infinity, score: 0.3 },
     ],
     indexation: { none: 1, cpi: 1, fixedUpTo3: 0.9, fixedUpTo5: 0.7, fixedAbove5: 0.4 },
+  },
+  location: {
+    description: "OpenStreetMap counts within 300 m of the address, scored per type of business (see Location rules); unknown when the address is not found",
   },
   checks: {
     description: "Each point to check before signing (soft flag or unverified field) lowers this part by 0.15",
@@ -79,6 +83,8 @@ export type RankingInput = {
   readonly hasLeaseDraft: boolean
   /** Soft findings of this candidate (lease concerns and others). */
   readonly softFindings: readonly Finding[]
+  /** OpenStreetMap counts around the address (code), or null when the location could not be checked. */
+  readonly area: AreaData | null
 }
 
 const pct = (x: number) => `${Math.round(x * 100)}%`
@@ -165,6 +171,16 @@ export function scoreCandidate(input: RankingInput): CandidateScore {
     } else missing.push("lease terms")
   } else missing.push("lease terms")
 
+  // Location: OpenStreetMap counts scored per business type (plain code); unknown when the address was not found.
+  let location: number | null = null
+  if (input.area) {
+    const scored = scoreLocation(input.area, profile.businessType().value)
+    location = scored.score
+    for (const p of scored.parts) {
+      reasons.push({ text: `Location: ${p.text}`, effect: p.effect, source: p.source, impact: ((p.score - 0.5) * A.weights.location) / scored.parts.length })
+    }
+  } else missing.push("location")
+
   // Points to check before signing (soft flags and unverified fields), lease terms not counted twice.
   const notTwice = new Set<string>(A.checks.notCountedTwice)
   const counted = input.softFindings.filter((f) => !notTwice.has(f.id.split(":").pop() ?? ""))
@@ -186,6 +202,7 @@ export function scoreCandidate(input: RankingInput): CandidateScore {
     { name: "cost", weight: A.weights.cost, value: cost },
     { name: "area", weight: A.weights.area, value: area },
     { name: "lease", weight: A.weights.lease, value: lease },
+    { name: "location", weight: A.weights.location, value: location },
     { name: "checks", weight: A.weights.checks, value: checks },
   ]
   const total = components.reduce((a, c) => a + c.weight, 0)
@@ -216,6 +233,8 @@ export function scoreCandidate(input: RankingInput): CandidateScore {
       ...what.map((m) =>
         m === "area"
           ? `area not stated: up to ${points("area")} points unknown`
+          : m === "location"
+          ? `location not checked (address not found in OpenStreetMap): up to ${points("location")} points unknown`
           : m === "verified lease"
             ? "lease terms come from the listing form, not from a lease draft"
             : input.hasLeaseDraft
@@ -233,7 +252,9 @@ export function scoreCandidate(input: RankingInput): CandidateScore {
         : { kind: "profile", ref: "questionnaire", field: "leaseMonths" }
       : what.includes("area")
         ? { kind: "listing", ref: listing.ref, field: "area", missing: true }
-        : { kind: "listing", ref: listing.ref, field: unverified[0]?.field ?? "rentMonthly", missing: true }
+        : what.includes("location")
+          ? { kind: "osm", ref: "OpenStreetMap address lookup: not found", field: "address" }
+          : { kind: "listing", ref: listing.ref, field: unverified[0]?.field ?? "rentMonthly", missing: true }
     if (label.length) {
       out.push({
         text: `Confidence ${confidence}: ${label.join("; ")}`,
