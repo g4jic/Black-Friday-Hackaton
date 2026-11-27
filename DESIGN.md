@@ -55,7 +55,7 @@ Sentence case everywhere, no ALL CAPS.
 | `brand` | `#F25C54` | **Brand coral.** Active tab, active sidebar button, count circles, tool dots, busy ring. Text on it is `ink` |
 | `brand-600` | `#E5483F` | Hover on brand fills |
 | `brand-50` | `#FDE7E3` | Brand tint |
-| `brand-soft` | `#F6857B` | Active sidebar item and the account avatar while Settings is open (a lighter coral that matches the other oranges) |
+| `brand-soft` | `#F6857B` | Every selected state and orange icon circle: active sidebar item, avatar while Settings is open, the Find spaces / Evaluate a space icons, selected tabs and chips (a lighter coral that matches the other oranges) |
 | `lilac` | `#C19BE9` | Answer source pill ("Recorded run" / "Scripted demo answers"), running bars on the Timeline. Text on it is `ink` |
 | `lilac-600` | `#8F5FD0` | Left edge of a running Timeline bar |
 | `lilac-100` | `#EEE3FB` | Lilac tint |

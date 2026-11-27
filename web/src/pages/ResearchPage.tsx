@@ -74,7 +74,7 @@ export function ResearchTabs({ tab, tabs = TABS }: { tab: ResearchTab; tabs?: ty
           type="button"
           aria-selected={tab === id}
           onClick={() => setSearchParam("tab", id)}
-          className={cx("inline-flex h-9 items-center gap-2 rounded-full px-4 text-sm font-medium transition-colors duration-200", tab === id ? "bg-brand text-ink" : "glass-strong text-ink hover:bg-white")}
+          className={cx("inline-flex h-9 items-center gap-2 rounded-full px-4 text-sm font-medium transition-colors duration-200", tab === id ? "bg-brand-soft text-ink" : "glass-strong text-ink hover:bg-white")}
         >
           <Icon size={16} strokeWidth={1.75} aria-hidden /> {label}
         </button>

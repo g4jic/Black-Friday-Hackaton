@@ -294,7 +294,7 @@ export function ListingTermsFields({ form, set, problemFor }: { form: Form; set:
                       type="button"
                       aria-pressed={on}
                       onClick={() => set({ permittedUses: on ? form.permittedUses.filter((u) => u !== use) : [...form.permittedUses, use] })}
-                      className={cx("h-10 rounded-full px-4 text-sm font-medium", on ? "bg-brand text-ink" : "glass-strong text-ink hover:bg-white")}
+                      className={cx("h-10 rounded-full px-4 text-sm font-medium", on ? "bg-brand-soft text-ink" : "glass-strong text-ink hover:bg-white")}
                     >
                       {BUSINESS_TYPE_LABELS[use]}
                     </button>

@@ -44,7 +44,7 @@ export function DashboardPage() {
 function ModeCard({ to, icon: Icon, title, text }: { to: string; icon: typeof Search; title: string; text: string }) {
   return (
     <Link to={to} className="group flex items-start gap-4 rounded-[24px] glass-strong p-5 hover:bg-white">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand text-ink">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-soft text-ink">
         <Icon size={20} strokeWidth={1.75} aria-hidden />
       </span>
       <span className="min-w-0 flex-1">

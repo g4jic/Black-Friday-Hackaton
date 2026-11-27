@@ -194,7 +194,7 @@ export function NewResearchPage({ config }: { config: Config | null }) {
                       role="radio"
                       aria-checked={scenario === s.id}
                       onClick={() => setScenario(s.id)}
-                      className={cx("h-10 rounded-full px-4 text-sm font-medium", scenario === s.id ? "bg-brand text-ink" : "glass-strong text-ink hover:bg-white")}
+                      className={cx("h-10 rounded-full px-4 text-sm font-medium", scenario === s.id ? "bg-brand-soft text-ink" : "glass-strong text-ink hover:bg-white")}
                     >
                       {s.title}
                     </button>
@@ -295,7 +295,7 @@ function ModeTab({ active, icon: Icon, title, text, onSelect }: { active: boolea
       onClick={onSelect}
       className={cx("flex items-center gap-4 rounded-[24px] p-4 text-left", active ? "bg-white shadow-[var(--shadow-soft)] ring-2 ring-brand" : "glass-strong hover:bg-white")}
     >
-      <span className={cx("flex h-11 w-11 shrink-0 items-center justify-center rounded-full", active ? "bg-brand text-ink" : "bg-white text-ink")}>
+      <span className={cx("flex h-11 w-11 shrink-0 items-center justify-center rounded-full", active ? "bg-brand-soft text-ink" : "bg-white text-ink")}>
         <Icon size={20} strokeWidth={1.75} aria-hidden />
       </span>
       <span>
