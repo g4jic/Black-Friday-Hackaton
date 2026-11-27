@@ -3,6 +3,17 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
+## Update (27 Nov 2026, 21:40, Andrej + Claude): plain interface text, photo dialog
+- Decided by Andrej: the interface says "owner", never "landlord", and shows no "simulated", "Stripe test" or
+  "simulated landlord" tags; the README and How it works state once that the data is synthetic and payments are
+  simulated or a Stripe test sandbox. Explanatory slop (where accounts live, how a photo is processed, what code does
+  behind a field) is removed. Agent texts and recordings keep "landlord"; `ownerWording` in
+  `web/src/app/research-store.ts` rewrites it when run events reach the browser, so the recordings still match.
+- "Recorded run" / "Scripted demo answers, no AI model" labels are KEPT (local keyless only; honesty rule in
+  CLAUDE.md). Ask Andrej before removing them.
+- Profile photo: a dialog (`web/src/app/PhotoDialog.tsx`) to upload, drag and zoom inside a round frame; the browser
+  uploads only the 256 px crop. Tested online on 27 Nov (Supabase Storage bucket `avatars` made on first upload).
+
 ## Update (27 Nov 2026, 21:00, Andrej + Claude): account identity, phone and browser pass, preferred districts
 - Settings, Account: edit the name and the email (Supabase sends a confirmation link for a new email; until then the
   old one signs in), upload or remove a profile photo. The browser crops it to a 256 px square JPEG; the server checks

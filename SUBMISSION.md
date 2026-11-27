@@ -16,7 +16,7 @@ live run at a time, and rent paid through a real Stripe Checkout in a Stripe tes
 4242, fake money.)
 
 Locally, from the README with no key and no database: `npm install`, `npm run dev`. The agents replay three recorded
-real model runs (labelled "Recorded run") and rent is paid through a clearly labelled simulated checkout; everything
+real model runs (labelled "Recorded run") and rent is paid through a simulated checkout (no card, no money); everything
 else is the same code and works the same.
 
 ## Description
@@ -29,7 +29,7 @@ calculation, decides every deal breaker and every verdict, and checks every quot
 source. Each space gets a score range, a verdict, a rent share of revenue, a bad year / good year view, a lease or buy
 comparison and a list of what to check before signing. The business can then make an offer; once the landlord accepts,
 both sides see the same lease with its rent due dates, and the tenant pays rent through one payment port (Stripe
-Checkout in a test sandbox with test keys, a clearly labelled simulated checkout without them; no real money ever
+Checkout in a test sandbox with test keys, a simulated checkout without them; no real money ever
 moves). 278 automated tests, no key needed.
 All listings, landlords and businesses are synthetic. Not financial or legal advice.
 

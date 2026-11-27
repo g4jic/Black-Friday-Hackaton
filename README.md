@@ -22,7 +22,7 @@ ship; put your own keys in `.env` and the local version does everything the onli
 | Setup | `npm install`, `npm run dev`: no key, no database, about two minutes | None: open the link and sign up |
 | Accounts | Kept on your computer (`data/local-accounts.json`) | Supabase Auth |
 | Agents | Three recorded real runs of claude-haiku-4-5, replayed with their timing and labelled "Recorded run" | The live model (claude-haiku-4-5) on our key, with your own questionnaire or an outside listing |
-| Rent payment | Simulated checkout, labelled "Simulated payment, no real money" | A real Stripe Checkout in a Stripe test sandbox (test card `4242 4242 4242 4242`), fake money |
+| Rent payment | A simulated checkout (no card, no money) | A real Stripe Checkout in a Stripe test sandbox (test card `4242 4242 4242 4242`), fake money |
 | The same in both | The Mozaik runtime, every rule, calculation, hard flag, ranking, verdict and audit; onboarding with roles; listings, offers, leases and the rent schedule | The same |
 
 Online, spending on the model is capped by a usage limit in the Anthropic Console, and the server runs one live
@@ -132,11 +132,12 @@ What you see:
 ### Then rent a space, still with no key (offer, lease, rent payment)
 1. Open any space (for example from the results, or under **Listings**) and use **Make an offer**: rent, start date,
    term, then **Send offer**.
-2. A seeded listing has no real landlord, so you answer as the **simulated landlord**: under **My spaces**, click **Accept as the landlord**. Code
-   creates the lease and its rent schedule (one due date per month).
-3. Under **My spaces** the lease shows every month as upcoming, due, overdue or paid. Click **Pay rent (simulated)**: the
-   checkout page is labelled **"Simulated payment, no real money"**; confirm it and the month turns **Paid
-   (simulated)**, with the payment reference.
+2. A seeded listing has no real owner, so you answer the offer yourself: under **My spaces**, click **Accept** on your
+   offer. Code creates the lease and its rent schedule (one due date per month).
+3. Under **My spaces** the lease shows every month as upcoming, due, overdue or paid. Click **Pay rent**: without
+   Stripe keys a simulated checkout opens (no card, nothing is charged); confirm it and the month turns **Paid**, with
+   the payment reference in its tooltip. With Stripe test keys the same button opens Stripe Checkout in test mode.
+   The interface does not tag these as simulated or test: this README and the How it works page state it once.
 4. A landlord sees the same lease and the same paid month under **Offers** (sign in with a second account that chose
    "List my space", publish a listing, and make the offer from the first one to see both sides).
 
@@ -370,8 +371,8 @@ quality check").
 | Listings, landlords, contacts, businesses | **Synthetic**: 100 generated listings (50 Novi Sad, 50 Beograd) from a frozen seed (stated in this README and on the How it works page). Prices per m2 are a synthetic assumption roughly aligned with public 2025-2026 ranges (Kurir Biznis, Biznis.rs): medians Novi Sad 10, Beograd 16.2 EUR/m2 |
 | Accounts, saved spaces, view counts | Real: Supabase Auth with Supabase, local accounts on this computer without it |
 | Area data (OpenStreetMap) | Real public data: counted once for the seeded addresses and stored in `fixtures/osm/` (© OpenStreetMap contributors, ODbL); an outside listing is looked up live (at most 1 request per second) |
-| Offers, leases, rent schedule | Real code and storage (Supabase or local); on a seeded listing the landlord's answer is given by the tenant as the "simulated landlord" |
-| Rent payments | **Simulated** without Stripe keys ("Simulated payment, no real money"); **Stripe test mode** with test keys (the online version uses an anonymous Stripe test sandbox, tested end to end on 27 Nov 2026: Checkout, test card, the month marked paid with the `cs_test_` session as its reference). Never real money |
+| Offers, leases, rent schedule | Real code and storage (Supabase or local); on a seeded listing, which has no real owner, the tenant answers the offer |
+| Rent payments | **Simulated** without Stripe keys (no card, nothing charged); **Stripe test mode** with test keys (the online version uses an anonymous Stripe test sandbox, tested end to end on 27 Nov 2026: Checkout, test card, the month marked paid with the `cs_test_` session as its reference). Never real money |
 | Signing a lease, contacting landlords | Not built |
 
 ## Architecture and code map
