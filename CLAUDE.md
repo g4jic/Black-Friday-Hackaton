@@ -30,7 +30,8 @@ done, exact state, next steps in order, how to run locally, Supabase, tonight's 
   listings (table `listings`); tenants can stay Guest and their searches stay in sessionStorage. "Find spaces" picks
   candidates from our own database; "Evaluate an outside listing" takes the same required fields typed by the user
   (plus optional pasted text). Seed: 100 SYNTHETIC listings (50 Novi Sad, 50 Belgrade) with 100 demo landlord
-  accounts, all `is_demo = true` and labelled "Demo listing". Launch story: before launch the founders agree the
+  accounts, all `is_demo = true`. Since 27 Nov there are no "Demo" labels in the UI; the README and How it works state
+  that all data is synthetic. Launch story: before launch the founders agree the
   first listings with landlords so the platform is not empty; in this version the data is synthetic. Never claim
   they are real partners. OpenStreetMap for area data stays allowed.
 - **Supabase (done, step 6):** project SuiteSpot, organisation mRtw, ref `oetcunfrpnjtmcqbdrbn`. Migrations in
@@ -42,8 +43,9 @@ done, exact state, next steps in order, how to run locally, Supabase, tonight's 
 - **Keyless honesty:** without a key the agents replay scripted demo answers and every result screen says "Scripted
   demo answers, no AI model". Since 27 Nov the keyless "Find spaces" replays recorded real runs of
   three scenarios (`npm run record:demo`), labelled "Recorded run". Never present scripted answers as a model's work.
-- Deploy on Railway: not done yet (after steps 7 to 9). Needs `SUITESPOT_ACCESS_CODE`, the SUPABASE_* values and
-  ANTHROPIC_API_KEY as Railway variables, and the Supabase Site URL set to the Railway address.
+- Deployed on Railway (https://suitespot-production.up.railway.app): ANTHROPIC_API_KEY and the SUPABASE_* values as
+  Railway variables. Since 27 Nov there is no access code: every feature is open; the cost guard is the usage limit in
+  the Anthropic Console plus one live run at a time per server.
 - **No demo slot for us.** The jury only sees the public repo and the README (plus our video link).
 - Stripe and Solana are not used (no natural fit).
 - Never give a legal verdict on permitted use; report "check before signing: <what>".
@@ -567,9 +569,8 @@ He is a QA Automation Engineer. Judging from what he shares on LinkedIn:
   nekretnine.rs block crawlers). There is no fetch_listing or web_search tool. The earlier per-site rules and the
   demo-01..08 fixtures are SUPERSEDED and removed. An outside listing enters only as fields the user types (mode A).
 - **Live mode env vars (one name each, used the same in code, `.env.example`, PROGRESS.md and here):**
-  (`SUITESPOT_MODE` was REMOVED on 27 Nov: a server with `ANTHROPIC_API_KEY` runs live, without it keyless) and `SUITESPOT_ACCESS_CODE` (optional; when set,
-  live runs need the header `X-Access-Code` with this value, which users enter under Settings; demo runs never need it).
-  Never print or commit its value.
+  (`SUITESPOT_MODE` was REMOVED on 27 Nov: a server with `ANTHROPIC_API_KEY` runs live, without it keyless).
+  `SUITESPOT_ACCESS_CODE` was REMOVED on 27 Nov too (live mode is open; cost is capped in the Anthropic Console).
 - **Model key: Anthropic**, from the user's own Anthropic Console account (`ANTHROPIC_API_KEY` in `.env`). The user
   manages the budget himself. Default model: `claude-haiku-4-5` (cheapest model in Mozaik's bundled list). Mozaik
   6.0.0's bundled Anthropic names are `claude-haiku-4-5`, `claude-sonnet-4-6`, `claude-opus-4-7`, `claude-opus-4-8`.

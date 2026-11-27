@@ -300,10 +300,6 @@ function MapPanel({ lensRef, welcome }: { lensRef: RefObject<HTMLDivElement>; we
         </div>
       </div>
       </div>
-      <div className="absolute right-5 bottom-5 flex gap-2">
-        <span className="rounded-full bg-lilac px-3 py-1.5 text-xs font-medium text-ink">Demo data</span>
-        <span className="rounded-full border border-brand/40 bg-white px-3 py-1.5 text-xs font-medium text-ink">100 synthetic listings</span>
-      </div>
     </section>
   )
 }

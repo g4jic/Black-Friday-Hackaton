@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react"
 
 /**
- * The default business profile and the live mode access code, kept in this browser (localStorage).
+ * The default business profile, kept in this browser (localStorage).
  * They prefill the questionnaire for live runs. Every storage call is guarded: private windows and blocked
  * storage fall back to the defaults.
  */
@@ -14,7 +14,6 @@ export type Settings = {
   /** null: not set yet (the questionnaire asks for it) */
   monthlyBudget: number | null
   currency: Currency
-  liveAccessCode: string
 }
 
 export const BUSINESS_TYPE_LABELS: Record<BusinessType, string> = {
@@ -26,7 +25,7 @@ export const BUSINESS_TYPE_LABELS: Record<BusinessType, string> = {
 
 export const CURRENCIES: Currency[] = ["EUR", "RSD", "USD"]
 
-export const DEFAULT_SETTINGS: Settings = { businessType: "cafe_food", city: "Novi Sad", monthlyBudget: null, currency: "EUR", liveAccessCode: "" }
+export const DEFAULT_SETTINGS: Settings = { businessType: "cafe_food", city: "Novi Sad", monthlyBudget: null, currency: "EUR" }
 
 const STORAGE_KEY = "suitespot.settings.v1"
 const listeners = new Set<() => void>()
@@ -42,7 +41,6 @@ function readSettings(): Settings {
       city: typeof parsed.city === "string" ? parsed.city : DEFAULT_SETTINGS.city,
       monthlyBudget: typeof parsed.monthlyBudget === "number" && parsed.monthlyBudget > 0 ? parsed.monthlyBudget : null,
       currency: parsed.currency && CURRENCIES.includes(parsed.currency) ? parsed.currency : DEFAULT_SETTINGS.currency,
-      liveAccessCode: typeof parsed.liveAccessCode === "string" ? parsed.liveAccessCode : "",
     }
   } catch {
     return DEFAULT_SETTINGS

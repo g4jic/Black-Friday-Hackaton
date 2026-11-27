@@ -10,9 +10,9 @@ in code stops the agents still working on a deal breaker, and every number on th
 > **All listings, landlords and businesses are synthetic. Not financial or legal advice.**
 
 - Demo video: **[link coming]** (2-3 min)
-- Live deployment: **https://suitespot-production.up.railway.app** (sign up, then Research. The three demo scenarios
-  and the whole deal loop run without any code; your own questionnaire runs the live model and needs the access code
-  under Settings, so a public link cannot spend our key)
+- Live deployment: **https://suitespot-production.up.railway.app** (sign up, then Research: every feature is open,
+  with the live model claude-haiku-4-5 on our key; spending is capped by a usage limit in the Anthropic Console, and
+  the server runs one live research at a time)
 - Mozaik Cloud: [screenshot of a live run](#how-the-agents-run-concurrently) (the Cloud project is private)
 
 ## Contents
@@ -104,7 +104,7 @@ What you see:
 ### Then rent a space, still with no key (offer, lease, rent payment)
 1. Open any space (for example from the results, or under **Listings**) and use **Make an offer**: rent, start date,
    term, then **Send offer**.
-2. A demo listing has no real landlord, so you answer as the **demo landlord (simulated)**: under **My spaces**, click **Accept as demo landlord**. Code
+2. A seeded listing has no real landlord, so you answer as the **simulated landlord**: under **My spaces**, click **Accept as the landlord**. Code
    creates the lease and its rent schedule (one due date per month).
 3. Under **My spaces** the lease shows every month as upcoming, due, overdue or paid. Click **Pay rent (simulated)**: the
    checkout page is labelled **"Simulated payment, no real money"**; confirm it and the month turns **Paid
@@ -132,8 +132,8 @@ Open `.env`, set `ANTHROPIC_API_KEY=` to your key from console.anthropic.com, sa
 There is no mode switch: a server with a key runs live, a server without one runs the recorded demo. The key stays on
 the server; the browser never receives it, and server events are scrubbed of it before they are streamed.
 
-- `SUITESPOT_ACCESS_CODE` (optional): when set, live runs need this code (users enter it under Settings), so a public
-  deployment cannot spend your key. The recorded demo never needs it.
+- Cost guard: set a usage limit for the key in the Anthropic Console. The server also runs at most one live research
+  at a time (a second one gets 429).
 - `MOZAIK_API_KEY` (optional): Mozaik Cloud tracing. Easier: run the pairing once, see below.
 - `STRIPE_SECRET_KEY` and `STRIPE_PUBLISHABLE_KEY` (optional, test keys only): rent payments through Stripe Checkout
   in test mode instead of the simulated checkout.
@@ -326,10 +326,10 @@ quality check").
 | Model answers with a key | Real: claude-haiku-4-5, live |
 | Model answers without a key, Find spaces | **Recorded**: three real claude-haiku-4-5 runs (`fixtures/recordings/*.json`, recorded 27 Nov 2026: 23, 27 and 21 model calls) replayed with their latencies; code still checks every value. A request that is not in the recording fails as a provider error, it is never invented. Labelled "Recorded run" |
 | Model answers without a key, "Evaluate for my business" on a demo listing | **Scripted**: answers built from the seed's own clause sentences, still checked by code. Labelled "Scripted demo answers, no AI model" |
-| Listings, landlords, contacts, businesses | **Synthetic**: 100 generated listings (50 Novi Sad, 50 Beograd) from a frozen seed, labelled "Demo listing". Prices per m2 are a synthetic assumption roughly aligned with public 2025-2026 ranges (Kurir Biznis, Biznis.rs): medians Novi Sad 10, Beograd 16.2 EUR/m2 |
+| Listings, landlords, contacts, businesses | **Synthetic**: 100 generated listings (50 Novi Sad, 50 Beograd) from a frozen seed (stated in this README and on the How it works page). Prices per m2 are a synthetic assumption roughly aligned with public 2025-2026 ranges (Kurir Biznis, Biznis.rs): medians Novi Sad 10, Beograd 16.2 EUR/m2 |
 | Accounts, saved spaces, view counts | Real: Supabase Auth with Supabase, local accounts on this computer without it |
 | Area data (OpenStreetMap) | Real public data: counted once for the seeded addresses and stored in `fixtures/osm/` (© OpenStreetMap contributors, ODbL); an outside listing is looked up live (at most 1 request per second) |
-| Offers, leases, rent schedule | Real code and storage (Supabase or local); on a demo listing the landlord's answer is given by the tenant as the "demo landlord (simulated)" |
+| Offers, leases, rent schedule | Real code and storage (Supabase or local); on a seeded listing the landlord's answer is given by the tenant as the "simulated landlord" |
 | Rent payments | **Simulated** without Stripe keys ("Simulated payment, no real money"); **Stripe test mode** with test keys. Never real money |
 | Signing a lease, contacting landlords | Not built |
 
@@ -384,7 +384,6 @@ against a fake fetch).
 | Vite opens on 5174 instead of 5173 | Port 5173 was taken; open the address Vite prints. |
 | `node -v` shows 20 or lower | Install Node.js 22 LTS or newer from nodejs.org. |
 | Find spaces shows only demo scenarios | Expected without a key. Add `ANTHROPIC_API_KEY` to `.env` and restart for live runs. |
-| A live run answers 401 | The server has `SUITESPOT_ACCESS_CODE` set; enter the code under Settings. |
 | A live run answers 429 | One live run at a time per server; wait for it to finish. |
 | `npm install` warns that install scripts were skipped (npm 11) | Nothing to do: tested on a fresh clone with npm 11.20 and Node 26 (install, tests, build and the keyless demo all work). If `npm run dev` ever fails with an esbuild error, run `npm rebuild esbuild`. |
 | Signing up asks for an email confirmation (Supabase) | Turn off "Confirm email" in Supabase Auth, or use the local accounts (leave SUPABASE_* empty). |

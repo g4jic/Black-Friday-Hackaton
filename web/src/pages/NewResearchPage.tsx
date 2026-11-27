@@ -124,19 +124,17 @@ export function NewResearchPage({ config }: { config: Config | null }) {
       .then((body) => setDemoProfile(body.profile))
       .catch(() => setDemoProfile(null))
   }, [scenario])
-  const accessCodeMissing = Boolean(config?.liveNeedsAccessCode) && !settings.liveAccessCode
-  // Recorded demo runs: on a server without a key, and on a public server for anyone without the access code (the
-  // jury), so the three demo scenarios always run. Every demo run uses the fixed demo profile.
-  const demoOnly = !liveAvailable || accessCodeMissing
+  // Without a key on the server: the recorded demo scenarios, each with its fixed demo profile.
+  const demoOnly = !liveAvailable
   const profileLocked = demoOnly
   const shownForm = profileLocked && demoProfile ? toForm(demoProfile) : form
 
-  const start = async (request: StartRequest, accessCode?: string) => {
+  const start = async (request: StartRequest) => {
     setError(null)
     setProblems([])
     setStarting(true)
     try {
-      navigate(paths.run(await startResearch(request, accessCode)))
+      navigate(paths.run(await startResearch(request)))
     } catch (failure) {
       setError((failure as Error).message)
       if (failure instanceof StartError) setProblems(failure.problems)
@@ -149,7 +147,7 @@ export function NewResearchPage({ config }: { config: Config | null }) {
     if (demoOnly) return void start(request.source === "search" ? { source: "demo", scenario } : request)
     const checked = profileFromForm(form)
     if ("error" in checked) return setError(checked.error)
-    void start({ mode: "live", ...request, profile: checked.profile }, settings.liveAccessCode)
+    void start({ mode: "live", ...request, profile: checked.profile })
   }
 
   return (
@@ -169,9 +167,7 @@ export function NewResearchPage({ config }: { config: Config | null }) {
                 </span>
               </Pill>
               <span className="text-[13px] text-ink-2">
-                {liveAvailable
-                  ? "Without the access code, runs use the locked profile of the demo scenario. Enter the code under Settings to use your own."
-                  : "Without an AI model key on the server, runs use the locked profile of the demo scenario."}
+                Without an AI model key on the server, runs use the locked profile of the demo scenario.
               </span>
             </div>
           ) : (
@@ -226,11 +222,10 @@ export function NewResearchPage({ config }: { config: Config | null }) {
           <OutsideListingForm
             liveAvailable={liveAvailable}
             starting={starting}
-            accessCodeMissing={accessCodeMissing}
             onStart={(outside) => {
               const checked = profileFromForm(form)
               if ("error" in checked) return setError(checked.error)
-              void start({ mode: "live", source: "outside", outside, profile: checked.profile }, settings.liveAccessCode)
+              void start({ mode: "live", source: "outside", outside, profile: checked.profile })
             }}
             error={error}
             problems={problems}
@@ -264,11 +259,6 @@ function ListingToEvaluate({ listingId, liveAvailable, starting, error, blocked,
               <Link to={paths.listing(listing.id)} className="font-semibold text-ink hover:underline">
                 {listing.title}
               </Link>
-              {listing.isDemo && (
-                <Pill variant="brand" icon={false}>
-                  Demo listing
-                </Pill>
-              )}
             </div>
             <p className="tnum mt-1 text-[13px]">
               {listing.district}, {listing.city} · {listing.areaM2} m² · {floorLabel(listing.floor)} · {formatMoney(listing.rentMonthly, "EUR")} rent +{" "}
@@ -394,14 +384,12 @@ function NoKeyNotice() {
 function OutsideListingForm({
   liveAvailable,
   starting,
-  accessCodeMissing,
   onStart,
   error,
   problems,
 }: {
   liveAvailable: boolean
   starting: boolean
-  accessCodeMissing: boolean
   onStart: (outside: { listing: unknown; leaseDraft?: string; url?: string; text?: string }) => void
   error: string | null
   problems: { field: string; message: string }[]
@@ -441,19 +429,11 @@ function OutsideListingForm({
         <button
           type="button"
           onClick={() => onStart({ listing: toInput(listing), ...(leaseDraft.trim() ? { leaseDraft } : {}), ...(url.trim() ? { url: url.trim() } : {}), ...(text.trim() ? { text } : {}) })}
-          disabled={!liveAvailable || starting || accessCodeMissing}
+          disabled={!liveAvailable || starting}
           className="inline-flex h-10 items-center gap-2 rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e] disabled:opacity-40"
         >
           <Play size={16} aria-hidden /> {starting ? "Starting..." : "Evaluate this listing"}
         </button>
-        {liveAvailable && accessCodeMissing && (
-          <span className="text-[13px]">
-            This server asks for an access code.{" "}
-            <Link to={paths.settings()} className="font-medium text-ink underline">
-              Enter it in Settings
-            </Link>
-          </span>
-        )}
       </div>
       {error && (
         <div role="alert" className="rounded-[18px] bg-hard-50 p-4 text-[13px] text-hard">

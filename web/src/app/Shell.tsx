@@ -73,7 +73,7 @@ function Sidebar({ route }: { route: Route }) {
               <span
                 className={cx(
                   "flex h-10 w-10 items-center justify-center rounded-full transition-colors duration-200",
-                  active ? "bg-brand text-ink" : "glass-strong text-ink group-hover:bg-white",
+                  active ? "bg-brand-soft text-ink" : "glass-strong text-ink group-hover:bg-white",
                 )}
               >
                 <Icon size={18} strokeWidth={active ? 2 : 1.75} aria-hidden />
@@ -126,7 +126,7 @@ function AvatarMenu({ settingsActive }: { settingsActive: boolean }) {
         title={`${user.name}: open the menu`}
         className="flex w-[58px] flex-col items-center gap-1 rounded-[18px] py-1.5 sm:w-[72px]"
       >
-        <span className={cx("flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold", settingsActive ? "bg-brand text-ink" : "bg-lilac text-ink")}>{user.name[0]}</span>
+        <span className={cx("flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold", settingsActive ? "bg-brand-soft text-ink" : "bg-lilac text-ink")}>{user.name[0]}</span>
         <span className="text-[11px] leading-3 font-medium text-ink-2">{user.name}</span>
       </button>
       {open && (

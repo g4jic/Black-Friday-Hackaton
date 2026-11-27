@@ -11,7 +11,8 @@ https://github.com/g4jic/Black-Friday-Hackaton
 
 ## Live deployment
 https://suitespot-production.up.railway.app (sign up, then Research. The three demo scenarios and the whole deal loop
-run without any code; live runs with your own questionnaire need the access code.)
+run with no key; your own questionnaire runs the live model on our key, capped by a usage limit in the Anthropic
+Console and one live run at a time. Every feature is open.)
 
 ## Description
 "Is this lease a good financial decision for my business?" A small business owner comparing commercial spaces needs an

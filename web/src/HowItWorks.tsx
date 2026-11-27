@@ -81,6 +81,14 @@ export function HowItWorksPage() {
   const b = a.buy
   return (
     <div className="grid gap-4 lg:grid-cols-2">
+      <Card title="About the data" className="lg:col-span-2">
+        <p className="max-w-[80ch]">
+          Every listing, landlord, contact and business on SuiteSpot in this version is synthetic: 100 generated listings in Novi Sad and Beograd,
+          made for this prototype. Prices per m2 follow public 2025-2026 ranges; area data is real public OpenStreetMap data. Offers, leases and
+          rent payments are real records in the app, but no real money moves: payments are simulated, or Stripe in test mode. Before launch, the
+          founders agree the first listings with landlords so the platform is not empty. Not financial or legal advice.
+        </p>
+      </Card>
       <Card title="Your score, out of 100">
         <p className="mb-3">Each space gets a score from fixed rules, the same for everyone. The parts:</p>
         <ul className="space-y-2">
@@ -183,7 +191,7 @@ export function HowItWorksPage() {
           <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="underline hover:text-ink">
             OpenStreetMap contributors
           </a>
-          , ODbL. All listings on SuiteSpot in this version are synthetic demo listings.
+          , ODbL. All listings on SuiteSpot in this version are synthetic.
         </p>
       </Card>
     </div>

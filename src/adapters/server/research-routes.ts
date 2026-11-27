@@ -1,4 +1,4 @@
-import { createHash, randomUUID, timingSafeEqual } from "node:crypto"
+import { randomUUID } from "node:crypto"
 import type { FastifyInstance } from "fastify"
 import type { InferenceRunner } from "@mozaik-ai/core"
 import { ResearchSession, type ResearchMode } from "../../application/research/research-session.js"
@@ -95,18 +95,6 @@ export type ResearchRoutesOptions = {
 type OutsideBody = { listing?: unknown; leaseDraft?: unknown; url?: unknown; text?: unknown }
 type Body = { scenario?: unknown; mode?: ResearchMode; source?: "demo" | "pasted" | "search" | "listing" | "outside"; listingId?: unknown; outside?: OutsideBody; listings?: { text?: unknown; lease?: unknown; url?: unknown }[]; profile?: Partial<BusinessProfileInput> }
 
-/** Name of the environment variable with the live mode access code (also in .env.example, PROGRESS.md, CLAUDE.md). */
-export const ACCESS_CODE_ENV = "SUITESPOT_ACCESS_CODE"
-const accessCode = () => process.env[ACCESS_CODE_ENV]?.trim() ?? ""
-
-/** Constant-time comparison (hashes first, so different lengths do not leak through timing either). */
-function accessCodeMatches(given: unknown): boolean {
-  const expected = accessCode()
-  if (!expected) return true // no code configured: live mode is open (local development)
-  if (typeof given !== "string" || !given) return false
-  const digest = (s: string) => createHash("sha256").update(s).digest()
-  return timingSafeEqual(digest(given.trim()), digest(expected))
-}
 
 /** The questionnaire of a live run, validated by the domain. Fields the form does not ask keep the demo values. */
 function liveProfile(input: Partial<BusinessProfileInput> | undefined, demo: BusinessProfile): BusinessProfile {
@@ -163,7 +151,6 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
 
   app.get("/api/config", async () => ({
     liveAvailable: options.liveAvailable(),
-    liveNeedsAccessCode: Boolean(accessCode()),
     maxListings: MAX_LISTINGS,
     liveModel: LIVE_MODEL,
     scenarios: (Object.keys(DEMO_SCENARIOS) as DemoScenarioId[]).map((id) => ({ id, title: DEMO_SCENARIOS[id].title, recorded: Boolean((options.loadRecording ?? loadRecording)(id)) })),
@@ -210,7 +197,6 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
       const mode: ResearchMode = body.mode === "live" ? "live" : "demo"
       if (mode === "live") {
         if (!options.liveAvailable()) throw new HttpError(403, "This server has no ANTHROPIC_API_KEY, so it can only run the keyless demo with scripted answers.")
-        if (!accessCodeMatches(req.headers["x-access-code"])) throw new HttpError(401, "Live mode needs a valid access code. Enter it under Settings.")
         const active = [...sessions.values()].filter((s) => s.mode === "live" && s.status === "running").length
         if (active >= MAX_ACTIVE_LIVE) throw new HttpError(429, "A live research is already running. Wait for it to finish.")
       }

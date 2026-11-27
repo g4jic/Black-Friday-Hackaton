@@ -8,8 +8,8 @@
  *     Writes design/screenshots/*.png.
  *   npm run screenshots -- --live --url http://localhost:3001
  *     One LIVE run of the whole demo (claude-haiku-4-5, costs money) against a server started with
- *     ANTHROPIC_API_KEY in .env (see PROGRESS.md "How to run"). If the server sets SUITESPOT_ACCESS_CODE, put the same value
- *     in this shell's environment. Writes design/screenshots/live-run-*.png and report-live.md.
+ *     ANTHROPIC_API_KEY in .env (see PROGRESS.md "How to run").
+ *     Writes design/screenshots/live-run-*.png and report-live.md.
  */
 import { mkdirSync, writeFileSync } from "node:fs"
 import { chromium } from "playwright-core"
@@ -33,15 +33,15 @@ const prefix = live ? "live-run-" : ""
 let researchId = ""
 if (live) {
   await page.goto(base)
-  researchId = await page.evaluate(async (accessCode) => {
+  researchId = await page.evaluate(async () => {
     const response = await fetch("/api/research", {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...(accessCode ? { "X-Access-Code": accessCode } : {}) },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mode: "live", source: "demo" }),
     })
     if (!response.ok) throw new Error(`Live run refused: ${response.status} ${await response.text()}`)
     return ((await response.json()) as { id: string }).id
-  }, process.env.SUITESPOT_ACCESS_CODE ?? "")
+  })
   await page.goto(`${base}/research/${researchId}/run`)
 } else {
   await page.goto(`${base}/?autorun=demo`)

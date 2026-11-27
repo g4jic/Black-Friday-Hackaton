@@ -7,22 +7,11 @@ import { BUSINESS_TYPE_LABELS } from "../app/settings"
 import { Card, EmptyState } from "../app/Shell"
 import { formatMoney } from "../format"
 import { INPUT, LABEL } from "../pages/SettingsPage"
-import { Pill, cx } from "../ui"
+import { cx } from "../ui"
 import { CITIES, exitLabel, floorLabel, indexationLabel, listingsApi, useLoad, type PublicListing, type RevealedContact } from "./listings-api"
-
-export const LAUNCH_NOTE =
-  "Before launch, the founders agree the first listings with landlords so the platform is not empty. In this version every listing and every landlord is synthetic."
 
 const PRIMARY = "inline-flex h-10 items-center gap-2 rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e] disabled:opacity-40"
 const SECONDARY = "inline-flex h-10 items-center gap-2 rounded-full glass-strong px-[18px] text-sm font-medium text-ink hover:bg-white disabled:opacity-50"
-
-function DemoListingPill() {
-  return (
-    <Pill variant="brand" icon={false} title="A synthetic listing made for the demo, not a real property">
-      Demo listing
-    </Pill>
-  )
-}
 
 const money = (amount: number) => formatMoney(amount, "EUR")
 const monthly = (l: PublicListing) => l.rentMonthly + l.serviceChargeMonthly
@@ -60,7 +49,6 @@ export function BrowseListingsPage() {
           <span className={LABEL}>Min area (m²)</span>
           <input value={minArea} onChange={(e) => setMinArea(e.target.value.replace(/[^\d]/g, ""))} inputMode="numeric" className={cx(INPUT, "tnum")} />
         </label>
-        <p className="w-full text-[13px] text-ink-2">{LAUNCH_NOTE}</p>
       </section>
       {error && <EmptyState text={error} />}
       {!data && !error && <p className="text-sm text-ink-2">Loading listings...</p>}
@@ -82,7 +70,6 @@ function ListingCard({ listing: l }: { listing: PublicListing }) {
     <Link to={paths.listing(l.id)} className="flex h-full flex-col gap-3 rounded-[24px] glass p-5 hover:bg-white/90">
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-base leading-6 font-semibold text-ink">{l.title}</h3>
-        {l.isDemo && <DemoListingPill />}
       </div>
       <p className="inline-flex items-center gap-1.5 text-[13px] text-ink-2">
         <MapPin size={14} aria-hidden /> {l.district}, {l.street}, {l.city}
@@ -135,7 +122,6 @@ export function ListingDetailPage({ id }: { id: string }) {
       <div className="flex flex-col gap-4">
         <Card>
           <div className="flex flex-wrap items-center gap-2">
-            {l.isDemo && <DemoListingPill />}
             <span className="inline-flex items-center gap-1.5 text-[13px] text-ink-2">
               <MapPin size={14} aria-hidden /> {l.district}, {l.street}, {l.city}
             </span>
@@ -191,7 +177,6 @@ export function ListingDetailPage({ id }: { id: string }) {
           </div>
         </Card>
         <OfferForm listing={l} />
-        {l.isDemo && <p className="px-2 text-[13px] text-ink-3">{LAUNCH_NOTE}</p>}
       </div>
     </div>
   )
@@ -214,11 +199,6 @@ function ContactBox({ contact }: { contact: RevealedContact }) {
     <div className="flex flex-col gap-2 rounded-[18px] bg-white/80 p-4">
       <p className="flex items-center justify-between gap-2 text-sm font-semibold text-ink">
         {contact.name}
-        {contact.isDemo && (
-          <Pill variant="brand" icon={false} title="A synthetic demo landlord: the phone is masked and nothing can be dialled or mailed">
-            Demo contact
-          </Pill>
-        )}
       </p>
       {contact.phone && line(Phone, contact.phone, `tel:${contact.phone.replace(/\s/g, "")}`)}
       {contact.email && line(Mail, contact.email, `mailto:${contact.email}`)}

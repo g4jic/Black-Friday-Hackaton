@@ -24,14 +24,14 @@ export function SettingsPage() {
       setStatus("invalid")
       return
     }
-    const stored = saveSettings({ ...draft, city: draft.city.trim(), liveAccessCode: draft.liveAccessCode.trim(), monthlyBudget: budget })
+    const stored = saveSettings({ ...draft, city: draft.city.trim(), monthlyBudget: budget })
     setStatus(stored ? "saved" : "notStored")
   }
 
   return (
     <form onSubmit={submit} className="grid gap-4 lg:grid-cols-2">
       <Card title="Default business profile">
-        <p className="mb-4">Used to prefill the questionnaire. Demo runs (on a server without an AI model key, or without the access code) use the fixed demo profile.</p>
+        <p className="mb-4">Used to prefill the questionnaire. Without an AI model key on the server, runs use the fixed demo profile.</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="sm:col-span-2">
             <span className={LABEL}>Business type</span>
@@ -70,16 +70,6 @@ export function SettingsPage() {
             </select>
           </label>
         </div>
-      </Card>
-      <Card title="Access code">
-        <p className="mb-4">
-          Runs with the real model cost money, so a hosted server may ask for an access code. You only need it if the server asks for one. The code
-          is kept only in this browser.
-        </p>
-        <label>
-          <span className={LABEL}>Access code</span>
-          <input type="password" autoComplete="off" value={draft.liveAccessCode} onChange={(e) => change({ liveAccessCode: e.target.value })} className={INPUT} />
-        </label>
       </Card>
       <div className="flex flex-wrap items-center gap-3 lg:col-span-2">
         <button type="submit" className="inline-flex h-10 items-center rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e]">

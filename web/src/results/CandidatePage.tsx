@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, ExternalLink, FlaskConical, OctagonAlert, TriangleAlert } from "lucide-react"
+import { ArrowLeft, Check, ExternalLink, OctagonAlert, TriangleAlert } from "lucide-react"
 import type { ReactNode } from "react"
 import { useResearch } from "../app/research-store"
 import { Link, paths } from "../app/router"
@@ -103,7 +103,7 @@ function Header({ candidate, listingNumber, position, entry }: { candidate: Cand
   )
 }
 
-/** A real link only when a URL was really given; synthetic listings say so; nothing is ever built or guessed. */
+/** A real link only when a URL was really given; nothing is ever built or guessed. */
 function ListingLink({ candidate }: { candidate: CandidateDTO }) {
   if (candidate.listingUrl) {
     return (
@@ -112,13 +112,7 @@ function ListingLink({ candidate }: { candidate: CandidateDTO }) {
       </a>
     )
   }
-  if (candidate.synthetic) {
-    return (
-      <span className="inline-flex h-9 items-center gap-2 rounded-full bg-lilac-100 px-4 text-[13px] font-medium text-ink">
-        <FlaskConical size={15} aria-hidden /> Synthetic demo listing
-      </span>
-    )
-  }
+  if (candidate.synthetic) return null
   return <span className="text-[13px] text-ink-3">No listing URL was given</span>
 }
 

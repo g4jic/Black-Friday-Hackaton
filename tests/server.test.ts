@@ -118,21 +118,18 @@ describe("server", () => {
     await app.close()
   })
 
-  it("live mode needs the access code when SUITESPOT_ACCESS_CODE is set; demo mode never does", async () => {
+  it("with a key, live mode is open (no access code); the demo still runs; the questionnaire is validated", async () => {
     process.env.ANTHROPIC_API_KEY = FAKE_KEY
-    process.env.SUITESPOT_ACCESS_CODE = "open-sesame"
     const app = await buildServer({ demoCatalogue: SAMPLE_CATALOGUE, demoPace: FAST_PACE, liveRunner: () => new MockRunner({ latencyMs: 50, script: () => ({ text: "{}" }) }) })
-    expect((await app.inject({ method: "GET", url: "/api/config" })).json()).toMatchObject({ liveAvailable: true, liveNeedsAccessCode: true })
+    const config = (await app.inject({ method: "GET", url: "/api/config" })).json()
+    expect(config).toMatchObject({ liveAvailable: true })
+    expect(config).not.toHaveProperty("liveNeedsAccessCode")
     const live = { mode: "live", source: "pasted", listings: [{ text: "Lokal 60 m2, Novi Sad, 900 EUR" }] }
-    const missing = await app.inject({ method: "POST", url: "/api/research", payload: live })
-    expect(missing.statusCode).toBe(401)
-    expect(missing.body).not.toContain("open-sesame")
-    expect((await app.inject({ method: "POST", url: "/api/research", payload: live, headers: { "x-access-code": "wrong" } })).statusCode).toBe(401)
     expect((await app.inject({ method: "POST", url: "/api/research", payload: { source: "demo" } })).statusCode).toBe(201)
     // A live profile from the questionnaire is validated by the domain.
-    const badProfile = await app.inject({ method: "POST", url: "/api/research", payload: { ...live, profile: { monthlyBudget: -5 } }, headers: { "x-access-code": "open-sesame" } })
+    const badProfile = await app.inject({ method: "POST", url: "/api/research", payload: { ...live, profile: { monthlyBudget: -5 } } })
     expect(badProfile.statusCode).toBe(400)
-    const ok = await app.inject({ method: "POST", url: "/api/research", payload: { ...live, profile: { city: "Beograd", monthlyBudget: 2000 } }, headers: { "x-access-code": "open-sesame" } })
+    const ok = await app.inject({ method: "POST", url: "/api/research", payload: { ...live, profile: { city: "Beograd", monthlyBudget: 2000 } } })
     expect(ok.statusCode).toBe(201)
     await app.close()
   })

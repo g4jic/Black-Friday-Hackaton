@@ -35,11 +35,6 @@ export function RunRow({ record, tab }: { record: HistoryRecord; tab?: "report" 
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
-          {record.synthetic && (
-            <Pill variant="brand" icon={false}>
-              Demo data
-            </Pill>
-          )}
           {record.mode === "live" && <Pill icon={false}>Live model</Pill>}
           {record.cancelled && <Pill variant="soft">Stopped</Pill>}
         </div>

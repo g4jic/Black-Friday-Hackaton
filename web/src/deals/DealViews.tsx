@@ -47,7 +47,7 @@ export function OfferForm({ listing }: { listing: PublicListing }) {
     return (
       <Card title="Offer sent">
         <p>
-          {listing.isDemo ? "This is a demo listing with no real landlord: in My spaces you answer your own offer as the simulated demo landlord." : "The landlord sees your offer in My listings and answers it there."}
+          {listing.isDemo ? "This listing has no real landlord yet: in My spaces you answer your own offer as the simulated landlord." : "The landlord sees your offer in My listings and answers it there."}
         </p>
         <Link to={paths.mySpaces()} className={cx(PRIMARY, "mt-4 w-full")}>
           Open My spaces
@@ -89,7 +89,7 @@ export function OfferForm({ listing }: { listing: PublicListing }) {
         <button type="submit" className={PRIMARY} disabled={state.kind === "sending"}>
           <Send size={16} aria-hidden /> {state.kind === "sending" ? "Sending..." : "Send offer"}
         </button>
-        {listing.isDemo && <p className="text-[12px] leading-4 text-ink-3">Demo listing: there is no real landlord. You answer the offer yourself as the simulated demo landlord.</p>}
+        {listing.isDemo && <p className="text-[12px] leading-4 text-ink-3">This listing has no real landlord yet: you answer the offer yourself as the simulated landlord.</p>}
       </form>
     </Card>
   )
@@ -157,10 +157,9 @@ function TenancyRow({ view, method, onPaid }: { view: TenancyView; method: "stri
           </Link>
           <p className="tnum text-[13px] text-ink-2">
             {formatMoney(t.rentMonthly, t.currency)} / month · from {dateLabel(t.startDate)} · {t.termMonths} months ·{" "}
-            {view.role === "tenant" ? (t.isDemoListing ? "demo landlord (simulated)" : "you rent it") : `rented by ${t.tenantName}`}
+            {view.role === "tenant" ? (t.isDemoListing ? "simulated landlord" : "you rent it") : `rented by ${t.tenantName}`}
           </p>
         </div>
-        {t.isDemoListing && <Pill variant="brand" icon={false}>Demo listing</Pill>}
       </div>
       {next ? (
         <div className="flex flex-wrap items-center gap-3">
@@ -222,7 +221,7 @@ function OfferRow({ offer, side, onChange }: { offer: Offer; side: "tenant" | "l
         </div>
         <Pill variant={pill.variant} icon={false}>
           {pill.text}
-          {offer.decidedBy === "demo-landlord" ? " (demo landlord)" : ""}
+          {offer.decidedBy === "demo-landlord" ? " (simulated landlord)" : ""}
         </Pill>
       </div>
       {(answerable || (side === "tenant" && offer.status === "pending")) && (
@@ -235,10 +234,10 @@ function OfferRow({ offer, side, onChange }: { offer: Offer; side: "tenant" | "l
                 </span>
               )}
               <button type="button" className={PRIMARY} disabled={busy} onClick={() => void act(() => dealsApi.answer(offer.id, "accept"))}>
-                <Check size={16} aria-hidden /> {asDemo ? "Accept as demo landlord" : "Accept"}
+                <Check size={16} aria-hidden /> {asDemo ? "Accept as the landlord" : "Accept"}
               </button>
               <button type="button" className={SECONDARY} disabled={busy} onClick={() => void act(() => dealsApi.answer(offer.id, "decline"))}>
-                <X size={16} aria-hidden /> {asDemo ? "Decline as demo landlord" : "Decline"}
+                <X size={16} aria-hidden /> {asDemo ? "Decline as the landlord" : "Decline"}
               </button>
             </>
           )}

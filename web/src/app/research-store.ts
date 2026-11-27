@@ -128,10 +128,10 @@ export class StartError extends Error {
 }
 
 /** Starts a run on the server and begins streaming it. Throws with the server's message on refusal. */
-export async function startResearch(request: StartRequest, accessCode?: string): Promise<string> {
+export async function startResearch(request: StartRequest): Promise<string> {
   const response = await fetch("/api/research", {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...(accessCode ? { "X-Access-Code": accessCode } : {}) },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
   })
   const answer = (await response.json().catch(() => ({}))) as { id?: string; error?: string; problems?: { field: string; message: string }[]; mode?: "demo" | "live"; answers?: AnswerSource; synthetic?: boolean }

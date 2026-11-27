@@ -25,7 +25,7 @@ mkdirSync("fixtures/recordings", { recursive: true })
 for (const scenario of scenarios) {
   const recorder = new RecordingRunner(createLiveRunner())
   const app = await buildServer({ liveRunner: () => recorder, loadRecording: () => null })
-  const headers = process.env.SUITESPOT_ACCESS_CODE ? { "x-access-code": process.env.SUITESPOT_ACCESS_CODE } : {}
+  const headers = {}
   const started = await app.inject({ method: "POST", url: "/api/research", headers, payload: { mode: "live", source: "demo", scenario } })
   if (started.statusCode !== 201) throw new Error(`${scenario}: ${started.body}`)
   const { id } = started.json() as { id: string }

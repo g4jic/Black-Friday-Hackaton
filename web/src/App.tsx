@@ -75,7 +75,7 @@ export function App() {
   // While the welcome animation plays the sign in screen stays, although the account is signed in already.
   if (!auth.landlord || welcoming) return <AuthScreen mode="signin" next={pathname + (search.toString() ? `?${search}` : "")} />
 
-  const titleExtra = route.name === "run" || route.name === "results" || route.name === "candidate" ? <DemoDataPill researchId={route.researchId} /> : null
+  const titleExtra = route.name === "run" || route.name === "results" || route.name === "candidate" ? <AnswerSourcePill researchId={route.researchId} /> : null
 
   return (
     <Shell route={route} title={TITLES[route.name]} titleExtra={titleExtra}>
@@ -146,22 +146,16 @@ export const ANSWER_LABEL = {
   recorded: { text: "Recorded run", title: "A real run with an AI model, recorded and replayed without a key. Code still checks every value against its source." },
 } as const
 
-function DemoDataPill({ researchId }: { researchId: string }) {
-  const { synthetic, answers } = useResearch(researchId)
+/** Says when the agents' answers were not made by a live model (recorded or scripted); a live run shows nothing. */
+function AnswerSourcePill({ researchId }: { researchId: string }) {
+  const { answers } = useResearch(researchId)
   const label = answers === "scripted" || answers === "recorded" ? ANSWER_LABEL[answers] : null
-  if (!synthetic && !label) return null
+  if (!label) return null
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5">
-      {synthetic && (
-        <Pill variant="brand" icon={false} title="This run uses synthetic demo listings, not real ones">
-          Demo data
-        </Pill>
-      )}
-      {label && (
-        <Pill icon={false} title={label.title}>
-          {label.text}
-        </Pill>
-      )}
+      <Pill icon={false} title={label.title}>
+        {label.text}
+      </Pill>
     </span>
   )
 }
