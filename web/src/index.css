@@ -442,3 +442,81 @@ button:active {
   transition: opacity 500ms ease;
   will-change: transform, opacity;
 }
+
+/*
+ * B6: one look for every dropdown, popover and scrollbar. Native selects keep their keyboard and screen reader
+ * behaviour; only the closed control is restyled to match the inputs (same height, radius, chevron).
+ */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 2.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%230b0b0f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+  background-size: 16px 16px;
+  transition: border-color 200ms var(--ease-ios), background-color 200ms var(--ease-ios);
+}
+select:hover:not(:disabled) {
+  background-color: #fff;
+}
+select option {
+  color: var(--color-ink);
+  background: #fff;
+}
+/* every popover: the same glass, radius, shadow and entrance */
+[role="menu"],
+[role="listbox"],
+.popover {
+  border-radius: 20px;
+  box-shadow: var(--shadow-pop);
+}
+/* thin, rounded scrollbars in the brand's soft ink, on every scrolling area */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(11, 11, 15, 0.22) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 9999px;
+  background: rgba(11, 11, 15, 0.22) padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(11, 11, 15, 0.38) padding-box;
+}
+
+/*
+ * B8: a magnifier cursor (the SuiteSpot lens) for mouse and trackpad only; touch devices never see it. The hot spot
+ * is the centre of the lens. Text fields keep the text cursor; links and buttons get the filled lens.
+ */
+@media (pointer: fine) {
+  html {
+    cursor: url("/cursor-lens.svg") 11 11, auto;
+  }
+  a[href],
+  button:not(:disabled),
+  select:not(:disabled),
+  summary,
+  label:has(input[type="checkbox"]),
+  label:has(input[type="radio"]),
+  [role="tab"],
+  [role="menuitem"],
+  [role="button"] {
+    cursor: url("/cursor-lens-active.svg") 11 11, pointer;
+  }
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  [contenteditable="true"] {
+    cursor: text;
+  }
+  :disabled {
+    cursor: not-allowed;
+  }
+}

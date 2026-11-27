@@ -378,7 +378,7 @@ function ProfileFields({ form, locked, onChange }: { form: ProfileForm; locked: 
 function NoKeyNotice() {
   return (
     <p className="mt-4 rounded-[18px] bg-white/70 px-4 py-3 text-[13px] leading-5 text-ink-2">
-      This server has no AI model key. "Find spaces" replays a recorded run of the real model for a demo scenario with a locked profile (labelled "Recorded run"). Add ANTHROPIC_API_KEY to .env and restart to run the model on your own questionnaire.
+      Demo mode: "Find spaces" replays a recorded run of the real AI model for one of three demo businesses, so the questionnaire is fixed. The README explains how to run it on your own business.
     </p>
   )
 }
