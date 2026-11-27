@@ -1,7 +1,7 @@
 import { AreaM2 } from "./area.js"
 import { DomainError } from "./errors.js"
 import { Money, type Currency } from "./money.js"
-import { sourced, type Sourced } from "./source.js"
+import { calc, sourced, type Sourced } from "./source.js"
 
 export type BusinessType = "cafe_food" | "retail" | "office_studio" | "workshop"
 const BUSINESS_TYPES: readonly BusinessType[] = ["cafe_food", "retail", "office_studio", "workshop"]
@@ -19,6 +19,8 @@ export type BusinessProfileInput = {
   grossMarginRate?: number
   walkInCustomers: boolean
   leaseMonths: number
+  /** How many years the business plans to stay (for lease or buy). Defaults to the lease length in whole years. */
+  yearsPlanned?: number
   city: string
   area?: string
   fitOutBudget: number
@@ -47,6 +49,9 @@ export class BusinessProfile {
       fail("Gross margin must be between 0 and 1")
     }
     if (!Number.isInteger(input.leaseMonths) || input.leaseMonths < 1) fail("Lease length must be a whole number of months")
+    if (input.yearsPlanned !== undefined && (!Number.isInteger(input.yearsPlanned) || input.yearsPlanned < 1 || input.yearsPlanned > 30)) {
+      fail("Years you plan to stay must be a whole number from 1 to 30")
+    }
     if (!(input.fitOutBudget >= 0) || !(input.equipmentBudget >= 0)) fail("Fit-out and equipment budgets must not be negative")
     return new BusinessProfile(Object.freeze({ ...input }))
   }
@@ -72,6 +77,12 @@ export class BusinessProfile {
 
   leaseMonths(): Sourced<number> {
     return sourced(this.input.leaseMonths, { kind: "profile", ref: "questionnaire", field: "leaseMonths" })
+  }
+
+  /** The years the business plans to stay: the questionnaire answer, or else the lease length in whole years (at least 1). */
+  yearsPlanned(): Sourced<number> {
+    if (this.input.yearsPlanned !== undefined) return sourced(this.input.yearsPlanned, { kind: "profile", ref: "questionnaire", field: "yearsPlanned" })
+    return calc(Math.max(1, Math.round(this.input.leaseMonths / 12)), "lease length in months / 12 (no years given)", [this.leaseMonths()])
   }
 
   grossMarginRate(): Sourced<number> | null {

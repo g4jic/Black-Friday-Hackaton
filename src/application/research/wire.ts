@@ -4,6 +4,8 @@ import {
   evaluatePremises,
   isMissingData,
   isRentMultiple,
+  leaseOrBuy,
+  leaseTermsFor,
   verdictFor,
   type Candidate,
   type Finding,
@@ -69,7 +71,14 @@ export type CandidateDTO = {
   /** The Premises inspector's result: null while not read (or when it failed); notStated = checks the texts do not mention. */
   premises: { notStated: string[] } | null
   ranking: RankingDTO | null
+  /** Lease or buy a similar space (code, labelled assumptions); null before ranking or for a rejected candidate. */
+  leaseOrBuy: LeaseOrBuyDTO | null
 }
+
+export type MoneyDTO = { amount: number; currency: string; source: SourceDTO }
+export type LeaseOrBuyDTO =
+  | { known: true; years: number; leaseCost: MoneyDTO; buyCost: MoneyDTO; upFront: MoneyDTO; price: MoneyDTO; monthlyLoanPayment: MoneyDTO; cheaper: "lease" | "buy"; difference: MoneyDTO; notes: string[] }
+  | { known: false; missing: string[] }
 
 export type RankingDTO = {
   rank: number
@@ -189,7 +198,21 @@ export function candidateDTO(c: Candidate, state: SuiteSpotState): CandidateDTO 
     findings: state.findings.filter((f) => f.candidateId === c.id).map(findingDTO),
     premises: premisesDTO(state, c.id),
     ranking: rankingDTO(state, c.id),
+    leaseOrBuy: leaseOrBuyDTO(state, c),
   }
+}
+
+function leaseOrBuyDTO(state: SuiteSpotState, c: Candidate): LeaseOrBuyDTO | null {
+  if (!state.profile || !state.rankings.has(c.id)) return null
+  const terms = leaseTermsFor(c.listing, state.profile, state.leaseClauses.get(c.id) ?? null)
+  if (isMissingData(terms)) return { known: false, missing: [...terms.missing] }
+  const address = isMissingData(c.listing.address) ? "" : String(c.listing.address.value)
+  const city = isMissingData(c.listing.city) ? "" : String(c.listing.city.value)
+  const area = isMissingData(c.listing.area) ? null : c.listing.area
+  const r = leaseOrBuy({ terms, area, city, district: address.split(",")[0]?.trim() ?? "", profile: state.profile })
+  if (isMissingData(r)) return { known: false, missing: [...r.missing] }
+  const m = (x: { value: Money; source: SourceRef }): MoneyDTO => ({ amount: x.value.amount, currency: x.value.currency, source: sourceDTO(x.source) })
+  return { known: true, years: r.years.value, leaseCost: m(r.leaseCost), buyCost: m(r.buyCost), upFront: m(r.upFront), price: m(r.price), monthlyLoanPayment: m(r.monthlyLoanPayment), cheaper: r.cheaper, difference: m(r.difference), notes: [...r.notes] }
 }
 
 function premisesDTO(state: SuiteSpotState, id: string): CandidateDTO["premises"] {

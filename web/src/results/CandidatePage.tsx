@@ -6,7 +6,7 @@ import { EmptyState } from "../app/Shell"
 import { candidateLocation, candidateShortName } from "../candidate-label"
 import { ResearchMissing } from "../pages/ResearchPage"
 import type { CandidateDTO } from "../types"
-import { SourceLabel, cx } from "../ui"
+import { SourceLabel, cx, formatMoney } from "../ui"
 import { allSources, costRows, leaseSection, locationSection, premisesSection, resultsList, strengthsAndRisks, unknowns, yearScenarios, type PointItem } from "./results-model"
 import { ScoreBlock, VerdictBadge } from "./ResultsList"
 
@@ -40,6 +40,7 @@ export function CandidatePage({ researchId, candidateId }: { researchId: string;
       <div className="grid gap-4 lg:grid-cols-2">
         <CostsCard candidate={candidate} />
         <YearScenariosCard candidate={candidate} />
+        <LeaseOrBuyCard candidate={candidate} />
         <StrengthsRisksCard candidate={candidate} />
         <LeaseCard candidate={candidate} />
         <LocationCard candidate={candidate} />
@@ -135,6 +136,54 @@ function CostsCard({ candidate }: { candidate: CandidateDTO }) {
           </div>
         ))}
       </dl>
+    </Section>
+  )
+}
+
+const money = (m: { amount: number; currency: string }) => formatMoney(m.amount, m.currency)
+
+/** Lease or buy a similar space: code with labelled public-source assumptions (How it works lists them). */
+function LeaseOrBuyCard({ candidate }: { candidate: CandidateDTO }) {
+  const r = candidate.leaseOrBuy
+  if (!r) return null
+  if (!r.known) {
+    return (
+      <Section title="Lease or buy">
+        <p className="text-[13px] text-ink-3">Not compared: {r.missing.join(", ")} not known.</p>
+      </Section>
+    )
+  }
+  const rows = [
+    { label: `Rent over ${r.years} years`, value: r.leaseCost },
+    { label: `Buying, net over ${r.years} years`, value: r.buyCost },
+    { label: "Price of a similar space", value: r.price },
+    { label: "Cash needed to buy (down payment, tax and fees)", value: r.upFront },
+    { label: "Loan payment per month", value: r.monthlyLoanPayment },
+  ]
+  return (
+    <Section title="Lease or buy" className="lg:col-span-2">
+      <p className="max-w-[70ch] text-sm leading-6 font-semibold text-ink">
+        {r.cheaper === "lease" ? "Leasing" : "Buying a similar space"} costs about {money(r.difference)} less over {r.years} years
+        <SourceLabel source={r.difference.source} />
+        {r.cheaper === "buy" && <span className="font-normal text-ink-2">, but needs {money(r.upFront)} in cash before you start.</span>}
+      </p>
+      <dl className="mt-4 grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
+        {rows.map((row) => (
+          <div key={row.label} className="flex justify-between gap-3 border-b border-line py-1.5">
+            <dt className="text-ink-2">{row.label}</dt>
+            <dd className="tnum font-semibold text-ink">
+              {money(row.value)}
+              <SourceLabel source={row.value.source} />
+            </dd>
+          </div>
+        ))}
+      </dl>
+      {r.notes.map((n) => (
+        <p key={n} className="mt-3 text-xs leading-5 text-ink-2">{n}</p>
+      ))}
+      <p className="mt-3 text-xs leading-5 text-ink-3">
+        Buying uses published average sale prices for this part of town, the average business loan rate and labelled SuiteSpot assumptions (see How it works). The net cost assumes the space keeps its price. A rough comparison, not a valuation. Not financial advice.
+      </p>
     </Section>
   )
 }

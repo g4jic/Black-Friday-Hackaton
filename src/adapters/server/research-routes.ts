@@ -7,6 +7,7 @@ import {
   BUSINESS_TYPE_TEXT,
   LOCATION_ASSUMPTIONS,
   NOISE_ASSUMPTIONS,
+  BUY_ASSUMPTIONS,
   PREMISES_ASSUMPTIONS,
   OSM_METRIC_TEXT,
   DomainError,
@@ -110,7 +111,7 @@ function accessCodeMatches(given: unknown): boolean {
 /** The questionnaire of a live run, validated by the domain. Fields the form does not ask keep the demo values. */
 function liveProfile(input: Partial<BusinessProfileInput> | undefined, demo: BusinessProfile): BusinessProfile {
   if (!input) return demo
-  const allowed: (keyof BusinessProfileInput)[] = ["businessType", "description", "headcount", "areaMinM2", "areaMaxM2", "currency", "monthlyBudget", "expectedMonthlyRevenue", "grossMarginRate", "walkInCustomers", "leaseMonths", "city", "fitOutBudget", "equipmentBudget"]
+  const allowed: (keyof BusinessProfileInput)[] = ["businessType", "description", "headcount", "areaMinM2", "areaMaxM2", "currency", "monthlyBudget", "expectedMonthlyRevenue", "grossMarginRate", "walkInCustomers", "leaseMonths", "yearsPlanned", "city", "fitOutBudget", "equipmentBudget"]
   const picked = Object.fromEntries(allowed.filter((k) => input[k] !== undefined && input[k] !== null).map((k) => [k, input[k]]))
   return BusinessProfile.create({ ...demo.input, specialNeeds: undefined, ...picked } as BusinessProfileInput)
 }
@@ -189,6 +190,7 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
       leaseConcerns: { maxNoticeMonths: MAX_NOTICE_MONTHS, maxFixedIndexationPercent: MAX_FIXED_INDEXATION_PERCENT },
       location: { radiusM: LOCATION_ASSUMPTIONS.radiusM, description: LOCATION_ASSUMPTIONS.description, rules: LOCATION_ASSUMPTIONS.rules, metricText: OSM_METRIC_TEXT, businessText: BUSINESS_TYPE_TEXT, attribution: OSM_ATTRIBUTION },
       noise: NOISE_ASSUMPTIONS,
+      buy: BUY_ASSUMPTIONS,
       premises: { description: PREMISES_ASSUMPTIONS.description, checks: PREMISES_ASSUMPTIONS.checks, checkText: PREMISES_ASSUMPTIONS.checkText, businessText: BUSINESS_TYPE_TEXT },
       demoQuestionnaire: {
         business: p.description,
