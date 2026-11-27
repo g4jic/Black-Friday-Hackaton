@@ -18,6 +18,8 @@ export function OwnerOverview({ showIntro }: { showIntro: boolean }) {
   const deals = useLoad("deals-landlord", dealsApi.overview)
   const views = listings.data?.reduce((sum, l) => sum + l.views, 0)
   const openOffers = deals.data?.offersReceived.filter((o) => o.status === "pending").length
+  // A listing with a lease (the owner is its landlord) shows "Leased" instead of "Published".
+  const leased = new Set(deals.data?.tenancies.filter((t) => t.role === "landlord").map((t) => t.tenancy.listingId) ?? [])
   return (
     <div className="flex flex-col gap-4">
       {showIntro && <p className="text-[15px] text-ink-2">What seekers see, how many viewed it and who made an offer.</p>}
@@ -79,7 +81,11 @@ export function OwnerOverview({ showIntro }: { showIntro: boolean }) {
                   {l.views}
                 </span>
                 <span role="cell">
-                  <span className="rounded-full bg-green-50 px-3 py-1 text-[13px] font-semibold text-green-700">Published</span>
+                  {leased.has(l.id) ? (
+                    <span className="rounded-full bg-lilac-100 px-3 py-1 text-[13px] font-semibold text-ink">Leased</span>
+                  ) : (
+                    <span className="rounded-full bg-green-50 px-3 py-1 text-[13px] font-semibold text-green-700">Published</span>
+                  )}
                 </span>
               </Link>
             ))}

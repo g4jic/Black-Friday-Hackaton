@@ -16,6 +16,8 @@ export interface DealStore {
   /** Tenancies where the user is the tenant or the landlord, newest first. */
   tenanciesFor(userId: string): Promise<TenancyProps[]>
   tenanciesOnListing(listingId: string): Promise<TenancyProps[]>
+  /** Ids of the listings with at least one tenancy (for the public "Leased" flag; no tenant data). */
+  leasedListingIds(): Promise<Set<string>>
   paymentsFor(tenancyIds: readonly string[]): Promise<RentPaymentProps[]>
   insertPayment(payment: RentPaymentProps): Promise<void>
 }

@@ -64,6 +64,10 @@ export class LocalDealStore implements DealStore {
     return this.data.tenancies.filter((t) => t.listingId === listingId).sort(newestFirst)
   }
 
+  async leasedListingIds(): Promise<Set<string>> {
+    return new Set(this.data.tenancies.map((t) => t.listingId))
+  }
+
   async paymentsFor(tenancyIds: readonly string[]): Promise<RentPaymentProps[]> {
     const ids = new Set(tenancyIds)
     return this.data.payments.filter((p) => ids.has(p.tenancyId))

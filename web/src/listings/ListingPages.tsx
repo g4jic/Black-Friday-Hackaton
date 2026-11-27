@@ -71,6 +71,7 @@ function ListingCard({ listing: l }: { listing: PublicListing }) {
     <Link to={paths.listing(l.id)} className="flex h-full flex-col gap-3 rounded-[24px] glass p-5 hover:bg-white/90">
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-base leading-6 font-semibold text-ink">{l.title}</h3>
+        {l.leased && <LeasedPill />}
       </div>
       <p className="inline-flex items-center gap-1.5 text-[13px] text-ink-2">
         <MapPin size={14} aria-hidden /> {l.district}, {l.street}, {l.city}
@@ -83,6 +84,11 @@ function ListingCard({ listing: l }: { listing: PublicListing }) {
       </div>
     </Link>
   )
+}
+
+/** A space with a lease: the server sends only the flag. */
+function LeasedPill() {
+  return <span className="shrink-0 rounded-full bg-lilac-100 px-2.5 py-0.5 text-xs font-semibold text-ink">Leased</span>
 }
 
 /** The public page of one listing. The contact appears only after "Show contact". */
@@ -126,6 +132,7 @@ export function ListingDetailPage({ id }: { id: string }) {
             <span className="inline-flex items-center gap-1.5 text-[13px] text-ink-2">
               <MapPin size={14} aria-hidden /> {l.district}, {l.street}, {l.city}
             </span>
+            {l.leased && <LeasedPill />}
           </div>
           <h2 className="mt-3 text-xl leading-7 font-semibold text-ink">{l.title}</h2>
           {l.description && <p className="mt-2 text-sm leading-6 text-ink-2">{l.description}</p>}
@@ -177,7 +184,13 @@ export function ListingDetailPage({ id }: { id: string }) {
             )}
           </div>
         </Card>
-        <OfferForm listing={l} />
+        {l.leased ? (
+          <Card title="Make an offer">
+            <p>This space is already leased.</p>
+          </Card>
+        ) : (
+          <OfferForm listing={l} />
+        )}
       </div>
     </div>
   )

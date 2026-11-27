@@ -163,6 +163,16 @@ export class SupabaseDealStore implements DealStore {
     return rows.map(rowToTenancy)
   }
 
+  /** Only the listing ids are read (service role on the server), a page of 1000 at a time. */
+  async leasedListingIds(): Promise<Set<string>> {
+    const ids = new Set<string>()
+    for (let from = 0; ; from += 1000) {
+      const rows = check(await this.db.from("tenancies").select("listing_id").order("id").range(from, from + 999), "leased listings") as { listing_id: string }[]
+      for (const r of rows) ids.add(r.listing_id)
+      if (rows.length < 1000) return ids
+    }
+  }
+
   async paymentsFor(tenancyIds: readonly string[]): Promise<RentPaymentProps[]> {
     if (tenancyIds.length === 0) return []
     const rows = check(await this.db.from("rent_payments").select("*").in("tenancy_id", [...tenancyIds]), "list payments") as PaymentRow[]

@@ -99,6 +99,29 @@ describe("deals over HTTP: the full loop without any key (simulated payment)", (
     expect(accepted.body.offer.decidedBy).toBe("demo-landlord")
     expect((await call(other, "POST", "/api/listings/listing-ns001/offers", { rentMonthly: 650, startDate: nextYear, termMonths: 6 })).status).toBe(200)
     expect((await call(other, "POST", `/api/offers/${offer.body.id}/withdraw`)).status).toBe(403)
+    // A demo listing never shows "Leased": its landlord is simulated and the demo loop stays open.
+    expect((await call(null, "GET", "/api/listings/listing-ns001")).body.leased).toBe(false)
+  })
+
+  it("a leased space shows leased: true in Listings and on its page, with no tenant data", async () => {
+    const { call } = await server()
+    const listingId = (await call(landlord, "POST", "/api/me/listings", { listing, contact })).body.id as string
+    expect((await call(null, "GET", `/api/listings/${listingId}`)).body.leased).toBe(false)
+    const offer = await call(tenant, "POST", `/api/listings/${listingId}/offers`, { rentMonthly: 1300, startDate: nextYear, termMonths: 12 })
+    expect((await call(null, "GET", `/api/listings/${listingId}`)).body.leased).toBe(false) // an open offer is not a lease
+    await call(landlord, "POST", `/api/offers/${offer.body.id}/answer`, { answer: "accept" })
+
+    const page = await call(other, "GET", `/api/listings/${listingId}`)
+    expect(page.body.leased).toBe(true)
+    const all = await call(null, "GET", "/api/listings")
+    const listed = (all.body.listings as Record<string, unknown>[]).find((l) => l.id === listingId)!
+    expect(listed.leased).toBe(true)
+    expect((all.body.listings as Record<string, unknown>[]).filter((l) => l.leased).map((l) => l.id)).toEqual([listingId])
+    for (const body of [JSON.stringify(page.body), JSON.stringify(listed)]) {
+      expect(body).not.toContain("tenant-1")
+      expect(body).not.toContain("Test Cafe")
+      expect(body).not.toMatch(/tenantId|tenantName|landlordId|offerId|startDate|"tenancy/)
+    }
   })
 })
 

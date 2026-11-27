@@ -65,10 +65,10 @@ export async function buildServer(options: ServerOptions = {}): Promise<FastifyI
   const localAccounts = auth ? null : new LocalAccounts(options.localAccountsFile === undefined ? LOCAL_ACCOUNTS_FILE : options.localAccountsFile)
   if (localAccounts) registerLocalAuthRoutes(app, localAccounts)
   const resolveActor = options.resolveActor ?? (auth ? supabaseActorResolver(auth) : localAccounts!.actorResolver())
-  registerListingRoutes(app, { store: listingStore, resolveActor, backend: auth ? "supabase" : "local" })
+  const dealStore = options.dealStore ?? (storeConfig ? new SupabaseDealStore(storeConfig) : new LocalDealStore(LOCAL_DEALS_FILE))
+  registerListingRoutes(app, { store: listingStore, resolveActor, backend: auth ? "supabase" : "local", leasedListingIds: () => dealStore.leasedListingIds() })
   // Deals: offers, tenancies and rent. Payments go through one port: Stripe Checkout in test mode when both test keys
   // are set, otherwise the simulated checkout (same flow, labelled "Simulated payment, no real money").
-  const dealStore = options.dealStore ?? (storeConfig ? new SupabaseDealStore(storeConfig) : new LocalDealStore(LOCAL_DEALS_FILE))
   const stripe = stripeTestConfig()
   if (stripe.warning) app.log.warn(stripe.warning)
   const simulated = new SimulatedGateway()

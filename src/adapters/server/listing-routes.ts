@@ -9,6 +9,8 @@ export type ListingRoutesOptions = {
   readonly store: ListingStore
   readonly resolveActor: ActorResolver
   readonly backend: "local" | "supabase"
+  /** Ids of leased listings (the deal store); without it nothing shows as leased. */
+  readonly leasedListingIds?: () => Promise<ReadonlySet<string>>
 }
 
 /** What anyone may see of a listing. Contacts are never part of it. */
@@ -76,12 +78,23 @@ export function registerListingRoutes(app: FastifyInstance, options: ListingRout
     return { backend: options.backend, landlord: actor ? { id: actor.id, displayName: actor.displayName, kind: actor.kind } : null }
   })
 
-  app.get("/api/listings", async () => ({ listings: (await store.listPublished()).map(publicListing) }))
+  /**
+   * leased: true when the space has a lease, only the flag (no tenant, no terms). A demo listing never shows it: its
+   * landlord is simulated and the demo deal loop stays open to everyone (the same rule as DealService). A failure to
+   * read the leases never breaks the listings; they then show as not leased.
+   */
+  const leasedSet = async (): Promise<ReadonlySet<string>> => (options.leasedListingIds ? options.leasedListingIds().catch(() => new Set<string>()) : new Set<string>())
+  const withLeased = (listing: SpaceListing, leased: ReadonlySet<string>) => ({ ...publicListing(listing), leased: !listing.props.isDemo && leased.has(listing.props.id) })
+
+  app.get("/api/listings", async () => {
+    const [listings, leased] = await Promise.all([store.listPublished(), leasedSet()])
+    return { listings: listings.map((l) => withLeased(l, leased)) }
+  })
 
   app.get("/api/listings/:id", async (req, reply) => {
-    const listing = await store.get((req.params as { id: string }).id)
+    const [listing, leased] = await Promise.all([store.get((req.params as { id: string }).id), leasedSet()])
     if (!listing || !listing.props.published) return reply.code(404).send({ error: "No such listing" })
-    return publicListing(listing)
+    return withLeased(listing, leased)
   })
 
   /** "Show contact": a POST, never cached, and the contact is never written to the log. */
