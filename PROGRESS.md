@@ -3,6 +3,20 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
+## Update (27 Nov 2026, night, Aleksa + Claude): dropdowns, collapsible cards, sticky contact, Settings (e96923e, deployed)
+- `web/src/Select.tsx` replaces every native select: glass panel portalled to the body (never clipped by a card,
+  opens upwards without room below), brand-soft hover, check on the chosen option, "Choose" placeholder, arrows,
+  Home/End, Enter/Space, Escape, Tab, first letter, outside click.
+- `Card` (Shell.tsx) takes `collapsible`, `id`, `count`: chevron left of the title pill, smooth open and close, state
+  per card in sessionStorage, inert when closed. Used on New listing (The space, Money and lease terms, Optional; not
+  Contact), Settings, owner Home, Offers and My spaces. The Rejected group in results was already collapsible.
+- New listing and the onboarding's List my space: the Contact column with Publish is sticky on wide screens (the page
+  scrolls, no inner scroll bar); the onboarding form became two columns on wide screens.
+- Settings: Account (avatar, name, email, Sign out), How you use SuiteSpot (three pill switch, black when chosen, one
+  sentence on the role), Business profile (seeker, both), Your spaces (owner, both: count and My listings).
+- Avatar menu item is "Settings"; cursors drawn at 24 px (arrow about 20 px), hot spot 3 3. A screenshot cannot show
+  the system cursor, so its size on screen at 100% and 150% was not checked visually.
+
 ## Update (27 Nov 2026, night, Aleksa + Claude): sidebar motion, avatar menu, cursors, local demo accounts
 - **UI:** sidebar items lift 2 px on hover or focus (spring back, none with reduced motion); only the avatar under the
   rail (no name); the avatar menu unfolds from the avatar (the avatar travels to the top of the panel), closes on the
