@@ -356,7 +356,7 @@ function ProfileFields({ form, locked, onChange }: { form: ProfileForm; locked: 
   )
 }
 
-/** The one message shown when the server has no model key: runs still work, with scripted answers, and say so. */
+/** The one message shown when the server has no model key: runs still work (recorded or scripted answers, see the README). */
 function NoKeyNotice() {
   return (
     <p className="mt-4 rounded-[18px] bg-white/70 px-4 py-3 text-[13px] leading-5 text-ink-2">

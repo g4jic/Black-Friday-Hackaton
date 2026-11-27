@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { HowItWorksPage } from "./HowItWorks"
-import { startResearch, useResearch } from "./app/research-store"
+import { startResearch } from "./app/research-store"
 import { navigate, paths, useLocation, useRoute, type Route } from "./app/router"
 import { Shell } from "./app/Shell"
 import { HistoryPage } from "./pages/HistoryPages"
@@ -23,7 +23,6 @@ import { OnboardingPage } from "./pages/OnboardingPage"
 import { useAuth } from "./app/auth"
 import { useWelcomeHold } from "./app/welcome"
 import type { Config } from "./types"
-import { Pill } from "./ui"
 
 const TITLES: Record<Route["name"], string> = {
   dashboard: "Find your SuiteSpot",
@@ -105,10 +104,9 @@ export function App() {
 
   // A page of the other role (a typed or old link): Home with a notice instead (see the effect above).
   if (blocked) return <div className="min-h-dvh" aria-busy="true" />
-  const titleExtra = route.name === "run" || route.name === "results" || route.name === "candidate" ? <AnswerSourcePill researchId={route.researchId} /> : null
 
   return (
-    <Shell route={route} title={title} titleExtra={titleExtra}>
+    <Shell route={route} title={title}>
       <Page route={route} config={config} />
     </Shell>
   )
@@ -173,24 +171,3 @@ function Page({ route, config }: { route: Route; config: Config | null }) {
   }
 }
 
-/**
- * Scripted answers (no model at all) are labelled on the result screens. A recorded run is a real model run replayed
- * without a key and shows no label (decided 27 Nov 2026; the README says the local version replays recordings).
- */
-export const ANSWER_LABEL = {
-  scripted: { text: "Scripted demo answers, no AI model", title: "No model was called: the agents replay scripted answers. Code still checks every value against its source." },
-} as const
-
-/** Says when the agents' answers were scripted; a live or recorded run shows nothing. */
-function AnswerSourcePill({ researchId }: { researchId: string }) {
-  const { answers } = useResearch(researchId)
-  const label = answers === "scripted" ? ANSWER_LABEL.scripted : null
-  if (!label) return null
-  return (
-    <span className="inline-flex flex-wrap items-center gap-1.5">
-      <Pill icon={false} title={label.title}>
-        {label.text}
-      </Pill>
-    </span>
-  )
-}

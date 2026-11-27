@@ -40,10 +40,10 @@ done, exact state, next steps in order, how to run locally, Supabase, tonight's 
   `listing_contacts` (no anon access; the server reveals one on "Show contact"; demo phones partly masked, no tel: or
   mailto:). The seed generator is FROZEN. **Keys are never in the repo**: `.env` is ignored; Aleksa gets the
   Supabase keys privately from Andrej; the service role key is server and seed script only.
-- **Keyless honesty:** without a key the agents replay scripted demo answers and every result screen says "Scripted
-  demo answers, no AI model". Since 27 Nov the keyless "Find spaces" replays recorded real runs of
-  three scenarios (`npm run record:demo`); since 27 Nov the screen does not label them (Andrej's decision; the README
-  states it). Never present scripted answers as a model's work: those keep their label.
+- **Keyless honesty:** without a key, "Find spaces" replays recorded real runs of three scenarios
+  (`npm run record:demo`) and "Evaluate for my business" on a demo listing uses scripted answers. Since 27 Nov the
+  screens label neither (Andrej's decision); the README table "What is real, recorded and scripted" states both.
+  Never describe scripted answers as a model's work in the docs.
 - Deployed on Railway (https://suitespot-production.up.railway.app): ANTHROPIC_API_KEY and the SUPABASE_* values as
   Railway variables. Since 27 Nov there is no access code: every feature is open; the cost guard is the usage limit in
   the Anthropic Console plus one live run at a time per server.

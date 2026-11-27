@@ -9,8 +9,8 @@ No long dashes in this file; use a plain hyphen.
   simulated or a Stripe test sandbox. Explanatory slop (where accounts live, how a photo is processed, what code does
   behind a field) is removed. Agent texts and recordings keep "landlord"; `ownerWording` in
   `web/src/app/research-store.ts` rewrites it when run events reach the browser, so the recordings still match.
-- "Recorded run" / "Scripted demo answers, no AI model" labels are KEPT (local keyless only; honesty rule in
-  CLAUDE.md). Ask Andrej before removing them.
+- Later the same evening Andrej removed the "Recorded run" and "Scripted demo answers, no AI model" labels too:
+  the README table "What is real, recorded and scripted" states where the keyless answers come from.
 - Profile photo: a dialog (`web/src/app/PhotoDialog.tsx`) to upload, drag and zoom inside a round frame; the browser
   uploads only the 256 px crop. Tested online on 27 Nov (Supabase Storage bucket `avatars` made on first upload).
 

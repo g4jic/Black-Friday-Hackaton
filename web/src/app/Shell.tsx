@@ -79,7 +79,7 @@ export function AdviceNote() {
  * in the space between them; the title is 24 px from the top. On a phone the sidebar is a bottom bar and the frame
  * has 16 px on each side.
  */
-export function Shell({ route, title, titleExtra, children }: { route: Route; title: string; titleExtra?: ReactNode; children: ReactNode }) {
+export function Shell({ route, title, children }: { route: Route; title: string; children: ReactNode }) {
   return (
     <div className="min-h-screen px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] text-ink page-frame sm:pb-8 sm:pl-[128px]">
       <Sidebar route={route} />
@@ -87,7 +87,6 @@ export function Shell({ route, title, titleExtra, children }: { route: Route; ti
         <header className="flex flex-wrap items-center gap-4">
           <h1 className="flex flex-wrap items-center gap-3 text-[28px] leading-[34px] font-semibold tracking-[-0.01em]">
             {title}
-            {titleExtra}
           </h1>
         </header>
         <main className="mt-5">{children}</main>
