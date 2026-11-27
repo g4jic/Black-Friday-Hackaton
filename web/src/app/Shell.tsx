@@ -1,6 +1,7 @@
 import { Bookmark, Building2, CircleHelp, History, House, Info, LayoutList, LogOut, MessageSquare, Plus, Search, Settings as SettingsIcon, type LucideIcon } from "lucide-react"
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { cx } from "../ui"
+import { Logo } from "../Logo"
 import { logOut, updateOnboarding, useAuth } from "./auth"
 import { onboardingPath } from "./onboarding-gate"
 import { navKeysFor, ROLE_LABELS, seeksSpaces, type NavKey } from "./roles"
@@ -73,7 +74,7 @@ function Sidebar({ route }: { route: Route }) {
       aria-label="Main"
     >
       <Link to={paths.dashboard()} className="mb-4 flex h-14 w-14 items-center justify-center max-sm:hidden" aria-label="SuiteSpot home" title="SuiteSpot">
-        <img src="/suitespot-logo.svg" alt="SuiteSpot" width={56} height={56} className="h-14 w-14" />
+        <Logo size={56} title="SuiteSpot" className="h-14 w-14" />
       </Link>
       <nav className="flex flex-col items-center gap-2.5 max-sm:contents">
         {navKeysFor(role).map((key) => {

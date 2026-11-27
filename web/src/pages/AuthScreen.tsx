@@ -4,6 +4,7 @@ import { Link, navigate, paths, useLocation } from "../app/router"
 import { safeNext } from "../app/onboarding-gate"
 import { holdWelcome, useWelcomeHold } from "../app/welcome"
 import { INPUT, LABEL } from "./SettingsPage"
+import { Logo } from "../Logo"
 
 /**
  * Sign in and sign up (DESIGN.md 7.5): a white glass card on the left, an animated map on the right where the
@@ -95,7 +96,7 @@ export function AuthScreen({ mode, next }: { mode: "signin" | "signup"; next: st
     <div className={`auth-shell flex min-h-dvh gap-4 p-4 lg:gap-6 lg:p-6 ${phase ? "is-welcome" : ""} ${phase === "zoom" ? "is-zoom" : ""}`}>
       <section className="auth-form glass flex w-full flex-col rounded-[32px] px-6 py-6 sm:px-10 lg:max-w-[640px] lg:flex-[0_0_44%]">
         <div className="flex items-center gap-3">
-          <img src="/suitespot-logo.svg" alt="" width={36} height={36} />
+          <Logo size={36} />
           <span className="text-xl font-semibold text-ink">SuiteSpot</span>
         </div>
         <div className="mx-auto flex w-full max-w-[380px] flex-1 flex-col justify-center py-10">

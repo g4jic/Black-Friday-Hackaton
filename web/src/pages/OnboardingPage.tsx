@@ -10,6 +10,7 @@ import { spaceExtrasDescription, type Storefront } from "../app/space-extras"
 import { EMPTY_LISTING_FORM, Field, FIELD_NAMES, ListingTermsFields, SECTION_LABEL, toInput, type Form as ListingForm } from "../listings/ListingFormPage"
 import { ApiError, listingsApi, type ListingProblem } from "../listings/listings-api"
 import { cx } from "../ui"
+import { Logo } from "../Logo"
 import { BusinessProfileFields } from "./BusinessProfileFields"
 import { INPUT } from "./SettingsPage"
 
@@ -77,7 +78,7 @@ function RoleStep({ next }: { next: string | null }) {
     <div className="flex min-h-dvh flex-col px-5 py-6 text-ink sm:px-10 sm:py-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <span className="flex items-center gap-2.5">
-          <img src="/suitespot-logo.svg" alt="" width={36} height={36} />
+          <Logo size={36} />
           <span className="text-[22px] font-semibold tracking-[-0.02em]">SuiteSpot</span>
         </span>
         <StepDots current={1} total={2} />
