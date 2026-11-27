@@ -76,5 +76,78 @@ begin
 end $$;
 reset role;
 
+-- 5. Deals (offers, tenancies, rent_payments): RLS on; written only by the server (service role, as here);
+--    each party reads its own rows; a third user and anon read nothing; nobody signed in can write.
+insert into auth.users (id, email, aud, role) values
+  ('00000000-0000-4000-8000-0000000000c3', 'rls-third@example.com', 'authenticated', 'authenticated');
+insert into public.offers (id, listing_id, listing_title, is_demo_listing, tenant_id, tenant_name, landlord_id, rent_monthly,
+  currency, start_date, term_months, message, status, created_at) values
+  ('offer-rls', 'listing-rlspub', 'Published test listing', false, '00000000-0000-4000-8000-0000000000b2', 'Tenant',
+   '00000000-0000-4000-8000-0000000000a1', 650, 'EUR', '2027-01-01', 12, '', 'accepted', now());
+insert into public.tenancies (id, offer_id, listing_id, listing_title, is_demo_listing, tenant_id, tenant_name, landlord_id,
+  rent_monthly, currency, start_date, term_months, created_at) values
+  ('tenancy-rls', 'offer-rls', 'listing-rlspub', 'Published test listing', false, '00000000-0000-4000-8000-0000000000b2',
+   'Tenant', '00000000-0000-4000-8000-0000000000a1', 650, 'EUR', '2027-01-01', 12, now());
+insert into public.rent_payments (id, tenancy_id, period, amount, currency, method, reference, paid_at) values
+  ('payment-rls', 'tenancy-rls', '2027-01', 650, 'EUR', 'simulated', 'simulated:rls', now());
+do $
+begin
+  if exists (select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace
+             where n.nspname = 'public' and c.relname in ('offers', 'tenancies', 'rent_payments') and not c.relrowsecurity) then
+    raise exception 'RLS is off on a deals table';
+  end if;
+  begin
+    insert into public.rent_payments (id, tenancy_id, period, amount, currency, method, reference, paid_at)
+    values ('payment-live', 'tenancy-rls', '2027-02', 650, 'EUR', 'stripe_test', 'cs_live_x', now());
+    raise exception 'a live Stripe reference was accepted';
+  exception when check_violation then null; -- expected: test or simulated references only
+  end;
+end $;
+
+set local role authenticated;
+-- the tenant and the landlord each read the offer, the tenancy and the payment
+set local request.jwt.claims = '{"sub": "00000000-0000-4000-8000-0000000000b2", "role": "authenticated"}';
+do $
+begin
+  if (select count(*) from public.offers where id = 'offer-rls') <> 1 then raise exception 'the tenant cannot read their offer'; end if;
+  if (select count(*) from public.tenancies where id = 'tenancy-rls') <> 1 then raise exception 'the tenant cannot read their tenancy'; end if;
+  if (select count(*) from public.rent_payments where id = 'payment-rls') <> 1 then raise exception 'the tenant cannot read their payment'; end if;
+  begin
+    insert into public.rent_payments (id, tenancy_id, period, amount, currency, method, reference, paid_at)
+    values ('payment-fake', 'tenancy-rls', '2027-03', 1, 'EUR', 'simulated', 'simulated:fake', now());
+    raise exception 'a signed-in user recorded a payment directly';
+  exception when insufficient_privilege then null; -- expected: only the server writes
+  end;
+  begin
+    update public.offers set status = 'accepted' where id = 'offer-rls';
+    raise exception 'a signed-in user changed an offer directly';
+  exception when insufficient_privilege then null;
+  end;
+end $;
+set local request.jwt.claims = '{"sub": "00000000-0000-4000-8000-0000000000a1", "role": "authenticated"}';
+do $
+begin
+  if (select count(*) from public.tenancies where id = 'tenancy-rls') <> 1 then raise exception 'the landlord cannot read the tenancy'; end if;
+  if (select count(*) from public.rent_payments where id = 'payment-rls') <> 1 then raise exception 'the landlord cannot read the payment'; end if;
+end $;
+-- a third user reads nothing
+set local request.jwt.claims = '{"sub": "00000000-0000-4000-8000-0000000000c3", "role": "authenticated"}';
+do $
+begin
+  if exists (select 1 from public.offers) or exists (select 1 from public.tenancies) or exists (select 1 from public.rent_payments)
+    then raise exception 'a third user reads someone else''s deal'; end if;
+end $;
+reset role;
+set local role anon;
+do $
+begin
+  begin
+    perform 1 from public.offers;
+    raise exception 'anon can read offers';
+  exception when insufficient_privilege then null;
+  end;
+end $;
+reset role;
+
 select 'all RLS checks passed' as result;
 rollback;
