@@ -130,7 +130,11 @@ function follow(b: Body, tx: number, ty: number, dt: number, k = 95, c = 16) {
   b.y += b.vy * dt
 }
 type AgentAnim = Body & { angle: number }
-type DotAnim = Body & { o: number; cancelAt: number | null; hidden: boolean }
+/**
+ * A loop dot lives in polar coordinates around its agent, so the dots always form a true circle centred on it:
+ * `slot` is its angle on that circle (it eases to an even share when loops come and go), `r` its distance.
+ */
+type DotAnim = { slot: number; r: number; vr: number; o: number; cancelAt: number | null; hidden: boolean }
 /** Writes a glow's opacity and scale, and nothing at all while it stays off. */
 function setGlow(el: HTMLElement, opacity: number, scale: number) {
   if (opacity <= 0) {
@@ -140,16 +144,43 @@ function setGlow(el: HTMLElement, opacity: number, scale: number) {
   el.style.opacity = opacity.toFixed(3)
   el.style.transform = `scale(${scale.toFixed(3)})`
 }
-/** Places a 1 px line from one point to another, stretched by scaleX (transform only). */
-function setLine(el: HTMLElement, from: [number, number], to: [number, number], opacity: number, drawn = 1) {
+type Pt = [number, number]
+/**
+ * The control point of a curve from a to b that never crosses the centre (where the status sentence is): a straight
+ * line when it already stays clear, otherwise a bend whose middle passes just outside the keep-out circle.
+ */
+function bend(a: Pt, b: Pt, keepOut: number): Pt {
+  const mid: Pt = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]
+  const dx = b[0] - a[0]
+  const dy = b[1] - a[1]
+  const len = Math.hypot(dx, dy) || 1
+  const t = clamp01(-(a[0] * dx + a[1] * dy) / (len * len))
+  if (Math.hypot(a[0] + dx * t, a[1] + dy * t) >= keepOut) return mid
+  const away = Math.hypot(mid[0], mid[1])
+  const u: Pt = away > 1 ? [mid[0] / away, mid[1] / away] : [-dy / len, dx / len]
+  // a quadratic curve passes through (mid + control) / 2 at its middle: put that point just outside the circle
+  const apex: Pt = [u[0] * keepOut * 1.12, u[1] * keepOut * 1.12]
+  return [2 * apex[0] - mid[0], 2 * apex[1] - mid[1]]
+}
+const onCurve = (a: Pt, c: Pt, b: Pt, t: number): Pt => [
+  (1 - t) * (1 - t) * a[0] + 2 * (1 - t) * t * c[0] + t * t * b[0],
+  (1 - t) * (1 - t) * a[1] + 2 * (1 - t) * t * c[1] + t * t * b[1],
+]
+/** Draws a link (an SVG path with pathLength 1) from a to b around the centre; `drawn` reveals it from a. */
+function setCurve(el: SVGPathElement, a: Pt, c: Pt, b: Pt, opacity: number, drawn = 1) {
   if (opacity <= 0.005) {
     if (el.style.opacity !== "0") el.style.opacity = "0"
     return
   }
-  const dx = to[0] - from[0]
-  const dy = to[1] - from[1]
+  const f = (p: Pt) => `${p[0].toFixed(1)} ${p[1].toFixed(1)}`
+  el.setAttribute("d", `M${f(a)}Q${f(c)} ${f(b)}`)
   el.style.opacity = opacity.toFixed(3)
-  el.style.transform = `translate(${from[0].toFixed(1)}px, ${from[1].toFixed(1)}px) rotate(${Math.atan2(dy, dx).toFixed(4)}rad) scaleX(${(Math.hypot(dx, dy) * drawn).toFixed(1)})`
+  el.style.strokeDashoffset = (1 - drawn).toFixed(3)
+}
+/** A point moved away from the centre, so a tag never covers the status sentence. */
+function outward(p: Pt, by: number): Pt {
+  const r = Math.hypot(p[0], p[1]) || 1
+  return [p[0] + (p[0] / r) * by, p[1] + (p[1] / r) * by]
 }
 function place(el: HTMLElement, p: [number, number], extra = "") {
   el.style.transform = `translate(${p[0].toFixed(1)}px, ${p[1].toFixed(1)}px) translate(-50%, -50%)${extra}`
@@ -174,8 +205,8 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
     dots: new Map<string, HTMLDivElement>(),
     agentFlags: new Map<string, HTMLSpanElement>(),
     rankGlow: null as HTMLSpanElement | null,
-    links: new Map<string, HTMLDivElement>(),
-    lines: new Map<string, HTMLDivElement>(),
+    links: new Map<string, SVGPathElement>(),
+    lines: new Map<string, SVGPathElement>(),
     tags: new Map<string, HTMLSpanElement>(),
     pulses: new Map<string, HTMLSpanElement>(),
   })
@@ -200,6 +231,8 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
     /** when each cue started playing (performance.now), or null when it arrived too late to be played */
     const started = new Map<string, number | null>()
     let drift = 0
+    /** where the busy agents' shared formation has turned to (degrees) */
+    let formation = -90
     let last = performance.now()
     let frame = 0
     let settled = false
@@ -209,6 +242,10 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
       const sec = now / 1000
       const { model: m, state: s, half: h } = live.current
       const unit = clamp01(h / 340) * 0.4 + 0.6 // sizes shrink a little on a small stage
+      /** links bend around this circle, so they never cross the status sentence in the centre */
+      const keepOut = h * CENTRE_RADIUS + 26 * unit
+      /** the radius of an agent's ring of loop dots (it widens a little for a crowd) */
+      const dotRing = (n: number) => (32 + Math.max(0, n - 8) * 2) * unit
       if (!s.done) drift += DRIFT * dt
 
       const fresh = new Set<string>()
@@ -234,6 +271,8 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
 
       // 1. where each agent would like to be: on the big circle while idle, wandering in the field while busy
       const target = new Map<string, [number, number]>()
+      const busyNames = ORBIT_AGENTS.filter((name) => !s.done && byAgent.has(name))
+      if (!s.done) formation += 18 * dt
       ORBIT_AGENTS.forEach((name, i) => {
         const slot = agentAngle(name) + drift
         let a = agents.get(name)
@@ -244,9 +283,11 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
         }
         let r: number
         let angle: number
-        if (!s.done && byAgent.has(name)) {
-          a.angle += (26 + 10 * Math.sin(i * 1.9)) * dt // each agent at its own pace, so they meet and pass
-          angle = a.angle + 14 * Math.sin(sec * 0.55 + i * 2.1)
+        const share = busyNames.indexOf(name)
+        if (share >= 0) {
+          // the busy agents share the field evenly and turn together, each wandering a little around its share
+          a.angle += turn(a.angle, formation + (share * 360) / busyNames.length) * Math.min(1, 1.8 * dt)
+          angle = a.angle + 10 * Math.sin(sec * 0.55 + i * 2.1)
           r = h * (WORK_RADIUS + 0.07 * Math.sin(sec * 0.9 + i * 1.3))
         } else {
           a.angle += turn(a.angle, slot) * Math.min(1, 2.5 * dt) // back to its place on the circle
@@ -304,7 +345,7 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
           }
           if (tag) {
             tag.style.opacity = e.toFixed(3)
-            place(tag, [p[0], p[1] - 44 * unit], ` scale(${(0.9 + 0.1 * e).toFixed(3)})`)
+            place(tag, outward(p, 70 * unit), ` scale(${(0.9 + 0.1 * e).toFixed(3)})`)
           }
         } else if (cue.kind === "ranked") {
           const e = envelope(t, LIFE.ranked)
@@ -328,7 +369,7 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
         const [tx, ty] = target.get(name)!
         follow(agents.get(name)!, tx, ty, dt, 26, 7.5)
       }
-      const minGap = 62 * unit
+      const minGap = 84 * unit // room for the names under the discs
       for (let i = 0; i < ORBIT_AGENTS.length; i++)
         for (let j = i + 1; j < ORBIT_AGENTS.length; j++) {
           const a = agents.get(ORBIT_AGENTS[i]!)!
@@ -346,7 +387,7 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
       for (const name of ORBIT_AGENTS) {
         const a = agents.get(name)!
         const r = Math.hypot(a.x, a.y) || 0.01
-        const inner = h * CENTRE_RADIUS + 30 * unit // never over the centre's sentence
+        const inner = h * CENTRE_RADIUS + 44 * unit // the agent and its ring of dots never cover the centre's sentence
         const outer = h * AGENT_RADIUS + 8 * unit
         const k = r < inner ? inner / r : r > outer ? outer / r : 1
         a.x *= k
@@ -370,7 +411,7 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
         const o = was + (goal - was) * Math.min(1, 6 * dt)
         linkOpacity.set(key, o)
         const el = els.current.links.get(key)
-        if (el) setLine(el, at(a), at(b), o)
+        if (el) setCurve(el, at(a), bend(at(a), at(b), keepOut), at(b), o)
       }
       for (const cue of m.cues) {
         if (cue.kind !== "handoff" && cue.kind !== "auditReturn") continue
@@ -381,27 +422,31 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
         const pulse = els.current.pulses.get(cue.key)
         const from = at(cue.kind === "handoff" ? "Lease reader" : "Auditor")
         const to = at(cue.kind === "handoff" ? "Finance analyst" : "Report writer")
-        if (line) setLine(line, from, to, e, clamp01(t / 320))
+        const c = bend(from, to, keepOut)
+        if (line) setCurve(line, from, c, to, e, clamp01(t / 320))
         if (pulse) {
           const p = clamp01(t / 700)
           pulse.style.opacity = e > 0 && p < 1 ? "1" : "0"
-          if (e > 0) place(pulse, mix(from, to, p))
+          if (e > 0) place(pulse, onCurve(from, c, to, p))
         }
         if (tag) {
           tag.style.opacity = e.toFixed(3)
-          if (e > 0) place(tag, [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2 - 26 * unit], ` scale(${(0.9 + 0.1 * e).toFixed(3)})`)
+          const middle = onCurve(from, c, to, 0.5)
+          if (e > 0) place(tag, outward(middle, 40 * unit), ` scale(${(0.9 + 0.1 * e).toFixed(3)})`)
         }
       }
 
-      // 5. dots: one per loop, circling the agent that runs it; a dot fades into its agent when the loop answers and
-      //    flies off in red when a deal breaker cancels it
+      // 5. dots: one per loop, on a circle centred on the agent that runs it, evenly spaced and turning together; a
+      //    dot shrinks into its agent when the loop answers and flies off in red when a deal breaker cancels it
       for (const d of m.dots) {
         const el = els.current.dots.get(d.loopKey)
         const owner = at(d.agent)
+        const mine = byAgent.get(d.agent) ?? []
+        const even = mine.includes(d.loopKey) ? (mine.indexOf(d.loopKey) * 360) / mine.length : null
         let a = dots.get(d.loopKey)
         if (!a) {
           // a loop that ended (or was cancelled) before this page saw it is not shown at all
-          a = { x: owner[0], y: owner[1], vx: 0, vy: 0, o: 0, cancelAt: null, hidden: d.endSeq !== null || d.cancelSeq !== null }
+          a = { slot: even ?? 0, r: 0, vr: 0, o: 0, cancelAt: null, hidden: d.endSeq !== null || d.cancelSeq !== null }
           dots.set(d.loopKey, a)
         }
         if (a.hidden) {
@@ -413,35 +458,30 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
         if (d.cancelSeq !== null) {
           if (a.cancelAt === null) {
             a.cancelAt = now
-            const n = Math.hypot(a.x - owner[0], a.y - owner[1]) || 1
-            a.vx = ((a.x - owner[0]) / n) * 380
-            a.vy = ((a.y - owner[1]) / n) * 380
+            a.vr = 380
           }
           const t = now - a.cancelAt
-          a.vx *= Math.exp(-6 * dt)
-          a.vy *= Math.exp(-6 * dt)
-          a.x += a.vx * dt
-          a.y += a.vy * dt
+          a.vr *= Math.exp(-6 * dt)
+          a.r += a.vr * dt
           a.o = 1 - clamp01(t / LIFE.bounce)
           scale = 1 + 0.4 * Math.sin(Math.min(1, t / 260) * Math.PI) - 0.5 * clamp01((t - 260) / (LIFE.bounce - 260))
           if (t >= LIFE.bounce) a.hidden = true
         } else if (d.endSeq !== null) {
-          follow(a, owner[0], owner[1], dt)
+          a.r += (0 - a.r) * Math.min(1, 9 * dt)
           a.o -= dt / (LIFE.fadeOut / 1000)
           scale = 0.6 + 0.4 * clamp01(a.o)
           if (a.o <= 0) a.hidden = true
         } else {
-          const mine = byAgent.get(d.agent) ?? [d.loopKey]
-          const index = Math.max(0, mine.indexOf(d.loopKey))
-          const spin = sec * 64 + ORBIT_AGENTS.indexOf(d.agent) * 45
-          const [ox, oy] = polar(spin + (index * 360) / mine.length, (31 + 1.6 * mine.length) * unit)
-          follow(a, owner[0] + ox, owner[1] + oy, dt, 150, 22)
+          if (even !== null) a.slot += turn(a.slot, even) * Math.min(1, 7 * dt)
+          a.r += (dotRing(mine.length) - a.r) * Math.min(1, 9 * dt)
           a.o = Math.min(1, a.o + dt / (LIFE.fadeIn / 1000))
           scale = 1 + 0.45 * (dotBoost.get(d.loopKey) ?? 0)
         }
         if (el) {
+          const spin = sec * 64 + ORBIT_AGENTS.indexOf(d.agent) * 45
+          const [ox, oy] = polar(spin + a.slot, a.r)
           el.style.opacity = clamp01(a.o).toFixed(3)
-          place(el, [a.x, a.y], ` scale(${Math.max(0.01, scale).toFixed(3)})`)
+          place(el, [owner[0] + ox, owner[1] + oy], ` scale(${Math.max(0.01, scale).toFixed(3)})`)
         }
       }
 
@@ -474,23 +514,25 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
       <div className="orbit-path" style={{ inset: `${(1 - AGENT_RADIUS) * 50}%` }} aria-hidden />
       <CentreStatus status={status} done={state.done} cancelled={state.cancelled} atWork={model.atWork} />
 
-      {/* links between agents working on the same space, and the encounter lines: under the agents */}
-      {PAIRS.map(([a, b]) => (
-        <div
-          key={pairKey(a, b)}
-          ref={(el) => void (el ? els.current.links.set(pairKey(a, b), el) : els.current.links.delete(pairKey(a, b)))}
-          className="orbit-line is-link"
-          aria-hidden
-        />
-      ))}
-      {lineCues.map((cue) => (
-        <div
-          key={cue.key}
-          ref={(el) => void (el ? els.current.lines.set(cue.key, el) : els.current.lines.delete(cue.key))}
-          className={cx("orbit-line", cue.kind === "auditReturn" && "is-return")}
-          aria-hidden
-        />
-      ))}
+      {/* links between agents working on the same space, and the encounter lines: under the agents, bent around the centre */}
+      <svg className="orbit-links" viewBox={`${-half} ${-half} ${half * 2} ${half * 2}`} aria-hidden>
+        {PAIRS.map(([a, b]) => (
+          <path
+            key={pairKey(a, b)}
+            ref={(el) => void (el ? els.current.links.set(pairKey(a, b), el) : els.current.links.delete(pairKey(a, b)))}
+            className="orbit-link"
+            pathLength={1}
+          />
+        ))}
+        {lineCues.map((cue) => (
+          <path
+            key={cue.key}
+            ref={(el) => void (el ? els.current.lines.set(cue.key, el) : els.current.lines.delete(cue.key))}
+            className={cx("orbit-cue-line", cue.kind === "auditReturn" && "is-return")}
+            pathLength={1}
+          />
+        ))}
+      </svg>
 
       {ORBIT_AGENTS.map((name) => {
         const Icon = agentIcon(name)

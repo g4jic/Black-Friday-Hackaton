@@ -45,6 +45,6 @@ on that candidate at its next breakpoint, before the next model call (in Office 
 unlimited rent increase after 4.6 s and the Finance analyst's running loop stops before its next tool call). When the
 room is quiet, a code Ranker scores worst case first, the Report writer drafts from numbered facts, and a code Auditor
 checks every sentence against the facts it cites (sends it back once, then removes failing sentences; 0 removed in all
-three demo runs). While a run is going, every running agent loop is a dot on the screen, drawn from the runtime's own
-events (the peak shows as many dots as loops: 27, 30 and 28 in the three scenarios); the Timeline tab draws every
+three demo runs). While a run is going, every running agent loop is a dot circling its agent on the screen, drawn from
+the runtime's own events (the peak shows as many dots as loops: 27, 30 and 28 in the three scenarios); the Timeline tab draws every
 loop as a lane, and each run appears in Mozaik Cloud. Without a key the example businesses replay recorded real claude-haiku-4-5 runs and every other run uses scripted agents (stated in the README).

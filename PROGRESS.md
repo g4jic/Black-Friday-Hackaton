@@ -3,7 +3,17 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
-## Update (27 Nov 2026, 22:00, Andrej + Claude): the run animation moves
+## Update (27 Nov 2026, 21:30, Andrej + Claude): final polish and docs
+- Run view polish: loop dots sit on a true circle centred on their agent (polar coordinates, no spring lag); links and
+  encounter lines are SVG curves that bend around the centre, so nothing crosses the status sentence; busy agents
+  share the field evenly and turn together; tags are pushed away from the centre; agents keep more room for names.
+- README rewritten short and direct (456 to about 300 lines, same facts); new run screenshot; "[link coming]"
+  removed (the video session adds the link to README and SUBMISSION when the video is done).
+- LICENSE: MIT (Andrej's decision, Aleksa left decisions to him). Seed listings keep the plain tile instead of a
+  photo (no image generator here and no licensed photos; owners upload their own).
+- .env.example comments match the untagged UI.
+
+## Update (27 Nov 2026, 21:00, Andrej + Claude): the run animation moves
 - Andrej asked for a livelier run view: agents that move and interact instead of standing on the circle, no inner
   ring of candidates (they appeared at the start and stayed, telling nothing), and a white interior like the centre.
 - Now (web/src/run/RunView.tsx, CSS in index.css): the field inside the ring is white; an agent with running loops
