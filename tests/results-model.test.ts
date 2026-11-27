@@ -84,7 +84,7 @@ describe("candidate page", () => {
       ],
     })
     const rows = costRows(c)
-    expect(rows[0]).toEqual({ label: "Monthly cost", value: "900 EUR", source: "our calculation", note: null })
+    expect(rows[0]).toMatchObject({ label: "Monthly cost", value: "900 EUR", source: "our calculation", note: null })
     expect(rows[3]).toMatchObject({ label: "Exit after 12 months", value: null, note: "Needs lease terms. Includes 10,000 EUR unrecovered fit-out." })
     expect(leaseSection(c).questions.length).toBeGreaterThan(0)
     expect(plainSource({ kind: "profile", ref: "questionnaire" })).toBe("your questionnaire")

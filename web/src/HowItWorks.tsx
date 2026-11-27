@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react"
 import { humanError } from "./app/api-fetch"
-import { Pill } from "./ui"
+import { VerdictDot } from "./results/VerdictDot"
 
 /** The subset of /api/assumptions this page shows (the same constants the code runs on). */
 type Assumptions = {
@@ -12,7 +12,15 @@ type Assumptions = {
   }
   hardFlags: { budgetTolerance: number; maxTermWithoutExitMonths: number }
   leaseConcerns: { maxNoticeMonths: number; maxFixedIndexationPercent: number }
-  location: { radiusM: number; rules: Record<string, ({ metric: string } & ({ kind: "more_is_better"; fullAt: number } | { kind: "competition"; fullAtOrBelow: number; zeroAt: number }))[]>; metricText: Record<string, string>; businessText: Record<string, string> }
+  location: {
+    radiusM: number
+    rules: Record<
+      string,
+      ({ metric: string } & ({ kind: "more_is_better"; fullAt: number } | { kind: "competition"; fullAtOrBelow: number; zeroAt: number }))[]
+    >
+    metricText: Record<string, string>
+    businessText: Record<string, string>
+  }
   noise: { description: string; denseHomesAtLeast: number; industrialBuildingsAtLeast: number }
   buy: {
     description: string
@@ -71,7 +79,11 @@ export function HowItWorksPage() {
     return (
       <Card title="How it works">
         <p role="alert">{error}</p>
-        <button type="button" onClick={() => setAttempt(attempt + 1)} className="mt-4 inline-flex h-10 items-center rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e]">
+        <button
+          type="button"
+          onClick={() => setAttempt(attempt + 1)}
+          className="mt-4 inline-flex h-10 items-center rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e]"
+        >
           Try again
         </button>
       </Card>
@@ -83,10 +95,10 @@ export function HowItWorksPage() {
     <div className="grid gap-4 lg:grid-cols-2">
       <Card title="About the data" className="lg:col-span-2">
         <p className="max-w-[80ch]">
-          Every listing, landlord, contact and business on SuiteSpot in this version is synthetic: 100 generated listings in Novi Sad and Beograd,
-          made for this prototype. Prices per m2 follow public 2025-2026 ranges; area data is real public OpenStreetMap data. Offers, leases and
-          rent payments are real records in the app, but no real money moves: payments are simulated, or Stripe in test mode. Before launch, the
-          founders agree the first listings with landlords so the platform is not empty.
+          Every listing, landlord, contact and business on SuiteSpot in this version is synthetic: 100 generated listings in Novi Sad and Beograd, made for this
+          prototype. Prices per m2 follow public 2025-2026 ranges; area data is real public OpenStreetMap data. Offers, leases and rent payments are real
+          records in the app, but no real money moves: payments are simulated, or Stripe in test mode. Before launch, the founders agree the first listings with
+          landlords so the platform is not empty.
         </p>
       </Card>
       <Card title="Your score, out of 100">
@@ -102,7 +114,8 @@ export function HowItWorksPage() {
           ))}
         </ul>
         <p className="mt-3">
-          Cost gets full points at {pct(r.cost.fullScoreAtOrBelow)} of your budget or less and none at {pct(r.cost.zeroScoreAt)}. When something is not known, it shows as missing and is never guessed.
+          Cost gets full points at {pct(r.cost.fullScoreAtOrBelow)} of your budget or less and none at {pct(r.cost.zeroScoreAt)}. When something is not known,
+          it shows as missing and is never guessed.
         </p>
       </Card>
 
@@ -119,18 +132,29 @@ export function HowItWorksPage() {
       </Card>
 
       <Card title="Verdicts and tags">
+        <p className="mb-2.5">The rank circle in the results is coloured by the verdict; its tooltip names it.</p>
         <ul className="space-y-2.5">
-          <li className="flex items-start gap-2">
-            <Pill variant="positive">Good</Pill>
-            <span>No deal breaker and nothing to check before signing.</span>
+          <li className="flex items-center gap-2.5">
+            <VerdictDot verdict="good" rank={1} size="sm" />
+            <span>
+              <span className="font-medium text-ink">Good:</span> no deal breaker and nothing to check before signing.
+            </span>
           </li>
-          <li className="flex items-start gap-2">
-            <Pill variant="soft">Check before signing</Pill>
-            <span>Worth a look, with named points to check first.</span>
+          <li className="flex items-center gap-2.5">
+            <VerdictDot verdict="check_before_signing" rank={2} size="sm" />
+            <span>
+              <span className="font-medium text-ink">Check before signing:</span> worth a look, with named points to check first.
+            </span>
           </li>
-          <li className="flex items-start gap-2">
-            <Pill variant="hard">Not recommended</Pill>
-            <span>A deal breaker was found; the space is stopped and not ranked.</span>
+          <li className="flex items-center gap-2.5">
+            <VerdictDot verdict="not_recommended" rank={3} size="sm" />
+            <span>
+              <span className="font-medium text-ink">Not recommended:</span> the space does not fit. A deal breaker stops the space before it is ranked, and it
+              keeps its icon{" "}
+              <span className="inline-flex align-middle">
+                <VerdictDot verdict="not_recommended" rank={null} rejected size="sm" />
+              </span>
+            </span>
           </li>
         </ul>
         <p className="mt-4 font-medium text-ink">Deal breakers</p>
@@ -141,7 +165,9 @@ export function HowItWorksPage() {
         </ul>
         <p className="mt-3 font-medium text-ink">Points to check before signing</p>
         <p className="mt-1">
-          Notice longer than {a.leaseConcerns.maxNoticeMonths} months, a fixed rent increase above {a.leaseConcerns.maxFixedIndexationPercent}% a year, a personal guarantee, structural repairs paid by you, an early exit penalty, noisy work next to homes, and rent above {pct(r.rentShare.checkAbove)} of your expected revenue.
+          Notice longer than {a.leaseConcerns.maxNoticeMonths} months, a fixed rent increase above {a.leaseConcerns.maxFixedIndexationPercent}% a year, a
+          personal guarantee, structural repairs paid by you, an early exit penalty, noisy work next to homes, and rent above {pct(r.rentShare.checkAbove)} of
+          your expected revenue.
         </p>
         <p className="mt-3 font-medium text-ink">Confidence</p>
         <ul className="mt-1 space-y-1">
@@ -161,17 +187,37 @@ export function HowItWorksPage() {
             label={`Noise: dense housing from ${a.noise.denseHomesAtLeast} homes within ${a.location.radiusM} m; an industrial zone from ${a.noise.industrialBuildingsAtLeast} industrial buildings`}
             source="SuiteSpot assumption, applied to OpenStreetMap land use"
           />
-          <Assumption label={`Location: what is mapped within ${a.location.radiusM} m of the address`} source="SuiteSpot assumption; OpenStreetMap does not measure foot traffic or revenue" />
+          <Assumption
+            label={`Location: what is mapped within ${a.location.radiusM} m of the address`}
+            source="SuiteSpot assumption; OpenStreetMap does not measure foot traffic or revenue"
+          />
         </ul>
         <p className="mt-4 font-medium text-ink">Lease or buy a similar space</p>
         <p className="mt-1 mb-2">{b.description}</p>
         <ul className="space-y-2.5">
           <Assumption label="Price per m2 by part of town" source={b.priceEurPerM2.source.ref} url={b.priceEurPerM2.source.url} />
-          <Assumption label={`Loan interest ${pct(b.interestRatePerYear.value)} a year`} source={b.interestRatePerYear.source} url={b.interestRatePerYear.url} />
-          <Assumption label={`Down payment ${pct(b.downPaymentShare.value)}, loan over ${b.loanYears.value} years`} source={`${b.downPaymentShare.source}. ${b.loanYears.source}`} />
-          <Assumption label={`Transfer tax ${pct(b.transferTaxRate.value)}, property tax ${pct(b.propertyTaxRatePerYear.value)} a year`} source={`${b.transferTaxRate.source}. ${b.propertyTaxRatePerYear.source}`} />
-          <Assumption label={`Fees ${pct(b.buyingFeesRate.value)}, upkeep ${pct(b.maintenanceRatePerYear.value)} a year`} source={`${b.buyingFeesRate.source}. ${b.maintenanceRatePerYear.source}`} />
-          <Assumption label={`Cash put in could earn ${pct(b.cashReturnPerYear.value)} a year elsewhere`} source={b.cashReturnPerYear.source} url={b.cashReturnPerYear.url} />
+          <Assumption
+            label={`Loan interest ${pct(b.interestRatePerYear.value)} a year`}
+            source={b.interestRatePerYear.source}
+            url={b.interestRatePerYear.url}
+          />
+          <Assumption
+            label={`Down payment ${pct(b.downPaymentShare.value)}, loan over ${b.loanYears.value} years`}
+            source={`${b.downPaymentShare.source}. ${b.loanYears.source}`}
+          />
+          <Assumption
+            label={`Transfer tax ${pct(b.transferTaxRate.value)}, property tax ${pct(b.propertyTaxRatePerYear.value)} a year`}
+            source={`${b.transferTaxRate.source}. ${b.propertyTaxRatePerYear.source}`}
+          />
+          <Assumption
+            label={`Fees ${pct(b.buyingFeesRate.value)}, upkeep ${pct(b.maintenanceRatePerYear.value)} a year`}
+            source={`${b.buyingFeesRate.source}. ${b.maintenanceRatePerYear.source}`}
+          />
+          <Assumption
+            label={`Cash put in could earn ${pct(b.cashReturnPerYear.value)} a year elsewhere`}
+            source={b.cashReturnPerYear.source}
+            url={b.cashReturnPerYear.url}
+          />
           <Assumption label="The space keeps its price" source={b.priceChange} />
         </ul>
         <p className="mt-3 text-xs text-ink-3">{b.notIncluded}</p>
@@ -182,7 +228,13 @@ export function HowItWorksPage() {
           {Object.entries(a.location.rules).map(([type, rules]) => (
             <li key={type}>
               <span className="font-medium text-ink">{a.location.businessText[type] ?? type}:</span>{" "}
-              {rules.map((rule) => (rule.kind === "more_is_better" ? `${a.location.metricText[rule.metric]} help (full at ${rule.fullAt})` : `${a.location.metricText[rule.metric]} compete (full at ${rule.fullAtOrBelow} or fewer)`)).join("; ")}
+              {rules
+                .map((rule) =>
+                  rule.kind === "more_is_better"
+                    ? `${a.location.metricText[rule.metric]} help (full at ${rule.fullAt})`
+                    : `${a.location.metricText[rule.metric]} compete (full at ${rule.fullAtOrBelow} or fewer)`,
+                )
+                .join("; ")}
             </li>
           ))}
         </ul>

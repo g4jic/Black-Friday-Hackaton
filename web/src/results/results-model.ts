@@ -11,7 +11,27 @@ import { formatMoney } from "../format"
 
 /** The server's verdict, plus "cannot_judge" for a candidate whose rent is not stated (a score without a price means little). */
 export type DisplayVerdict = Verdict | "cannot_judge"
-export const VERDICT_LABEL: Record<DisplayVerdict, string> = { good: "Good", check_before_signing: "Check before signing", not_recommended: "Not recommended", cannot_judge: "Can't judge: rent not stated" }
+export const VERDICT_LABEL: Record<DisplayVerdict, string> = {
+  good: "Good",
+  check_before_signing: "Check before signing",
+  not_recommended: "Not recommended",
+  cannot_judge: "Can't judge: rent not stated",
+}
+/** The colour of the rank circle: green good, yellow check before signing, red not recommended, grey cannot judge. */
+export type VerdictTone = "good" | "check" | "bad" | "unknown"
+export const VERDICT_TONE: Record<DisplayVerdict, VerdictTone> = {
+  good: "good",
+  check_before_signing: "check",
+  not_recommended: "bad",
+  cannot_judge: "unknown",
+}
+/** What each colour means, for the legend, the tooltip and How it works. */
+export const VERDICT_MEANING: Record<DisplayVerdict, string> = {
+  good: "No deal breaker and nothing to check before signing",
+  check_before_signing: "Worth a look, with named points to check first",
+  not_recommended: "A deal breaker was found, or the space does not fit",
+  cannot_judge: "The rent is not stated, so the cost cannot be judged",
+}
 export const CONFIDENCE_LABEL: Record<string, string> = { high: "High confidence", medium: "Medium confidence", low: "Low confidence" }
 
 /** Where a number comes from, in plain language. */
@@ -44,6 +64,7 @@ export type ListEntry = {
   location: string | null
   areaM2: number | null
   monthlyCost: string | null
+  monthlyCostSource: SourceDTO | null
   /** "18.3% of expected revenue", from the Ranker (code); null when the rent or the revenue is unknown */
   rentShare: { text: string; aboveThreshold: boolean; source: SourceDTO } | null
   verdict: DisplayVerdict
@@ -60,6 +81,12 @@ const moneyText = (value: ValueDTO | undefined): string | null => (value?.kind =
 
 function monthlyCostText(c: CandidateDTO): string | null {
   return moneyText(findingOf(c, "monthly_cost")?.value) ?? moneyText(c.fields.rentMonthly?.value)
+}
+
+function monthlyCostSource(c: CandidateDTO): SourceDTO | null {
+  const f = findingOf(c, "monthly_cost")
+  if (f?.value?.kind === "money") return f.source
+  return c.fields.rentMonthly?.value.kind === "money" ? (c.fields.rentMonthly.source ?? null) : null
 }
 
 const listingNumbers = (s: ResearchState) => {
@@ -109,6 +136,7 @@ function entryFor(c: CandidateDTO, listingNumber: number): ListEntry {
     location: candidateLocation(c),
     areaM2: areaM2(c),
     monthlyCost: monthlyCostText(c),
+    monthlyCostSource: monthlyCostSource(c),
     rentShare: rentShareOf(c),
     verdict,
     score: ranking?.score ?? null,
@@ -140,7 +168,9 @@ export function headline(s: ResearchState): string {
   // A candidate without a rent cannot be judged, so it is never called the best option.
   const best = ranked.find((e) => e.score !== null && e.verdict !== "cannot_judge") ?? ranked.find((e) => e.score !== null)
   if (!best) {
-    return rejected.length > 0 ? "No space is recommended: every candidate was rejected by a hard flag or could not be scored." : "No candidate could be scored in this run."
+    return rejected.length > 0
+      ? "No space is recommended: every candidate was rejected by a hard flag or could not be scored."
+      : "No candidate could be scored in this run."
   }
   const name = best.location && best.areaM2 !== null ? `${best.location.split(",")[0]}, ${Math.round(best.areaM2)} m2` : best.name
   if (best.verdict === "cannot_judge") return `No space can be judged yet: ${name} has the highest score, but its rent is not stated.`
@@ -159,14 +189,14 @@ export function rentShareOf(c: CandidateDTO): ListEntry["rentShare"] {
   return { text: `${percent1(r.share)} of expected revenue`, aboveThreshold: r.aboveThreshold, source: r.source }
 }
 
-export type CostRow = { label: string; value: string | null; source: string | null; note: string | null }
+export type CostRow = { label: string; value: string | null; source: string | null; note: string | null; ref: SourceDTO | null }
 
 const costRow = (c: CandidateDTO, name: string, label: string, render: (v: ValueDTO) => string | null, missingNote: string): CostRow => {
   const f = findingOf(c, name)
-  if (!f || !f.value) return { label, value: null, source: null, note: "Not calculated in this run" }
-  if (f.value.kind === "missing") return { label, value: null, source: plainSource(f.source), note: missingNote }
+  if (!f || !f.value) return { label, value: null, source: null, note: "Not calculated in this run", ref: null }
+  if (f.value.kind === "missing") return { label, value: null, source: plainSource(f.source), note: missingNote, ref: f.source }
   const fromQuestionnaireTerm = f.claim.includes("no lease draft") ? "Uses the lease length from your questionnaire (no lease draft yet)" : null
-  return { label, value: render(f.value), source: plainSource(f.source), note: fromQuestionnaireTerm }
+  return { label, value: render(f.value), source: plainSource(f.source), note: fromQuestionnaireTerm, ref: f.source }
 }
 
 export function costRows(c: CandidateDTO): CostRow[] {
@@ -179,24 +209,50 @@ export function costRows(c: CandidateDTO): CostRow[] {
   return [
     costRow(c, "monthly_cost", "Monthly cost", moneyText, "Needs the rent from the listing"),
     costRow(c, "initial_costs", "Initial cost", moneyText, "Needs the rent and deposit"),
-    costRow(c, "total_cost_over_term", termMonths ? `Total over the lease (${termMonths} months)` : "Total over the lease", moneyText, "Needs the lease length"),
+    costRow(
+      c,
+      "total_cost_over_term",
+      termMonths ? `Total over the lease (${termMonths} months)` : "Total over the lease",
+      moneyText,
+      "Needs the lease length",
+    ),
     exit,
     rentShareRow(c),
-    costRow(c, "break_even_revenue", "Break-even revenue", (v) => (moneyText(v) ? `${moneyText(v)} per month` : null), "Needs your gross margin (questionnaire)"),
-    costRow(c, "payback_months", "Payback", (v) => (v.kind === "number" ? `${v.value} months` : v.kind === "none" ? "Never at the expected revenue" : null), "Needs your gross margin (questionnaire)"),
+    costRow(
+      c,
+      "break_even_revenue",
+      "Break-even revenue",
+      (v) => (moneyText(v) ? `${moneyText(v)} per month` : null),
+      "Needs your gross margin (questionnaire)",
+    ),
+    costRow(
+      c,
+      "payback_months",
+      "Payback",
+      (v) => (v.kind === "number" ? `${v.value} months` : v.kind === "none" ? "Never at the expected revenue" : null),
+      "Needs your gross margin (questionnaire)",
+    ),
   ]
 }
 
 function rentShareRow(c: CandidateDTO): CostRow {
   const label = "Rent share of revenue"
   const r = c.ranking?.rentShare
-  if (!r) return { label, value: null, source: null, note: c.ranking ? "Needs the rent and your expected monthly revenue (questionnaire)" : "Not calculated in this run" }
+  if (!r)
+    return {
+      label,
+      value: null,
+      source: null,
+      note: c.ranking ? "Needs the rent and your expected monthly revenue (questionnaire)" : "Not calculated in this run",
+      ref: null,
+    }
   const limit = `${Math.round(r.threshold * 100)}%`
   return {
     label,
     value: percent1(r.share),
     source: plainSource(r.source),
     note: r.aboveThreshold ? `Above ${limit} (SuiteSpot assumption): check before signing` : `Within ${limit} (SuiteSpot assumption)`,
+    ref: r.source,
   }
 }
 
@@ -207,11 +263,14 @@ export function strengthsAndRisks(c: CandidateDTO): { strengths: PointItem[]; ri
   const hardFlags = [...(c.rejection ? [c.rejection] : []), ...c.laterFlags]
   const risks: PointItem[] = [
     ...hardFlags.map((f) => ({ text: `Hard flag: ${f.reason}`, hard: true, source: plainSource(f.source) })),
-    ...c.findings.filter((f) => f.severity === "soft").map((f) => ({ text: f.checkBeforeSigning ? `Check before signing: ${f.checkBeforeSigning}` : f.claim, hard: false, source: plainSource(f.source) })),
+    ...c.findings
+      .filter((f) => f.severity === "soft")
+      .map((f) => ({ text: f.checkBeforeSigning ? `Check before signing: ${f.checkBeforeSigning}` : f.claim, hard: false, source: plainSource(f.source) })),
     ...c.unverified.map((u) => ({ text: `The ${u.field} could not be verified from the text`, hard: false, source: "from the listing" })),
     ...(c.ranking?.reasons.filter((r) => r.effect === "minus").map((r) => ({ text: r.text, hard: false, source: plainSource(r.source) })) ?? []),
   ]
-  const strengths = c.ranking?.reasons.filter((r) => r.effect === "plus").map((r) => ({ text: sentence(r.text) ?? r.text, hard: false, source: plainSource(r.source) })) ?? []
+  const strengths =
+    c.ranking?.reasons.filter((r) => r.effect === "plus").map((r) => ({ text: sentence(r.text) ?? r.text, hard: false, source: plainSource(r.source) })) ?? []
   return { strengths, risks }
 }
 
@@ -239,18 +298,36 @@ export function leaseSection(c: CandidateDTO): { hasLease: boolean; fromForm: bo
   return { hasLease: c.hasLease, fromForm: false, terms, questions: LANDLORD_QUESTIONS.map((q) => q.question) }
 }
 
-const COMPONENT_LABEL: Record<string, string> = { cost: "Monthly cost against your budget", area: "Area against your range", lease: "Lease terms", location: "Location", premises: "The space itself", checks: "Points to check before signing" }
-const COMPONENT_MISSING: Record<string, string> = { cost: "the rent is not stated", area: "the area is not stated", lease: "no verified lease terms", location: "no OpenStreetMap area data for this address in this run", premises: "the listing was not read", checks: "not known" }
+const COMPONENT_LABEL: Record<string, string> = {
+  cost: "Monthly cost against your budget",
+  area: "Area against your range",
+  lease: "Lease terms",
+  location: "Location",
+  premises: "The space itself",
+  checks: "Points to check before signing",
+}
+const COMPONENT_MISSING: Record<string, string> = {
+  cost: "the rent is not stated",
+  area: "the area is not stated",
+  lease: "no verified lease terms",
+  location: "no OpenStreetMap area data for this address in this run",
+  premises: "the listing was not read",
+  checks: "not known",
+}
 
 /** What lowers the confidence and by how much (points between the worst and the best case). */
 export function unknowns(c: CandidateDTO): { items: { text: string; points: number }[]; totalPoints: number } {
   const ranking = c.ranking
   const items: { text: string; points: number }[] = []
   for (const component of ranking?.components ?? []) {
-    if (component.value === null) items.push({ text: `${COMPONENT_LABEL[component.name] ?? component.name}: ${COMPONENT_MISSING[component.name] ?? "unknown"}`, points: component.weight })
+    if (component.value === null)
+      items.push({ text: `${COMPONENT_LABEL[component.name] ?? component.name}: ${COMPONENT_MISSING[component.name] ?? "unknown"}`, points: component.weight })
     else if (component.valueHigh !== undefined && component.valueHigh > component.value) {
       const notStated = (c.premises?.notStated ?? []).map((f) => fieldLabel(f).toLowerCase())
-      items.push({ text: `${COMPONENT_LABEL[component.name] ?? component.name}: not stated in the listing or the lease${notStated.length ? ` (${notStated.join(", ")})` : ""}`, points: Math.round(component.weight * (component.valueHigh - component.value)) })
+      items.push({
+        text: `${COMPONENT_LABEL[component.name] ?? component.name}: not stated in the listing or the lease${notStated.length ? ` (${notStated.join(", ")})` : ""}`,
+        points: Math.round(component.weight * (component.valueHigh - component.value)),
+      })
     }
   }
   for (const u of c.unverified) items.push({ text: `The ${u.field} could not be verified from the text (${u.reason})`, points: 0 })
@@ -315,7 +392,16 @@ export const fieldLabel = (name: string): string => FIELD_LABEL[name] ?? name.re
 
 export type SourceGroup = { title: string; items: string[] }
 
-const GROUP_ORDER = ["Listing form", "Listing text", "Lease draft", "Your questionnaire", "Calculation", "SuiteSpot assumption", "OpenStreetMap", "Estimate"] as const
+const GROUP_ORDER = [
+  "Listing form",
+  "Listing text",
+  "Lease draft",
+  "Your questionnaire",
+  "Calculation",
+  "SuiteSpot assumption",
+  "OpenStreetMap",
+  "Estimate",
+] as const
 
 function groupOf(s: SourceDTO): (typeof GROUP_ORDER)[number] {
   if (s.kind === "listing") return s.form ? "Listing form" : "Listing text"
@@ -363,10 +449,15 @@ const LOCATION_LABEL: Record<string, string> = {
 }
 
 /** The Location card: OpenStreetMap counts (code), the Location analyst's explanation, and whether it was checked. */
-export function locationSection(c: CandidateDTO): { rows: { label: string; count: number }[]; explanation: string | null; zone: string | null; checked: boolean } {
+export function locationSection(c: CandidateDTO): {
+  rows: { label: string; count: number; source: SourceDTO }[]
+  explanation: string | null
+  zone: string | null
+  checked: boolean
+} {
   const rows = Object.keys(LOCATION_LABEL).flatMap((metric) => {
     const f = c.findings.find((x) => x.id === `${c.id}:location:${metric}`)
-    return f?.value?.kind === "number" ? [{ label: LOCATION_LABEL[metric]!, count: f.value.value }] : []
+    return f?.value?.kind === "number" ? [{ label: LOCATION_LABEL[metric]!, count: f.value.value, source: f.source }] : []
   })
   const explanation = c.findings.find((x) => x.id === `${c.id}:location:explanation`)?.claim ?? null
   const zone = c.findings.find((x) => x.id === `${c.id}:location:zone`)?.claim ?? null
@@ -422,7 +513,8 @@ export function yearScenarios(c: CandidateDTO): YearScenarios | null {
     .flatMap((f) => (f.value?.kind === "money" ? [{ label: f.claim, value: formatMoney(f.value.amount, f.value.currency), source: f.source }] : []))
   const exitTotal = moneyText(exit?.value)
   const known = findingOf(c, "exit_cost_known_part")
-  const paybackText = payback?.value?.kind === "number" ? `${payback.value.value} months` : payback?.value?.kind === "none" ? "Never at your expected revenue" : null
+  const paybackText =
+    payback?.value?.kind === "number" ? `${payback.value.value} months` : payback?.value?.kind === "none" ? "Never at your expected revenue" : null
   return {
     bad: {
       total: exitTotal ?? moneyText(known?.value),
@@ -440,7 +532,51 @@ export function yearScenarios(c: CandidateDTO): YearScenarios | null {
       paybackSource: payback?.value && payback.value.kind !== "missing" ? payback.source : null,
       breakEven: breakEven?.value?.kind === "money" ? `${formatMoney(breakEven.value.amount, breakEven.value.currency)} per month` : null,
       breakEvenSource: breakEven?.value?.kind === "money" ? breakEven.source : null,
-      note: paybackText ? "At the revenue and gross margin from your questionnaire, the money you put in before opening (without the refundable deposit) is earned back after this many months." : "Needs your gross margin (questionnaire).",
+      note: paybackText
+        ? "At the revenue and gross margin from your questionnaire, the money you put in before opening (without the refundable deposit) is earned back after this many months."
+        : "Needs your gross margin (questionnaire).",
     },
   }
+}
+
+// ---------------------------------------------------------------- charts (calculated values only)
+
+export type ChartBar = { label: string; amount: number; currency: string; text: string; source: SourceDTO }
+
+const calcBar = (label: string, value: ValueDTO | undefined | null, source: SourceDTO | undefined): ChartBar | null =>
+  value?.kind === "money" && source?.kind === "calc"
+    ? { label, amount: value.amount, currency: value.currency, text: formatMoney(value.amount, value.currency), source }
+    : null
+
+/**
+ * "What the lease can cost you": moving in, leaving after 12 months and the whole lease, each a figure SuiteSpot's
+ * lease calculator computed (source kind calc). A figure that was not calculated is named in missing, never drawn.
+ */
+export function costChart(c: CandidateDTO): { bars: ChartBar[]; missing: string[] } {
+  const termMonths = /over (\d+) months/.exec(findingOf(c, "total_cost_over_term")?.claim ?? "")?.[1]
+  const wanted = [
+    { name: "initial_costs", label: "Moving in" },
+    { name: "exit_cost_after_12_months", label: "Leaving after 12 months" },
+    { name: "total_cost_over_term", label: termMonths ? `The whole lease (${termMonths} months)` : "The whole lease" },
+  ]
+  const bars: ChartBar[] = []
+  const missing: string[] = []
+  for (const w of wanted) {
+    const f = findingOf(c, w.name)
+    const bar = calcBar(w.label, f?.value, f?.source)
+    if (bar && (bars.length === 0 || bar.currency === bars[0]!.currency)) bars.push(bar)
+    else missing.push(w.label)
+  }
+  return { bars, missing }
+}
+
+/** Leasing against buying a similar space over the same years: both net costs come from the calculator (calc). */
+export function leaseOrBuyChart(c: CandidateDTO): ChartBar[] {
+  const r = c.leaseOrBuy
+  if (!r || !r.known) return []
+  const bars = [
+    calcBar(`Leasing, ${r.years} years`, { kind: "money", ...r.leaseCost }, r.leaseCost.source),
+    calcBar(`Buying, net over ${r.years} years`, { kind: "money", ...r.buyCost }, r.buyCost.source),
+  ]
+  return bars.every((b) => b !== null) && bars[0]!.currency === bars[1]!.currency ? (bars as ChartBar[]) : []
 }
