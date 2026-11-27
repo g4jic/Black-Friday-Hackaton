@@ -461,6 +461,20 @@ button:active {
   .auth-lens-move, .auth-pill, .auth-building { transition: none; }
 }
 
+/* Onboarding: the welcome veil fades away on this screen; its parts rise in one after another (delay set inline). */
+.onb-enter {
+  animation: onb-enter 520ms var(--ease-ios) both;
+}
+@keyframes onb-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .onb-enter { animation: none; }
+}
+
 /*
  * Research run (B5): agent balls on an elastic path. JS sets transform and opacity on .orbit-ball and .orbit-path
  * every frame; nothing else moves. Reduced motion shows a static list instead.

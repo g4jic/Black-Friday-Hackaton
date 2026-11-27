@@ -2,6 +2,7 @@ import { Bookmark, Building2, CircleHelp, History, House, Info, LayoutList, LogO
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { cx } from "../ui"
 import { logOut, useAuth } from "./auth"
+import { ROLE_LABELS } from "./roles"
 import { Link, navigate, paths, useLocation, type Route } from "./router"
 
 /** label: under the icon (the rail is narrow); name: the full name for the tooltip and screen readers. */
@@ -131,10 +132,13 @@ function AvatarMenu({ settingsActive }: { settingsActive: boolean }) {
       </button>
       {open && (
         <div role="menu" className="pop-in absolute w-[220px] max-sm:right-0 max-sm:bottom-[64px] sm:bottom-0 sm:left-[84px] rounded-[20px] glass-strong p-2 shadow-[var(--shadow-pop)]">
-          <p className="px-3 pt-2 pb-2 text-xs text-ink-2">
-            Signed in as <span className="font-semibold text-ink">{user.name}</span>
-            {auth.landlord?.email ? ` (${auth.landlord.email})` : ""}.
-          </p>
+          <div className="px-3 pt-2 pb-2.5">
+            <p className="truncate text-sm font-semibold text-ink">{user.name}</p>
+            {auth.landlord?.email && <p className="truncate text-xs text-ink-2">{auth.landlord.email}</p>}
+            {auth.landlord?.role && (
+              <span className="mt-2 inline-flex h-6 items-center rounded-full bg-brand-50 px-2.5 text-xs font-medium text-ink">{ROLE_LABELS[auth.landlord.role]}</span>
+            )}
+          </div>
           <button type="button" role="menuitem" onClick={() => go(paths.mySpaces())} className={ITEM}>
             <Bookmark size={16} aria-hidden /> My spaces
           </button>

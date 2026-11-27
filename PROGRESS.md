@@ -3,6 +3,23 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
+## Onboarding (27 Nov 2026, night, Aleksa + Claude, branch wip/onboarding): IN PROGRESS
+- **Phase A done (role choice):** after sign up, or a sign in while the onboarding is not finished, the welcome veil
+  fades into `/onboarding` (no sidebar) instead of the app; the reduced-motion / narrow screen path goes there too.
+  Two cards, "List my space" (owner) and "Find a space" (seeker), plus "I do both" (both). A returning user who
+  finished it goes straight to the page they wanted. The avatar menu shows "Space owner", "Space seeker" or
+  "Owner & seeker" under the email; Settings has "How you use SuiteSpot" to change the role.
+- **Storage choice: option B** of the onboarding plan. Supabase: `user_metadata.role` (`owner | seeker | both`) and
+  `user_metadata.onboarded_at` (ISO time, set once), next to `display_name`, through `auth.updateUser`. Local accounts:
+  the same two fields on the account in `data/local-accounts.json`, saved by `POST /api/local-auth/profile`
+  (`{ role?, onboarded?: true }`; unknown role 400, no session 401) and returned by sign in, sign up and `/me`.
+  The user can edit their own metadata, so the role only shapes the UI; billing must keep anything that decides money
+  in a server-owned table (billing plan section 4).
+- Files: `web/src/pages/OnboardingPage.tsx`, `web/src/app/onboarding-gate.ts` (pure rules, tested),
+  `web/src/app/roles.ts`, `web/src/app/auth.ts` (`updateOnboarding`), `src/adapters/auth/local-accounts.ts`,
+  `tests/onboarding.test.ts`.
+- Next: phase B (forms after the cards, Skip for now, Fill with example), phase C (menu by role).
+
 ## HANDOFF (27 Nov 2026, late evening, Andrej + Claude): READ THIS FIRST
 Changes since the handoff below (commit 39f5f9c, deployed and checked on Railway):
 - **Every feature is open: the access code is gone** (server, web, tests, scripts, `.env.example`; the Railway

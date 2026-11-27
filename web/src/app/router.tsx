@@ -21,6 +21,7 @@ export type Route =
   | { name: "mySpaces" }
   | { name: "login" }
   | { name: "signup" }
+  | { name: "onboarding" }
   | { name: "simulatedPayment"; reference: string }
   | { name: "notFound"; path: string }
 
@@ -37,6 +38,7 @@ const STATIC_ROUTES: Record<string, Route> = {
   "/my-spaces": { name: "mySpaces" },
   "/login": { name: "login" },
   "/signup": { name: "signup" },
+  "/onboarding": { name: "onboarding" },
 }
 
 export function parseRoute(pathname: string): Route {
@@ -77,6 +79,7 @@ export const paths = {
   evaluateSpace: () => "/research/new?mode=evaluate",
   login: () => "/login",
   signup: () => "/signup",
+  onboarding: () => "/onboarding",
 }
 
 const listeners = new Set<() => void>()

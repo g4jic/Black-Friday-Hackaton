@@ -8,7 +8,19 @@ import { setAuthHeaders } from "../listings/listings-api"
  * keys): local accounts kept by this server in a file on this machine only (mode "local", labelled in the UI); the
  * session token is kept in this browser's localStorage.
  */
-export type Landlord = { readonly id: string; readonly email: string; readonly displayName: string }
+/** What the user chose in the onboarding (UI only: never decides money or access). null until chosen. */
+export type Role = "owner" | "seeker" | "both"
+export const ROLES: readonly Role[] = ["owner", "seeker", "both"]
+export const isRole = (value: unknown): value is Role => ROLES.includes(value as Role)
+
+export type Landlord = {
+  readonly id: string
+  readonly email: string
+  readonly displayName: string
+  readonly role: Role | null
+  /** When the onboarding was finished (saved or skipped); null: show the onboarding. */
+  readonly onboardedAt: string | null
+}
 export type AuthMode = "supabase" | "local"
 export type AuthState = { readonly status: "loading" | "ready"; readonly enabled: boolean; readonly mode: AuthMode; readonly landlord: Landlord | null }
 
@@ -35,8 +47,12 @@ type SessionLike = { access_token: string; user: { id: string; email?: string; u
 function applySession(session: SessionLike): void {
   token = session?.access_token ?? null
   const user = session?.user
-  const name = typeof user?.user_metadata?.display_name === "string" ? (user.user_metadata.display_name as string).trim() : ""
-  set({ status: "ready", landlord: user ? { id: user.id, email: user.email ?? "", displayName: name || user.email || "Account" } : null })
+  const meta = user?.user_metadata ?? {}
+  const name = typeof meta.display_name === "string" ? meta.display_name.trim() : ""
+  // Option B of the onboarding plan: role and onboarded_at live in Supabase user_metadata, next to display_name.
+  const role = isRole(meta.role) ? meta.role : null
+  const onboardedAt = typeof meta.onboarded_at === "string" ? meta.onboarded_at : null
+  set({ status: "ready", landlord: user ? { id: user.id, email: user.email ?? "", displayName: name || user.email || "Account", role, onboardedAt } : null })
 }
 
 const readLocalToken = (): string | null => {
@@ -55,12 +71,23 @@ const writeLocalToken = (value: string | null): void => {
   }
 }
 
-type LocalAccount = { id: string; email: string; displayName: string }
+type LocalAccount = { id: string; email: string; displayName: string; role?: unknown; onboardedAt?: unknown }
 
 function applyLocal(newToken: string | null, account: LocalAccount | null): void {
   token = newToken
   writeLocalToken(newToken)
-  set({ status: "ready", landlord: account ? { id: account.id, email: account.email, displayName: account.displayName } : null })
+  set({
+    status: "ready",
+    landlord: account
+      ? {
+          id: account.id,
+          email: account.email,
+          displayName: account.displayName,
+          role: isRole(account.role) ? account.role : null,
+          onboardedAt: typeof account.onboardedAt === "string" ? account.onboardedAt : null,
+        }
+      : null,
+  })
 }
 
 async function localRequest(path: string, body?: unknown): Promise<{ token: string; account: LocalAccount }> {
@@ -119,6 +146,30 @@ export async function logOut(): Promise<void> {
   }
   if (client) await client.auth.signOut()
   applySession(null)
+}
+
+/**
+ * Saves the onboarding answers on the account: the role and, when the last step is saved or skipped, that the
+ * onboarding is done (kept the first time). Supabase: user_metadata (role, onboarded_at); local accounts: the
+ * server's account file. Both are UI preferences the user may edit, never a basis for billing or access.
+ */
+export async function updateOnboarding(change: { role?: Role; onboarded?: true }): Promise<void> {
+  const current = state.landlord
+  if (!current) throw new Error("Sign in first.")
+  if (state.mode === "local") {
+    const response = await fetch("/api/local-auth/profile", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(change) })
+    const data = (await response.json().catch(() => ({}))) as { account?: LocalAccount; error?: string }
+    if (!response.ok || !data.account) throw new Error(data.error ?? "Your choice could not be saved. Try again.")
+    return applyLocal(token, data.account)
+  }
+  const data: Record<string, string> = {}
+  if (change.role) data.role = change.role
+  if (change.onboarded && !current.onboardedAt) data.onboarded_at = new Date().toISOString()
+  if (Object.keys(data).length === 0) return
+  const { data: updated, error } = await client!.auth.updateUser({ data })
+  if (error) throw new Error(error.message)
+  // onAuthStateChange also fires (USER_UPDATED); apply at once so the next screen sees the new answers.
+  if (updated.user) applySession({ access_token: token ?? "", user: updated.user })
 }
 
 /** The signed-in account right now (outside React). */

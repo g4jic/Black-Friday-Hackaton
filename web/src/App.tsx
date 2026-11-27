@@ -16,6 +16,8 @@ import { CandidatePage } from "./results/CandidatePage"
 import { DashboardPage, NotFoundPage } from "./pages/SimplePages"
 import { RequireLandlord } from "./pages/AuthPages"
 import { AuthRoute, AuthScreen } from "./pages/AuthScreen"
+import { onboardingRedirect, safeNext } from "./app/onboarding-gate"
+import { OnboardingPage } from "./pages/OnboardingPage"
 import { useAuth } from "./app/auth"
 import { useWelcomeHold } from "./app/welcome"
 import type { Config } from "./types"
@@ -38,6 +40,7 @@ const TITLES: Record<Route["name"], string> = {
   mySpaces: "My spaces",
   login: "Sign in",
   signup: "Sign up",
+  onboarding: "Welcome",
   simulatedPayment: "Payment",
   notFound: "Page not found",
 }
@@ -69,11 +72,26 @@ export function App() {
   const auth = useAuth()
   const welcoming = useWelcomeHold()
   const { pathname } = useLocation()
+  const here = pathname + (search.toString() ? `?${search}` : "")
+  const signedIn = Boolean(auth.landlord) && !welcoming
+  const onboarding = signedIn && !auth.landlord?.onboardedAt
+  // Step 3.5 of the gate: signed in, welcome done, onboarding not finished: /onboarding (remembering the page the
+  // user wanted). Finished: /onboarding itself goes on to that page, so a returning user never sees it again.
+  const onboardedAt = auth.landlord?.onboardedAt ?? null
+  useEffect(() => {
+    if (!signedIn) return
+    const to = onboardingRedirect({ onboardedAt, onOnboarding: route.name === "onboarding", here, next: search.get("next") })
+    if (to) navigate(to, { replace: true })
+  }, [signedIn, onboardedAt, route.name, here, search])
+
   // No guest mode: /login and /signup stand alone; every other page needs a signed-in user, who comes back to it after.
   if (route.name === "login" || route.name === "signup") return <AuthRoute mode={route.name === "login" ? "signin" : "signup"} />
   if (auth.status === "loading") return <div className="min-h-dvh" aria-busy="true" />
   // While the welcome animation plays the sign in screen stays, although the account is signed in already.
-  if (!auth.landlord || welcoming) return <AuthScreen mode="signin" next={pathname + (search.toString() ? `?${search}` : "")} />
+  if (!auth.landlord || welcoming) return <AuthScreen mode="signin" next={route.name === "onboarding" ? safeNext(search.get("next")) : here} />
+  // The welcome veil fades away on the onboarding (no sidebar, nothing around it), not on the app.
+  if (onboarding) return <OnboardingPage />
+  if (route.name === "onboarding") return <div className="min-h-dvh" aria-busy="true" />
 
   const titleExtra = route.name === "run" || route.name === "results" || route.name === "candidate" ? <AnswerSourcePill researchId={route.researchId} /> : null
 
@@ -132,6 +150,7 @@ function Page({ route, config }: { route: Route; config: Config | null }) {
       )
     case "login":
     case "signup":
+    case "onboarding":
       return null
     case "simulatedPayment":
       return <SimulatedPaymentPage reference={route.reference} />
