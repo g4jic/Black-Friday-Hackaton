@@ -7,19 +7,19 @@ import { ORBIT_AGENTS, candidateChips, type CandidatePhase, type OrbitAgentName 
  * every one of them carries the seq of the wire event that caused it, so nothing moves that the bus did not say.
  * Pure, no DOM: tested in tests/orbit-model.test.ts against recorded runs.
  *
- * - a dot is one agent loop (or one audit) on one candidate: it appears on loop.started (audit.started), sits on
- *   that candidate's small circle and goes away on loop.answered (audit.done);
+ * - a dot is one agent loop (or one audit) on one candidate: it appears on loop.started (audit.started),
+ *   circles the agent that runs it and goes away on loop.answered (audit.done);
  * - "flag": candidate.rejected; the loops it names in cancelledLoops bounce off and the candidate is marked;
  * - "handoff": lease.read without a hard flag while that candidate's Finance loop is still running (Finance waits
  *   for these lease terms in shared state, see finance-analyst.ts);
  * - "auditReturn": report.audit_failed (the Auditor sends the draft's problems back to the Report writer);
- * - "ranked": ranking.done (the candidates take their places in the Ranker's order).
+ * - "ranked": ranking.done (the Ranker orders the candidates).
  */
 
 export type OrbitDot = {
   loopKey: string
   agent: OrbitAgentName
-  /** null for work on the whole run (the Report writer, the Auditor): the dot sits by the centre */
+  /** null for work on the whole run (the Report writer, the Auditor) */
   candidateId: string | null
   /** seq of loop.started (or audit.started) */
   startSeq: number
@@ -55,7 +55,7 @@ export const CUE_EVENT: Record<OrbitCue["kind"], string> = {
 export type OrbitCandidate = {
   id: string
   label: string
-  /** place on the inner ring, 0..1 from the top, clockwise; after ranking.done, the Ranker's order */
+  /** place in the order, 0..1; after ranking.done, the Ranker's order */
   slot: number
   phase: CandidatePhase
   rank: number | null

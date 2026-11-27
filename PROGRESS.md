@@ -3,7 +3,18 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
-## Update (27 Nov 2026, 23:00, Andrej + Claude): listing photos
+## Update (27 Nov 2026, 22:00, Andrej + Claude): the run animation moves
+- Andrej asked for a livelier run view: agents that move and interact instead of standing on the circle, no inner
+  ring of candidates (they appeared at the start and stayed, telling nothing), and a white interior like the centre.
+- Now (web/src/run/RunView.tsx, CSS in index.css): the field inside the ring is white; an agent with running loops
+  steps in and wanders at its own pace, and the agents keep out of each other's way; every running loop is a small
+  dot circling its agent; a lilac link joins two agents while both have loops on the same space; a deal breaker makes
+  the raising agent step in and glow red, its cancelled loops fly off and their agents recoil; lease terms and an
+  audit return make the two agents meet with a pulse; the Ranker steps in at the end. Same run length.
+- orbit-model.ts keeps its logic, so every dot, link and cue still comes from a bus event (tests/orbit-model.test.ts);
+  only the paths are free. README "What you see" updated. 284 tests pass.
+
+## Update (27 Nov 2026, 20:40, Andrej + Claude): listing photos
 - Owners add up to six photos in the listing form and in onboarding's first space (PhotoPicker: several at once,
   remove, make cover). The browser shrinks each to 1600 px JPEG; POST /api/me/listing-photos checks type, size (1.5 MB)
   and magic bytes and stores it (Supabase Storage public bucket `listing-photos`, made on first upload, or
@@ -16,7 +27,7 @@ No long dashes in this file; use a plain hyphen.
   counter and thumbnails. The image store is shared with profile photos (`src/adapters/storage/image-store.ts`).
 - Not yet tested online (needs a signed-in owner on the deploy).
 
-## Update (27 Nov 2026, 22:30, Andrej + Claude): final pass, every flow works without a key
+## Update (27 Nov 2026, 20:15, Andrej + Claude): final pass, every flow works without a key
 - Fresh clone (npm install 15 s, no .env) walked as a judge: sign up, both roles, Fill with example, publish, Find
   spaces, candidate, save, offer, accept, simulated rent payment. All worked.
 - Keyless now runs every flow: Find spaces offers the three example businesses (recorded real runs) or "Your

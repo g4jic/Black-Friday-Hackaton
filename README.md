@@ -100,14 +100,17 @@ Then:
 ![Onboarding: choose List my space, Find a space or Set up both roles](design/screenshots/onboarding.png)
 
 What you see:
-- **The run** (about 7 to 13 seconds): every agent has its place on the big circle and every candidate is a small
-  circle inside it. **Each running agent loop is a dot** that travels from its agent to its candidate, and the centre
-  counts them (peak 30 in the office scenario). When code finds a deal breaker, the agent that raised it glows dark
-  red, the loops it cancelled on that candidate bounce off, the candidate gets a red mark and moves to "Ruled out"
-  with the reason. When the Lease reader's terms reach a Finance loop that waits for them, a short "Lease terms" line
-  joins the two; when the Auditor sends a draft back, a "Sent back" pulse runs to the Report writer. At the end the
-  Ranker orders the candidates on the ring. Every dot and line comes from a real bus event, never from a timer
-  (`web/src/run/orbit-model.ts`, checked against the three recordings in `tests/orbit-model.test.ts`).
+- **The run** (about 7 to 13 seconds): the agents start on the big circle. An agent with running loops steps into
+  the white field and moves around it; **each running agent loop is a small dot circling its agent**, and the centre
+  counts them (peak 30 in the office scenario). A thin lilac link joins two agents while both have loops on the same
+  space. When code finds a deal breaker, the agent that raised it glows dark red and steps towards the centre, the
+  loops it cancelled fly off in red, the agents that owned them recoil, and the space moves to "Ruled out" with the
+  reason. When the Lease reader's terms reach a Finance loop that waits for them, the two agents meet and a "Lease
+  terms" pulse runs between them; when the Auditor sends a draft back, it meets the Report writer with a "Sent back"
+  pulse. At the end the Ranker steps in and glows. Every dot, link, glow and pulse comes from a real bus event, never
+  from a timer (`web/src/run/orbit-model.ts`, checked against the three recordings in `tests/orbit-model.test.ts`);
+  only the agents' paths are free (they drift, wander and keep out of each other's way), so where an agent stands
+  means nothing.
 - **Results, List tab**: one ranked list. **The rank circle's colour is the verdict** (green Good, yellow Check
   before signing, red Not recommended; one small legend above the list, the verdict in each circle's tooltip), with
   the score, the monthly cost and the main reason. Rejected spaces are in their own block with the hard flag that

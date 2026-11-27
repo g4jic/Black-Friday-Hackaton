@@ -638,11 +638,20 @@ textarea:disabled {
 }
 
 /*
- * Research run: agent homes on the big circle, candidates on the inner ring, one dot per running loop. JS sets
- * transform and opacity on the dots, candidates, lines and glows every frame; nothing else moves, and nothing inside
- * the stage uses backdrop blur (solid fills only), so 30 moving dots stay at 60 fps. Reduced motion shows a static
- * list with counters instead.
+ * Research run: the agents start on the big circle and move through the white field inside it while they have
+ * loops; each running loop is a small dot circling its agent. JS sets transform and opacity on the agents, dots,
+ * lines and glows every frame; nothing else moves, and nothing inside the stage uses backdrop blur (solid fills
+ * only), so 30 moving dots stay at 60 fps. Reduced motion shows a static list with counters instead.
  */
+.orbit-field {
+  position: absolute;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.9),
+    inset 0 -18px 50px rgba(11, 11, 15, 0.035),
+    0 14px 40px rgba(11, 11, 15, 0.07);
+}
 .orbit-path {
   position: absolute;
   border-radius: 9999px;
@@ -664,13 +673,8 @@ textarea:disabled {
 @media (prefers-reduced-motion: reduce) {
   .orbit-path { animation: none; }
 }
-.orbit-inner-ring {
-  position: absolute;
-  border-radius: 9999px;
-  border: 1px dashed rgba(11, 11, 15, 0.12);
-}
 /* everything that moves sits at the stage centre and is placed by its transform */
-.orbit-candidate,
+.orbit-agent,
 .orbit-dot,
 .orbit-line,
 .orbit-tag,
@@ -680,79 +684,51 @@ textarea:disabled {
   left: 50%;
   will-change: transform, opacity;
 }
-.orbit-candidate {
-  z-index: 10;
-}
-.orbit-candidate-disc {
-  position: relative;
-  display: flex;
-  width: 100%;
-  height: 100%;
-  align-items: center;
-  justify-content: center;
-  border-radius: 9999px;
-  border: 1.5px solid rgba(11, 11, 15, 0.16);
-  background: #fff;
-  color: var(--color-ink-2);
-  font-size: 12px;
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(11, 11, 15, 0.08);
-  transition:
-    border-color 300ms ease,
-    color 300ms ease,
-    opacity 400ms ease;
-}
-.orbit-candidate[data-phase="evaluating"] .orbit-candidate-disc {
-  border-color: var(--color-brand);
-  color: var(--color-ink);
-}
-.orbit-candidate[data-phase="done"] .orbit-candidate-disc {
-  border-color: var(--color-ink);
-  color: var(--color-ink);
-}
-.orbit-candidate[data-phase="rejected"] .orbit-candidate-disc {
-  border-color: var(--color-hard);
-  background: var(--color-hard-50);
-  color: var(--color-hard);
-}
-.orbit-candidate[data-phase="failed"] .orbit-candidate-disc {
-  opacity: 0.5;
-}
-/* the ring that spreads from a candidate when a deal breaker rules it out */
-.orbit-flag-ring {
-  position: absolute;
-  inset: -7px;
-  border-radius: 9999px;
-  border: 2px solid var(--color-hard);
-  opacity: 0;
-}
 .orbit-agent {
   z-index: 20;
 }
 .orbit-agent-disc {
   position: relative;
   display: flex;
-  height: 44px;
-  width: 44px;
+  height: 100%;
+  width: 100%;
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  border: 1px solid #fff;
-  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(11, 11, 15, 0.08);
+  background: #fff;
   color: var(--color-ink-2);
-  opacity: 0.6;
+  box-shadow: 0 2px 8px rgba(11, 11, 15, 0.08);
   transition:
-    opacity 400ms ease,
     border-color 300ms ease,
-    color 300ms ease;
+    color 300ms ease,
+    box-shadow 300ms ease;
 }
 .orbit-agent[data-busy="true"] .orbit-agent-disc {
   border-color: var(--color-brand);
-  background: #fff;
   color: var(--color-ink);
-  opacity: 1;
+  box-shadow: 0 6px 18px rgba(242, 92, 84, 0.22);
 }
-/* dark red: the agent that raised a deal breaker; lilac: the Ranker ordering the candidates */
+.orbit-agent-name {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 2px 8px;
+  color: var(--color-ink);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  white-space: nowrap;
+  transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* a busy agent has its loop dots circling it: the name steps down below them */
+.orbit-agent[data-busy="true"] .orbit-agent-name {
+  transform: translateX(-50%) translateY(18px);
+}
+/* dark red: the agent that raised a deal breaker; coral: the Ranker ordering the candidates */
 .orbit-agent-flag,
 .orbit-agent-rank {
   position: absolute;
@@ -771,19 +747,14 @@ textarea:disabled {
 }
 .orbit-dot {
   z-index: 30;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   border-radius: 9999px;
-  border: 1.5px solid var(--color-brand);
-  background: #fff;
-  color: var(--color-ink);
+  border: 1.5px solid #fff;
+  background: var(--color-brand);
   opacity: 0;
-  box-shadow: 0 1px 4px rgba(11, 11, 15, 0.12);
+  box-shadow: 0 1px 4px rgba(11, 11, 15, 0.18);
 }
 .orbit-dot[data-cancelled="true"] {
-  border-color: var(--color-hard);
-  color: var(--color-hard);
+  background: var(--color-hard);
 }
 /* a 1 px line stretched by scaleX to its length (transform only) */
 .orbit-line {
@@ -797,6 +768,13 @@ textarea:disabled {
 }
 .orbit-line.is-return {
   background: var(--color-hard);
+}
+/* two agents working on the same space at the same time */
+.orbit-line.is-link {
+  z-index: 5;
+  height: 2px;
+  margin-top: -1px;
+  background: var(--color-lilac-600);
 }
 .orbit-tag {
   z-index: 40;
@@ -821,6 +799,9 @@ textarea:disabled {
   background: var(--color-hard);
   opacity: 0;
 }
+.orbit-return-pulse.is-handoff {
+  background: var(--color-ink);
+}
 /*
  * The run page cards keep the glass look without the backdrop blur: the page behind them is a soft gradient, so the
  * blur adds nothing visible, but re-blurring a large card while 30 dots move and text changes costs whole frames.
@@ -835,16 +816,6 @@ textarea:disabled {
 }
 .run-card .glass-strong {
   background: rgba(255, 255, 255, 0.85);
-}
-/* the centre disc: solid, no backdrop blur behind moving dots */
-.orbit-centre-disc {
-  position: absolute;
-  inset: 0;
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.9),
-    0 10px 30px rgba(11, 11, 15, 0.08);
 }
 
 /*

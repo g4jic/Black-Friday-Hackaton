@@ -4,7 +4,7 @@ import { cancelResearch, useResearch, type RunSnapshot } from "../app/research-s
 import { navigate, paths } from "../app/router"
 import { ResearchMissing } from "../pages/ResearchPage"
 import { agentIcon, cx } from "../ui"
-import { isFresh, orbitModel } from "./orbit-model"
+import { isFresh, orbitModel, type FlagCue } from "./orbit-model"
 import {
   ORBIT_AGENTS,
   agentNodes,
@@ -30,9 +30,10 @@ export function usePrefersReducedMotion(): boolean {
 }
 
 /**
- * The research run (/research/:id/run): every agent has its home on the big circle, every candidate is a small
- * circle inside it, and every running loop is a dot that travels from its agent to its candidate. Everything on
- * screen comes from the run's SSE events (orbit-model.ts). When the run ends the page moves on to the results.
+ * The research run (/research/:id/run): the agents start on the big circle; an agent with running loops moves into
+ * the white field, every running loop is a small dot circling its agent, and the agents meet when one hands work to
+ * another. What is drawn comes from the run's SSE events (orbit-model.ts). When the run ends the page moves on to
+ * the results.
  */
 export function RunView({ researchId }: { researchId: string }) {
   const snapshot = useResearch(researchId)
@@ -92,41 +93,43 @@ export function useHeldValue<T>(value: T, holdMs: number): T {
 }
 
 /*
- * Geometry, as shares of the stage's half width. The big circle holds one home per agent (fixed, clockwise from the
- * top); the candidates are small circles on an inner ring; the centre disc says how many loops are at work.
+ * Geometry, as shares of the stage's half width. The agents start on the big circle; an agent with running loops
+ * leaves the circle and moves through the white field around the centre, which says how many loops are at work.
  */
 const AGENT_RADIUS = 0.82
-const CANDIDATE_RADIUS = 0.53
+/** where a busy agent wanders (it breathes a little in and out around this radius) */
+const WORK_RADIUS = 0.56
 const CENTRE_RADIUS = 0.3
-/** Where an agent's dot sits around a candidate's circle (one place per agent, so the dots never stack). */
-const SATELLITE: Partial<Record<OrbitAgentName, number>> = { Scout: 0, "Finance analyst": 1, "Lease reader": 2, "Location analyst": 3, "Premises inspector": 4 }
 /** How long each encounter plays, in ms. */
-const LIFE = { flag: 1800, handoff: 1500, auditReturn: 1700, ranked: 1300, bounce: 650, fadeIn: 220, fadeOut: 420 }
+const LIFE = { flag: 1800, handoff: 1300, auditReturn: 1700, ranked: 1400, bounce: 650, fadeIn: 220, fadeOut: 420 }
+/** The whole team turns slowly around the centre while the run lasts (degrees a second). */
+const DRIFT = 5
+/** The agents that run loops on single candidates: a thin link joins two of them while both work on the same space. */
+const LINKED: OrbitAgentName[] = ["Scout", "Finance analyst", "Lease reader", "Location analyst", "Premises inspector"]
+const PAIRS = LINKED.flatMap((a, i) => LINKED.slice(i + 1).map((b) => [a, b] as const))
+const pairKey = (a: string, b: string) => `${a}|${b}`
 
 const rad = (deg: number) => (deg * Math.PI) / 180
 const agentAngle = (name: OrbitAgentName) => -90 + ORBIT_AGENTS.indexOf(name) * (360 / ORBIT_AGENTS.length)
-const candidateAngle = (slot: number) => -90 + slot * 360 + 22.5
 const polar = (deg: number, r: number): [number, number] => [Math.cos(rad(deg)) * r, Math.sin(rad(deg)) * r]
+const angleOf = (p: [number, number]) => (Math.atan2(p[1], p[0]) * 180) / Math.PI
+/** the shortest turn from one angle to another, in degrees (-180..180) */
+const turn = (from: number, to: number) => ((((to - from) % 360) + 540) % 360) - 180
 /** 0 -> 1 -> 0 over a cue's life: quick rise, hold, slow fade. */
 const envelope = (t: number, life: number) =>
   t < 0 || t > life ? 0 : t < life * 0.15 ? t / (life * 0.15) : t > life * 0.6 ? 1 - (t - life * 0.6) / (life * 0.4) : 1
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v))
-/** The place of an agent's dot on a candidate's circle (c = the candidate's centre, from the stage centre). */
-function satellite(agent: OrbitAgentName, c: [number, number], unit: number): [number, number] {
-  const angle = Math.atan2(c[1], c[0]) + rad((SATELLITE[agent] ?? 0) * 72)
-  return [c[0] + Math.cos(angle) * 31 * unit, c[1] + Math.sin(angle) * 31 * unit]
-}
+const mix = (a: [number, number], b: [number, number], e: number): [number, number] => [a[0] + (b[0] - a[0]) * e, a[1] + (b[1] - a[1]) * e]
 
 type Body = { x: number; y: number; vx: number; vy: number }
-/** One step of a slightly springy follow (a little overshoot, then rest). */
-function follow(b: Body, tx: number, ty: number, dt: number) {
-  const k = 95
-  const c = 16
+/** One step of a springy follow: stiff for the loop dots, soft and floating for the agents. */
+function follow(b: Body, tx: number, ty: number, dt: number, k = 95, c = 16) {
   b.vx += (k * (tx - b.x) - c * b.vx) * dt
   b.vy += (k * (ty - b.y) - c * b.vy) * dt
   b.x += b.vx * dt
   b.y += b.vy * dt
 }
+type AgentAnim = Body & { angle: number }
 type DotAnim = Body & { o: number; cancelAt: number | null; hidden: boolean }
 /** Writes a glow's opacity and scale, and nothing at all while it stays off. */
 function setGlow(el: HTMLElement, opacity: number, scale: number) {
@@ -137,22 +140,41 @@ function setGlow(el: HTMLElement, opacity: number, scale: number) {
   el.style.opacity = opacity.toFixed(3)
   el.style.transform = `scale(${scale.toFixed(3)})`
 }
+/** Places a 1 px line from one point to another, stretched by scaleX (transform only). */
+function setLine(el: HTMLElement, from: [number, number], to: [number, number], opacity: number, drawn = 1) {
+  if (opacity <= 0.005) {
+    if (el.style.opacity !== "0") el.style.opacity = "0"
+    return
+  }
+  const dx = to[0] - from[0]
+  const dy = to[1] - from[1]
+  el.style.opacity = opacity.toFixed(3)
+  el.style.transform = `translate(${from[0].toFixed(1)}px, ${from[1].toFixed(1)}px) rotate(${Math.atan2(dy, dx).toFixed(4)}rad) scaleX(${(Math.hypot(dx, dy) * drawn).toFixed(1)})`
+}
+function place(el: HTMLElement, p: [number, number], extra = "") {
+  el.style.transform = `translate(${p[0].toFixed(1)}px, ${p[1].toFixed(1)}px) translate(-50%, -50%)${extra}`
+}
 
 /**
  * The orbit. React renders the elements from the event model (orbit-model.ts); one animation frame loop moves them
- * with transform and opacity only, written straight to the elements (no React render per frame). Every motion starts
- * from an object that names its wire event: a dot is a loop, an encounter is a cue.
+ * with transform and opacity only, written straight to the elements (no React render per frame).
+ *
+ * What is drawn comes from the bus: a dot is one running loop and circles the agent that runs it, an agent leaves the
+ * big circle while it has loops, a link joins two agents while both have loops on the same space, and every
+ * encounter (a deal breaker, lease terms handed to Finance, a draft sent back, the ranking) is a cue. Only the paths
+ * are free: the agents drift, wander and keep out of each other's way so the room stays alive, but where an agent
+ * stands means nothing.
  */
 function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () => void }) {
   const { state } = snapshot
   const model = useMemo(() => orbitModel(state), [state])
   const stageRef = useRef<HTMLDivElement>(null)
   const els = useRef({
+    agents: new Map<string, HTMLDivElement>(),
     dots: new Map<string, HTMLDivElement>(),
-    candidates: new Map<string, HTMLDivElement>(),
-    candidateFlags: new Map<string, HTMLSpanElement>(),
     agentFlags: new Map<string, HTMLSpanElement>(),
     rankGlow: null as HTMLSpanElement | null,
+    links: new Map<string, HTMLDivElement>(),
     lines: new Map<string, HTMLDivElement>(),
     tags: new Map<string, HTMLSpanElement>(),
     pulses: new Map<string, HTMLSpanElement>(),
@@ -172,129 +194,215 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
 
   // The frame loop: reads the latest model from a ref, writes transform and opacity only.
   useEffect(() => {
+    const agents = new Map<string, AgentAnim>()
     const dots = new Map<string, DotAnim>()
-    /** candidates move along the ring (angle in degrees, radius in px), never across the centre */
-    const candidates = new Map<string, Body>()
+    const linkOpacity = new Map<string, number>()
     /** when each cue started playing (performance.now), or null when it arrived too late to be played */
     const started = new Map<string, number | null>()
+    let drift = 0
     let last = performance.now()
     let frame = 0
     let settled = false
     const tick = (now: number) => {
       const dt = Math.min(1 / 30, (now - last) / 1000)
       last = now
+      const sec = now / 1000
       const { model: m, state: s, half: h } = live.current
-      const unit = clamp01(h / 340) * 0.4 + 0.6 // dot and circle sizes shrink a little on a small stage
-      const home = (name: OrbitAgentName) => polar(agentAngle(name), h * AGENT_RADIUS)
+      const unit = clamp01(h / 340) * 0.4 + 0.6 // sizes shrink a little on a small stage
+      if (!s.done) drift += DRIFT * dt
 
-      for (const cue of m.cues) if (!started.has(cue.key)) started.set(cue.key, isFresh(cue, s) ? now : null)
+      const fresh = new Set<string>()
+      for (const cue of m.cues)
+        if (!started.has(cue.key)) {
+          const play = isFresh(cue, s)
+          started.set(cue.key, play ? now : null)
+          if (play) fresh.add(cue.key)
+        }
       const age = (key: string) => {
         const at = started.get(key)
         return at == null ? Infinity : now - at
       }
 
-      // candidates: follow their slot (the slot changes once, when the Ranker orders them)
-      const candPos = new Map<string, [number, number]>()
-      for (const c of m.candidates) {
-        const angle = candidateAngle(c.slot)
-        let b = candidates.get(c.id)
-        if (!b) candidates.set(c.id, (b = { x: angle, y: h * CANDIDATE_RADIUS, vx: 0, vy: 0 }))
-        follow(b, b.x + ((((angle - b.x) % 360) + 540) % 360) - 180, h * CANDIDATE_RADIUS, dt)
-        const [x, y] = polar(b.x, b.y)
-        candPos.set(c.id, [x, y])
-        const el = els.current.candidates.get(c.id)
-        if (el) el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -50%)`
+      // the loops at work, per agent (in start order) and per candidate
+      const alive = m.dots.filter((d) => d.endSeq === null && d.cancelSeq === null)
+      const byAgent = new Map<string, string[]>()
+      const onCandidate = new Map<string, Set<string>>()
+      for (const d of alive) {
+        byAgent.set(d.agent, [...(byAgent.get(d.agent) ?? []), d.loopKey])
+        if (d.candidateId) onCandidate.set(d.candidateId, (onCandidate.get(d.candidateId) ?? new Set<string>()).add(d.agent))
       }
-      const alive = new Set(m.dots.filter((d) => d.endSeq === null && d.cancelSeq === null).map((d) => d.loopKey))
 
-      // encounters: how strongly each element glows right now (the glow elements are always there, so a cue
-      // never inserts DOM in the middle of the animation)
+      // 1. where each agent would like to be: on the big circle while idle, wandering in the field while busy
+      const target = new Map<string, [number, number]>()
+      ORBIT_AGENTS.forEach((name, i) => {
+        const slot = agentAngle(name) + drift
+        let a = agents.get(name)
+        if (!a) {
+          const [x, y] = polar(slot, h * AGENT_RADIUS)
+          a = { x, y, vx: 0, vy: 0, angle: slot }
+          agents.set(name, a)
+        }
+        let r: number
+        let angle: number
+        if (!s.done && byAgent.has(name)) {
+          a.angle += (26 + 10 * Math.sin(i * 1.9)) * dt // each agent at its own pace, so they meet and pass
+          angle = a.angle + 14 * Math.sin(sec * 0.55 + i * 2.1)
+          r = h * (WORK_RADIUS + 0.07 * Math.sin(sec * 0.9 + i * 1.3))
+        } else {
+          a.angle += turn(a.angle, slot) * Math.min(1, 2.5 * dt) // back to its place on the circle
+          angle = a.angle
+          r = h * AGENT_RADIUS + 3 * unit * Math.sin(sec * 1.2 + i)
+        }
+        target.set(name, polar(angle, r))
+      })
+      const at = (name: string): [number, number] => {
+        const a = agents.get(name)!
+        return [a.x, a.y]
+      }
+
+      // 2. encounters pull agents together (or push them apart) while they play
       const dotBoost = new Map<string, number>()
       const agentGlow = new Map<string, number>()
-      const candidateRing = new Map<string, [number, number]>()
       let rankGlow: [number, number] = [0, 0]
       let animating = false
+      const meet = (a: OrbitAgentName, b: OrbitAgentName, e: number) => {
+        const pa = at(a)
+        const pb = at(b)
+        const mid: [number, number] = [(pa[0] + pb[0]) / 2, (pa[1] + pb[1]) / 2]
+        const d = Math.hypot(pa[0] - pb[0], pa[1] - pb[1]) || 1
+        const gap = 36 * unit
+        const ux = (pa[0] - pb[0]) / d
+        const uy = (pa[1] - pb[1]) / d
+        target.set(a, mix(target.get(a)!, [mid[0] + ux * gap, mid[1] + uy * gap], e * 0.85))
+        target.set(b, mix(target.get(b)!, [mid[0] - ux * gap, mid[1] - uy * gap], e * 0.85))
+      }
       for (const cue of m.cues) {
         const t = age(cue.key)
         if (cue.kind === "flag") {
           const e = envelope(t, LIFE.flag)
-          if (e > 0) animating = true
-          candidateRing.set(cue.candidateId, [e, clamp01(t / LIFE.flag)])
-          if (cue.agent) agentGlow.set(cue.agent, Math.max(agentGlow.get(cue.agent) ?? 0, e))
-        } else if (cue.kind === "ranked") {
-          const e = envelope(t, LIFE.ranked)
-          if (e > 0) animating = true
-          rankGlow = [e, clamp01(t / LIFE.ranked)]
-        } else {
-          const life = cue.kind === "handoff" ? LIFE.handoff : LIFE.auditReturn
-          const e = envelope(t, life)
-          const line = els.current.lines.get(cue.key)
           const tag = els.current.tags.get(cue.key)
-          const pulse = els.current.pulses.get(cue.key)
           if (e <= 0) {
-            if (line && line.style.opacity !== "0") line.style.opacity = "0"
             if (tag && tag.style.opacity !== "0") tag.style.opacity = "0"
-            if (pulse && pulse.style.opacity !== "0") pulse.style.opacity = "0"
             continue
           }
           animating = true
-          let from: [number, number]
-          let to: [number, number]
-          let tagAt: [number, number]
-          if (cue.kind === "handoff") {
-            // from where the Lease reader read this lease (its loop has just answered) to the Finance dot waiting for the terms
-            const c = candPos.get(cue.candidateId) ?? home("Finance analyst")
-            const toDot = dots.get(cue.toLoopKey)
-            from = satellite("Lease reader", c, unit)
-            to = toDot && alive.has(cue.toLoopKey) ? [toDot.x, toDot.y] : satellite("Finance analyst", c, unit)
-            const out = Math.hypot(c[0], c[1]) || 1
-            tagAt = [c[0] + (c[0] / out) * 46 * unit, c[1] + (c[1] / out) * 46 * unit]
-            dotBoost.set(cue.toLoopKey, e)
-          } else {
-            from = home("Auditor")
-            to = home("Report writer")
-            tagAt = [((from[0] + to[0]) / 2) * 0.86, ((from[1] + to[1]) / 2) * 0.86]
-          }
-          const dx = to[0] - from[0]
-          const dy = to[1] - from[1]
-          const len = Math.hypot(dx, dy)
-          const drawn = clamp01(t / 320)
-          if (line) {
-            line.style.opacity = e.toFixed(3)
-            line.style.transform = `translate(${from[0].toFixed(1)}px, ${from[1].toFixed(1)}px) rotate(${Math.atan2(dy, dx).toFixed(4)}rad) scaleX(${(len * drawn).toFixed(1)})`
-          }
-          if (pulse) {
-            const p = clamp01(t / 700)
-            pulse.style.opacity = (p < 1 ? 1 : 0).toString()
-            pulse.style.transform = `translate(${(from[0] + dx * p).toFixed(1)}px, ${(from[1] + dy * p).toFixed(1)}px) translate(-50%, -50%)`
+          if (!cue.agent) continue
+          agentGlow.set(cue.agent, Math.max(agentGlow.get(cue.agent) ?? 0, e))
+          // the agent that raised the deal breaker steps in towards the centre ...
+          const p = at(cue.agent)
+          target.set(cue.agent, mix(target.get(cue.agent)!, polar(angleOf(p), h * (CENTRE_RADIUS + 0.13)), e))
+          // ... and the agents whose loops it cancelled recoil, once
+          if (fresh.has(cue.key)) {
+            const owners = new Set(m.dots.filter((d) => cue.cancelledLoopKeys.includes(d.loopKey)).map((d) => d.agent))
+            for (const owner of owners) {
+              if (owner === cue.agent) continue
+              const o = agents.get(owner)!
+              const n = Math.hypot(o.x - p[0], o.y - p[1]) || 1
+              o.vx += ((o.x - p[0]) / n) * 260
+              o.vy += ((o.y - p[1]) / n) * 260
+            }
           }
           if (tag) {
             tag.style.opacity = e.toFixed(3)
-            tag.style.transform = `translate(${tagAt[0].toFixed(1)}px, ${tagAt[1].toFixed(1)}px) translate(-50%, -50%) scale(${(0.9 + 0.1 * e).toFixed(3)})`
+            place(tag, [p[0], p[1] - 44 * unit], ` scale(${(0.9 + 0.1 * e).toFixed(3)})`)
           }
+        } else if (cue.kind === "ranked") {
+          const e = envelope(t, LIFE.ranked)
+          if (e <= 0) continue
+          animating = true
+          rankGlow = [e, clamp01(t / LIFE.ranked)]
+          target.set("Ranker", mix(target.get("Ranker")!, polar(angleOf(at("Ranker")), h * 0.46), e))
+        } else {
+          const e = envelope(t, cue.kind === "handoff" ? LIFE.handoff : LIFE.auditReturn)
+          if (e <= 0) continue
+          animating = true
+          if (cue.kind === "handoff") {
+            meet("Lease reader", "Finance analyst", e)
+            dotBoost.set(cue.toLoopKey, e)
+          } else meet("Auditor", "Report writer", e)
         }
       }
 
-      for (const [id, ring] of els.current.candidateFlags) {
-        const [e, p] = candidateRing.get(id) ?? [0, 0]
-        setGlow(ring, e, 1 + 0.35 * p)
+      // 3. move the agents: a soft spring to the target, and they keep out of each other's way
+      for (const name of ORBIT_AGENTS) {
+        const [tx, ty] = target.get(name)!
+        follow(agents.get(name)!, tx, ty, dt, 26, 7.5)
       }
+      const minGap = 62 * unit
+      for (let i = 0; i < ORBIT_AGENTS.length; i++)
+        for (let j = i + 1; j < ORBIT_AGENTS.length; j++) {
+          const a = agents.get(ORBIT_AGENTS[i]!)!
+          const b = agents.get(ORBIT_AGENTS[j]!)!
+          const dx = a.x - b.x
+          const dy = a.y - b.y
+          const d = Math.hypot(dx, dy) || 0.01
+          if (d >= minGap) continue
+          const push = (minGap - d) * 55 * dt
+          a.vx += (dx / d) * push
+          a.vy += (dy / d) * push
+          b.vx -= (dx / d) * push
+          b.vy -= (dy / d) * push
+        }
+      for (const name of ORBIT_AGENTS) {
+        const a = agents.get(name)!
+        const r = Math.hypot(a.x, a.y) || 0.01
+        const inner = h * CENTRE_RADIUS + 30 * unit // never over the centre's sentence
+        const outer = h * AGENT_RADIUS + 8 * unit
+        const k = r < inner ? inner / r : r > outer ? outer / r : 1
+        a.x *= k
+        a.y *= k
+        const el = els.current.agents.get(name)
+        if (el) place(el, [a.x, a.y])
+      }
+
+      // 4. glows, links and encounter lines, drawn between where the agents are now
       for (const [agent, glow] of els.current.agentFlags) {
         const e = agentGlow.get(agent) ?? 0
         setGlow(glow, e, 0.9 + 0.3 * e)
       }
       if (els.current.rankGlow) setGlow(els.current.rankGlow, rankGlow[0], 0.9 + 0.4 * rankGlow[1])
+      for (const [a, b] of PAIRS) {
+        const key = pairKey(a, b)
+        let shared = 0
+        for (const set of onCandidate.values()) if (set.has(a) && set.has(b)) shared++
+        const goal = shared > 0 && !s.done ? Math.min(0.42, 0.14 + 0.06 * shared) : 0
+        const was = linkOpacity.get(key) ?? 0
+        const o = was + (goal - was) * Math.min(1, 6 * dt)
+        linkOpacity.set(key, o)
+        const el = els.current.links.get(key)
+        if (el) setLine(el, at(a), at(b), o)
+      }
+      for (const cue of m.cues) {
+        if (cue.kind !== "handoff" && cue.kind !== "auditReturn") continue
+        const t = age(cue.key)
+        const e = envelope(t, cue.kind === "handoff" ? LIFE.handoff : LIFE.auditReturn)
+        const line = els.current.lines.get(cue.key)
+        const tag = els.current.tags.get(cue.key)
+        const pulse = els.current.pulses.get(cue.key)
+        const from = at(cue.kind === "handoff" ? "Lease reader" : "Auditor")
+        const to = at(cue.kind === "handoff" ? "Finance analyst" : "Report writer")
+        if (line) setLine(line, from, to, e, clamp01(t / 320))
+        if (pulse) {
+          const p = clamp01(t / 700)
+          pulse.style.opacity = e > 0 && p < 1 ? "1" : "0"
+          if (e > 0) place(pulse, mix(from, to, p))
+        }
+        if (tag) {
+          tag.style.opacity = e.toFixed(3)
+          if (e > 0) place(tag, [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2 - 26 * unit], ` scale(${(0.9 + 0.1 * e).toFixed(3)})`)
+        }
+      }
 
-      // dots: one per loop; born at the agent's home, they travel to their candidate and leave when the loop ends
+      // 5. dots: one per loop, circling the agent that runs it; a dot fades into its agent when the loop answers and
+      //    flies off in red when a deal breaker cancels it
       for (const d of m.dots) {
         const el = els.current.dots.get(d.loopKey)
+        const owner = at(d.agent)
         let a = dots.get(d.loopKey)
         if (!a) {
-          const [hx, hy] = home(d.agent)
-          a = { x: hx, y: hy, vx: 0, vy: 0, o: 0, cancelAt: null, hidden: d.endSeq !== null }
+          // a loop that ended (or was cancelled) before this page saw it is not shown at all
+          a = { x: owner[0], y: owner[1], vx: 0, vy: 0, o: 0, cancelAt: null, hidden: d.endSeq !== null || d.cancelSeq !== null }
           dots.set(d.loopKey, a)
-          // a loop that was cancelled before this page saw it does not bounce now
-          if (d.cancelSeq !== null) a.hidden = true
         }
         if (a.hidden) {
           if (el && el.style.opacity !== "0") el.style.opacity = "0"
@@ -305,43 +413,35 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
         if (d.cancelSeq !== null) {
           if (a.cancelAt === null) {
             a.cancelAt = now
-            const c = d.candidateId ? candPos.get(d.candidateId) : undefined
-            const ox = c ? a.x - c[0] : a.x
-            const oy = c ? a.y - c[1] : a.y
-            const n = Math.hypot(ox, oy) || 1
-            a.vx = (ox / n) * 360
-            a.vy = (oy / n) * 360
+            const n = Math.hypot(a.x - owner[0], a.y - owner[1]) || 1
+            a.vx = ((a.x - owner[0]) / n) * 380
+            a.vy = ((a.y - owner[1]) / n) * 380
           }
           const t = now - a.cancelAt
-          a.vx *= Math.exp(-7 * dt)
-          a.vy *= Math.exp(-7 * dt)
+          a.vx *= Math.exp(-6 * dt)
+          a.vy *= Math.exp(-6 * dt)
           a.x += a.vx * dt
           a.y += a.vy * dt
           a.o = 1 - clamp01(t / LIFE.bounce)
-          scale = 1 + 0.35 * Math.sin(Math.min(1, t / 260) * Math.PI) - 0.5 * clamp01((t - 260) / (LIFE.bounce - 260))
+          scale = 1 + 0.4 * Math.sin(Math.min(1, t / 260) * Math.PI) - 0.5 * clamp01((t - 260) / (LIFE.bounce - 260))
           if (t >= LIFE.bounce) a.hidden = true
         } else if (d.endSeq !== null) {
-          const [hx, hy] = home(d.agent)
-          follow(a, hx, hy, dt)
+          follow(a, owner[0], owner[1], dt)
           a.o -= dt / (LIFE.fadeOut / 1000)
-          scale = 0.7 + 0.3 * clamp01(a.o)
+          scale = 0.6 + 0.4 * clamp01(a.o)
           if (a.o <= 0) a.hidden = true
         } else {
-          const c = d.candidateId ? candPos.get(d.candidateId) : undefined
-          let tx: number
-          let ty: number
-          if (c) {
-            ;[tx, ty] = satellite(d.agent, c, unit)
-          } else {
-            ;[tx, ty] = polar(agentAngle(d.agent), h * CENTRE_RADIUS + 16 * unit)
-          }
-          follow(a, tx, ty, dt)
+          const mine = byAgent.get(d.agent) ?? [d.loopKey]
+          const index = Math.max(0, mine.indexOf(d.loopKey))
+          const spin = sec * 64 + ORBIT_AGENTS.indexOf(d.agent) * 45
+          const [ox, oy] = polar(spin + (index * 360) / mine.length, (31 + 1.6 * mine.length) * unit)
+          follow(a, owner[0] + ox, owner[1] + oy, dt, 150, 22)
           a.o = Math.min(1, a.o + dt / (LIFE.fadeIn / 1000))
-          scale = 1 + 0.3 * (dotBoost.get(d.loopKey) ?? 0)
+          scale = 1 + 0.45 * (dotBoost.get(d.loopKey) ?? 0)
         }
         if (el) {
           el.style.opacity = clamp01(a.o).toFixed(3)
-          el.style.transform = `translate(${a.x.toFixed(1)}px, ${a.y.toFixed(1)}px) translate(-50%, -50%) scale(${Math.max(0.01, scale).toFixed(3)})`
+          place(el, [a.x, a.y], ` scale(${Math.max(0.01, scale).toFixed(3)})`)
         }
       }
 
@@ -365,15 +465,24 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
   const status = useHeldValue(statusLine(state), STATUS_HOLD_MS)
   const unit = clamp01(half / 340) * 0.4 + 0.6
   const working = new Set(model.dots.filter((d) => d.endSeq === null).map((d) => d.agent))
-  const numbers = new Map([...new Set([...state.submitted, ...state.order])].map((id, i) => [id, i + 1]))
   const lineCues = model.cues.filter((c) => c.kind === "handoff" || c.kind === "auditReturn")
+  const flagCues = model.cues.filter((c): c is FlagCue => c.kind === "flag")
 
   return (
     <div ref={stageRef} className="orbit-stage" data-done={state.done} role="img" aria-label={`${model.atWork} agent loop${model.atWork === 1 ? "" : "s"} at work. ${status}`}>
+      <div className="orbit-field" style={{ inset: `${(1 - AGENT_RADIUS) * 50}%` }} aria-hidden />
       <div className="orbit-path" style={{ inset: `${(1 - AGENT_RADIUS) * 50}%` }} aria-hidden />
-      <div className="orbit-inner-ring" style={{ inset: `${(1 - CANDIDATE_RADIUS) * 50}%` }} aria-hidden />
+      <CentreStatus status={status} done={state.done} cancelled={state.cancelled} atWork={model.atWork} />
 
-      {/* handoff and audit lines: above the candidate circles, under the dots */}
+      {/* links between agents working on the same space, and the encounter lines: under the agents */}
+      {PAIRS.map(([a, b]) => (
+        <div
+          key={pairKey(a, b)}
+          ref={(el) => void (el ? els.current.links.set(pairKey(a, b), el) : els.current.links.delete(pairKey(a, b)))}
+          className="orbit-line is-link"
+          aria-hidden
+        />
+      ))}
       {lineCues.map((cue) => (
         <div
           key={cue.key}
@@ -383,74 +492,44 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
         />
       ))}
 
-      {model.candidates.map((c) => {
-        return (
-          <div
-            key={c.id}
-            ref={(el) => void (el ? els.current.candidates.set(c.id, el) : els.current.candidates.delete(c.id))}
-            className="orbit-candidate"
-            data-phase={c.phase}
-            title={`${c.label}: ${CANDIDATE_PHASE[c.phase]}`}
-            style={{ width: 36 * unit, height: 36 * unit }}
-          >
-            <span
-              ref={(el) => void (el ? els.current.candidateFlags.set(c.id, el) : els.current.candidateFlags.delete(c.id))}
-              className="orbit-flag-ring"
-              aria-hidden
-            />
-            <span className="orbit-candidate-disc tnum">
-              {c.phase === "rejected" ? <OctagonAlert size={15 * unit} aria-hidden /> : c.rank !== null ? `#${c.rank}` : numbers.get(c.id)}
-            </span>
-          </div>
-        )
-      })}
-
-      {ORBIT_AGENTS.map((name, i) => {
+      {ORBIT_AGENTS.map((name) => {
         const Icon = agentIcon(name)
+        const busy = working.has(name) && !state.done
         return (
           <div
             key={name}
-            className="orbit-polar orbit-agent"
-            style={{ "--turn": i / ORBIT_AGENTS.length - 0.25, "--radius": AGENT_RADIUS } as CSSProperties}
-            data-busy={working.has(name)}
+            ref={(el) => void (el ? els.current.agents.set(name, el) : els.current.agents.delete(name))}
+            className="orbit-agent"
+            style={{ width: 44 * unit, height: 44 * unit }}
+            data-busy={busy}
             title={name}
           >
-            <div className="flex flex-col items-center gap-1">
-              <div className="relative">
-                <span className="orbit-glow" data-busy={working.has(name) && !state.done} />
-                {/* dark red when this agent raises a deal breaker (a flag cue names it) */}
-                <span
-                  ref={(el) => void (el ? els.current.agentFlags.set(name, el) : els.current.agentFlags.delete(name))}
-                  className="orbit-agent-flag"
-                  aria-hidden
-                />
-                {name === "Ranker" && <span ref={(el) => void (els.current.rankGlow = el)} className="orbit-agent-rank" aria-hidden />}
-                <span className="orbit-agent-disc">
-                  <Icon size={19} strokeWidth={1.75} aria-hidden />
-                </span>
-              </div>
-              <span className="rounded-full bg-white/85 px-2 py-0.5 text-[11px] leading-4 font-medium whitespace-nowrap text-ink max-sm:hidden">{name}</span>
-            </div>
+            <span className="orbit-glow" data-busy={busy} />
+            {/* dark red when this agent raises a deal breaker (a flag cue names it) */}
+            <span
+              ref={(el) => void (el ? els.current.agentFlags.set(name, el) : els.current.agentFlags.delete(name))}
+              className="orbit-agent-flag"
+              aria-hidden
+            />
+            {name === "Ranker" && <span ref={(el) => void (els.current.rankGlow = el)} className="orbit-agent-rank" aria-hidden />}
+            <span className="orbit-agent-disc">
+              <Icon size={19 * unit} strokeWidth={1.75} aria-hidden />
+            </span>
+            <span className="orbit-agent-name max-sm:hidden">{name}</span>
           </div>
         )
       })}
 
-      {model.dots.map((d) => {
-        const Icon = agentIcon(d.agent)
-        return (
-          <div
-            key={d.loopKey}
-            ref={(el) => void (el ? els.current.dots.set(d.loopKey, el) : els.current.dots.delete(d.loopKey))}
-            className="orbit-dot"
-            data-cancelled={d.cancelSeq !== null}
-            style={{ width: 22 * unit, height: 22 * unit }}
-            title={`${d.agent}${d.candidateId ? ` on ${candidateLabel(state, d.candidateId)}` : ""}`}
-            aria-hidden
-          >
-            <Icon size={12 * unit} strokeWidth={2} />
-          </div>
-        )
-      })}
+      {model.dots.map((d) => (
+        <div
+          key={d.loopKey}
+          ref={(el) => void (el ? els.current.dots.set(d.loopKey, el) : els.current.dots.delete(d.loopKey))}
+          className="orbit-dot"
+          data-cancelled={d.cancelSeq !== null}
+          style={{ width: 11 * unit, height: 11 * unit }}
+          aria-hidden
+        />
+      ))}
 
       {lineCues.map((cue) => (
         <span
@@ -462,18 +541,25 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
           {cue.kind === "handoff" ? "Lease terms" : "Sent back"}
         </span>
       ))}
-      {lineCues
-        .filter((c) => c.kind === "auditReturn")
-        .map((cue) => (
-          <span
-            key={`${cue.key}:pulse`}
-            ref={(el) => void (el ? els.current.pulses.set(cue.key, el) : els.current.pulses.delete(cue.key))}
-            className="orbit-return-pulse"
-            aria-hidden
-          />
-        ))}
+      {lineCues.map((cue) => (
+        <span
+          key={`${cue.key}:pulse`}
+          ref={(el) => void (el ? els.current.pulses.set(cue.key, el) : els.current.pulses.delete(cue.key))}
+          className={cx("orbit-return-pulse", cue.kind === "handoff" && "is-handoff")}
+          aria-hidden
+        />
+      ))}
+      {flagCues.map((cue) => (
+        <span
+          key={`${cue.key}:tag`}
+          ref={(el) => void (el ? els.current.tags.set(cue.key, el) : els.current.tags.delete(cue.key))}
+          className="orbit-tag is-return max-sm:hidden"
+          aria-hidden
+        >
+          Deal breaker: {candidateLabel(state, cue.candidateId)}
+        </span>
+      ))}
 
-      <CentreStatus status={status} done={state.done} cancelled={state.cancelled} atWork={model.atWork} />
       {/* on a phone the centre is too small for the sentence: it goes under the orbit */}
       <p key={status} className="status-enter absolute inset-x-0 -bottom-10 text-center text-sm font-medium text-ink sm:hidden">
         {status}
@@ -493,8 +579,7 @@ const CANDIDATE_PHASE: Record<CandidatePhase, string> = {
 
 function CentreStatus({ status, done, cancelled, atWork }: { status: string; done: boolean; cancelled: boolean; atWork: number }) {
   return (
-    <div className="absolute flex items-center justify-center p-[5%] text-center" style={{ inset: `${(1 - CENTRE_RADIUS) * 50}%` }}>
-      <span className="orbit-centre-disc" aria-hidden />
+    <div className="pointer-events-none absolute flex items-center justify-center p-[5%] text-center" style={{ inset: `${(1 - CENTRE_RADIUS) * 50}%` }}>
       <div aria-live="polite" className="relative flex flex-col items-center gap-1.5">
         {done ? (
           <span

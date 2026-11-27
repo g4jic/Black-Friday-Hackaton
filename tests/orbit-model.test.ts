@@ -137,11 +137,11 @@ describe("orbit model: every animation comes from a real bus event", () => {
     expect(m.cues.map((c) => c.kind === "handoff" && [c.candidateId, c.toLoopKey, c.fromLoopKey])).toEqual([["c", "finance:c:1", null]])
   })
 
-  it("the run view draws nothing that is not in the model: no random or timed motion", () => {
+  it("the run view draws nothing that is not in the model: no random motion, no timer-made events", () => {
     const source = readFileSync("web/src/run/RunView.tsx", "utf8")
     expect(source).not.toMatch(/Math\.random/)
     expect(source).not.toMatch(/setInterval/)
-    // every moving element is rendered from model.dots, model.candidates or a cue
-    for (const kind of ["model.dots.map", "model.candidates.map", "lineCues.map", "m.cues"]) expect(source).toContain(kind)
+    // every dot, line, tag and glow is rendered from model.dots or a cue (the agents only move between them)
+    for (const kind of ["model.dots.map", "lineCues.map", "flagCues.map", "m.cues"]) expect(source).toContain(kind)
   })
 })
