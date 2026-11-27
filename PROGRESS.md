@@ -3,6 +3,16 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
+## Update (27 Nov 2026, night, Aleksa + Claude): dev shortcuts and old screenshots removed (9b7ed14)
+- Removed the local development shortcut as planned: `web/src/dev/` (DevSignIn, dev accounts),
+  `scripts/seed-dev-accounts.ts`, and the lazy DevSignIn block in `AuthScreen.tsx`. The local `data/` folder (the
+  three demo accounts, their listings and deals) was deleted on Aleksa's machine. "Fill with example" stays.
+- Checked: the production build has no "Dev: sign in", no demo password, no demo emails; a fresh clone in
+  `npm run dev` (no .env, no data/) shows only "Sign in" / "Create account" on /login and /signup, no console errors.
+- Deleted every screenshot in `design/screenshots/` that the README no longer uses (assumptions, live-*, new-research,
+  report, reports, results-rejected-open). Older entries below still name them; the files are gone. All six README
+  image links resolve. Typecheck clean, 270 tests in 36 files pass.
+
 ## Update (27 Nov 2026, night, Aleksa + Claude): event-driven orbit, rank colours, report page, README shots
 - **Phase 1 (960540a):** quieter sign in (no map pill), role choice with whole-card buttons and "Set up both roles",
   step pills with an aria-label, Back above the onboarding forms.
