@@ -47,7 +47,7 @@ export function OfferForm({ listing }: { listing: PublicListing }) {
     return (
       <Card title="Offer sent">
         <p>
-          The landlord sees your offer in My listings. {listing.isDemo && "This is a demo listing: in My spaces you answer your own offer as the simulated demo landlord."}
+          {listing.isDemo ? "This is a demo listing with no real landlord: in My spaces you answer your own offer as the simulated demo landlord." : "The landlord sees your offer in My listings and answers it there."}
         </p>
         <Link to={paths.mySpaces()} className={cx(PRIMARY, "mt-4 w-full")}>
           Open My spaces

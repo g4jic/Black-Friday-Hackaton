@@ -31,7 +31,7 @@ export function SettingsPage() {
   return (
     <form onSubmit={submit} className="grid gap-4 lg:grid-cols-2">
       <Card title="Default business profile">
-        <p className="mb-4">Used to prefill the questionnaire. Without an AI model key on the server, runs use the fixed demo profile.</p>
+        <p className="mb-4">Used to prefill the questionnaire. Demo runs (on a server without an AI model key, or without the access code) use the fixed demo profile.</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="sm:col-span-2">
             <span className={LABEL}>Business type</span>

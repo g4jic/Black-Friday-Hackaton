@@ -74,7 +74,8 @@ const sentence = (reason: string | undefined) => {
   return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
-const lowerFirst = (s: string) => s.charAt(0).toLowerCase() + s.slice(1)
+/** Lower-cases the first letter to join two reasons, and puts back the product name the Ranker's own text lowered. */
+const lowerFirst = (s: string) => (s.charAt(0).toLowerCase() + s.slice(1)).replace(/\bsuiteSpot\b/g, "SuiteSpot")
 
 /** Why the score is what it is, in one line: the strongest plus and the biggest minus (the Ranker's own reasons). */
 export function scoreReason(c: CandidateDTO): string | undefined {
@@ -256,7 +257,12 @@ export function unknowns(c: CandidateDTO): { items: { text: string; points: numb
   const monthly = findingOf(c, "monthly_cost")
   const unknownCosts = /unknown: (.+)$/.exec(monthly?.claim ?? "")?.[1]
   if (unknownCosts && unknownCosts !== "none") items.push({ text: `Not in the monthly cost: ${unknownCosts}`, points: 0 })
-  return { items, totalPoints: ranking ? ranking.scoreHigh - ranking.score : 0 }
+  const totalPoints = ranking ? ranking.scoreHigh - ranking.score : 0
+  // The scores are rounded on their own, so one rounded item can read 7 against a 91-97 range: keep them consistent.
+  const scored = items.filter((i) => i.points > 0)
+  if (scored.length === 1) scored[0]!.points = totalPoints
+  else for (const item of scored) item.points = Math.min(item.points, totalPoints)
+  return { items: items.filter((i) => i.points > 0 || !scored.includes(i)), totalPoints }
 }
 
 /** Internal field names (form, extraction, lease clauses, questionnaire) in plain words. */

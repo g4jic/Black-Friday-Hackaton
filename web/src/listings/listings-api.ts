@@ -1,6 +1,6 @@
 // Listings as the server sends them (mirror of src/adapters/server/listing-routes.ts; the web app never imports
 // server code). Contacts are never part of a listing: they come only from revealContact.
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { BusinessType } from "../app/settings"
 
 export type Indexation = { kind: "none" } | { kind: "cpi" } | { kind: "fixed_rate"; ratePercent: number } | { kind: "landlord_unilateral" }
@@ -83,9 +83,12 @@ export const listingsApi = {
 export function useLoad<T>(key: string, load: () => Promise<T>): { data: T | null; error: string | null; reload: () => void } {
   const [state, setState] = useState<{ data: T | null; error: string | null }>({ data: null, error: null })
   const [version, setVersion] = useState(0)
+  const loadedKey = useRef(key)
   useEffect(() => {
     let alive = true
-    setState({ data: null, error: null })
+    // A reload of the same data keeps showing the old data until the new arrives (no "Loading..." flash).
+    if (loadedKey.current !== key) setState({ data: null, error: null })
+    loadedKey.current = key
     load().then(
       (data) => alive && setState({ data, error: null }),
       (error: unknown) => alive && setState({ data: null, error: error instanceof Error ? error.message : "Could not load" }),
