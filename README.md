@@ -4,7 +4,7 @@
 ten seconds: Mozaik agents evaluate every candidate space at the same time, code does every calculation, a hard flag
 in code stops the agents still working on a deal breaker, and every number on the screen points to its source.
 
-![SuiteSpot results: ranked spaces with score ranges, verdicts and confidence](design/screenshots/results-list.png)
+![SuiteSpot results: ranked spaces, each rank circle coloured by its verdict, with score, monthly cost and the main reason](design/screenshots/results-list.png)
 
 > Built in 48 hours for the JigJoy Black Friday AI Hackathon (26-27 Nov 2026), track "AI agents in finance".
 > **All listings, landlords and businesses are synthetic. Not financial or legal advice.**
@@ -77,22 +77,33 @@ Wait for the line `Local: http://localhost:5173/`, then open **http://localhost:
 Then:
 1. **Sign up** with any email and password. Without Supabase the account is kept on this computer only
    (`data/local-accounts.json`, password stored as a scrypt hash); the page says so.
-2. **Onboarding:** choose **Find a space** (or "I do both"); the role decides what the menu shows. On the business
-   profile form press **Skip for now** (or "Fill with example", then save) and you are in the app.
+2. **Onboarding:** choose **Find a space** (or **Set up both roles**); the role decides what the menu shows. On the
+   business profile form press **Skip for now** (or "Fill with example", then save) and you are in the app.
 3. Click **Research** in the side menu; the **Find spaces** tab is open.
 4. Under "Demo scenario" pick one of the three: **Cafe in Novi Sad**, **Office in Beograd** or **Shop in Novi Sad**.
    The questionnaire on the left is locked to that scenario.
 5. Click **Search and evaluate**.
 
+![Onboarding: choose List my space, Find a space or Set up both roles](design/screenshots/onboarding.png)
+
 What you see:
-- **The run** (about 7 to 13 seconds): the agents travel on a path around the candidate spaces. Counters show the
-  candidates evaluated, the ones ruled out by a deal breaker and **how many agent tasks run right now** (peak 30 in
-  the office scenario). When code finds a deal breaker, that candidate turns red and moves to "Ruled out" with the
-  reason, and any agent loop still working on it stops at its next breakpoint.
-- **Results, List tab**: one ranked list, a verdict per space (Good, Check before signing, Not recommended), the
-  score as a range ("74-94") when data is missing, the confidence and the main reason. Rejected spaces are in their
-  own block with the hard flag that rejected them. Click a space for its page: costs with their sources, strengths
-  and risks, lease terms or questions for the landlord, and what is unknown.
+- **The run** (about 7 to 13 seconds): every agent has its place on the big circle and every candidate is a small
+  circle inside it. **Each running agent loop is a dot** that travels from its agent to its candidate, and the centre
+  counts them (peak 30 in the office scenario). When code finds a deal breaker, the agent that raised it glows dark
+  red, the loops it cancelled on that candidate bounce off, the candidate gets a red mark and moves to "Ruled out"
+  with the reason. When the Lease reader's terms reach a Finance loop that waits for them, a short "Lease terms" line
+  joins the two; when the Auditor sends a draft back, a "Sent back" pulse runs to the Report writer. At the end the
+  Ranker orders the candidates on the ring. Every dot and line comes from a real bus event, never from a timer
+  (`web/src/run/orbit-model.ts`, checked against the three recordings in `tests/orbit-model.test.ts`).
+- **Results, List tab**: one ranked list. **The rank circle's colour is the verdict** (green Good, yellow Check
+  before signing, red Not recommended; one small legend above the list, the verdict in each circle's tooltip), with
+  the score, the monthly cost and the main reason. Rejected spaces are in their own block with the hard flag that
+  rejected them, and keep its icon.
+- **A space's page** reads like a short financial report: a summary (verdict colour, score or range such as "64-74",
+  monthly cost, main reason), then collapsible cards (Costs, Bad year / good year, Lease or buy, Lease terms,
+  Location, The space, Strengths and risks, What is unknown). Each card opens with one sentence on what it shows and
+  what it means for this space; every number after it carries its source, and two small bar charts use calculated
+  values only.
 - **Report tab**: the audited report, one sentence per claim, each with the facts it cites and "Audited: N claims
   checked".
 - **Timeline tab** ("How your research ran"): one lane per agent loop over time, calculator calls as dots, the loop
@@ -101,7 +112,9 @@ What you see:
   claude-haiku-4-5 (see [What is real, recorded and scripted](#what-is-real-recorded-and-scripted)).
 - **How it works** (avatar menu): every weight, threshold and assumption, served from the code itself.
 
-![The run: agents on an orbit around the candidates, one rejected by a hard flag](design/screenshots/run-mid.png)
+![The run at its peak: 27 agent loops as dots on the eight candidates, one candidate already ruled out by a deal breaker](design/screenshots/run-mid.png)
+
+![A space's page: summary with the verdict colour, score range, monthly cost and main reason, then the Costs and Lease or buy cards with sourced numbers and charts](design/screenshots/candidate.png)
 
 ### Then rent a space, still with no key (offer, lease, rent payment)
 1. Open any space (for example from the results, or under **Listings**) and use **Make an offer**: rent, start date,
