@@ -52,7 +52,7 @@ may raise the rent at will, a permitted use that excludes their business). Done 
 spreadsheet per listing, and the clause that matters most is the easiest to miss.
 
 SuiteSpot is a two-sided platform: landlords publish structured listings (rent, costs, area, term, early exit,
-indexation, permitted use, optionally the lease draft), and a business either asks **Find spaces** (SuiteSpot picks
+indexation, permitted use, optionally the lease draft and up to six photos), and a business either asks **Find spaces** (SuiteSpot picks
 the listings that fit its questionnaire) or **Evaluate an outside listing** (it types in the terms of a space it found
 elsewhere). Every candidate gets a score range, a verdict decided by code, and a list of what to check before signing.
 When the business picks a space it can make an offer; once the landlord accepts, both sides see the same lease with
@@ -376,7 +376,7 @@ quality check").
 | Model answers with a key | Real: claude-haiku-4-5, live |
 | Model answers without a key, Find spaces | **Recorded**: three real claude-haiku-4-5 runs (`fixtures/recordings/*.json`, recorded 27 Nov 2026: 23, 27 and 21 model calls) replayed with their latencies; code still checks every value. A request that is not in the recording fails as a provider error, it is never invented. Not labelled on screen (stated here) |
 | Model answers without a key, every other run (Find spaces with your own questionnaire, "Evaluate for my business" on any listing, an outside listing) | **Scripted**: the agents follow fixed scripts (the calculator calls, the Lease reader's answers for the seed drafts built from the seed's own clause sentences); every number still comes from the calculator and code still checks every quote. A lease draft that is not in the seed is not read without a key (its terms come from the listing form), and the area data of an address outside the seed is not looked up. Not labelled on screen (stated here) |
-| Listings, landlords, contacts, businesses | **Synthetic**: 100 generated listings (50 Novi Sad, 50 Beograd) from a frozen seed (stated in this README and on the How it works page). Prices per m2 are a synthetic assumption roughly aligned with public 2025-2026 ranges (Kurir Biznis, Biznis.rs): medians Novi Sad 10, Beograd 16.2 EUR/m2 |
+| Listings, landlords, contacts, businesses | **Synthetic**: 100 generated listings (50 Novi Sad, 50 Beograd) from a frozen seed (stated in this README and on the How it works page). The seed listings have no photos (a plain tile stands in, never a stock photo); photos come only from owners who upload them. Prices per m2 are a synthetic assumption roughly aligned with public 2025-2026 ranges (Kurir Biznis, Biznis.rs): medians Novi Sad 10, Beograd 16.2 EUR/m2 |
 | Accounts, saved spaces, view counts | Real: Supabase Auth with Supabase, local accounts on this computer without it |
 | Area data (OpenStreetMap) | Real public data: counted once for the seeded addresses and stored in `fixtures/osm/` (© OpenStreetMap contributors, ODbL); an outside listing is looked up live (at most 1 request per second) |
 | Offers, leases, rent schedule | Real code and storage (Supabase or local); on a seeded listing, which has no real owner, the tenant answers the offer |
@@ -404,12 +404,12 @@ npm test
 ```powershell
 npm run typecheck
 ```
-280 tests in 37 files, no key and no network needed (`tests/setup.ts` turns Mozaik Cloud off and blocks any request
+284 tests in 38 files, no key and no network needed (`tests/setup.ts` turns Mozaik Cloud off and blocks any request
 to another host): every domain rule and invariant (with the violation it rejects), the schema
 rules for every structured output, cancellation mid-run, a failing agent that does not stop the others, the server
 and its cost guards, the three recorded scenarios replayed end to end to an audited report, the run animation
 replayed against the real bus events of those recordings (every dot is a real loop), the onboarding and role rules,
-the business profile form against the domain, Find spaces with preferred districts (a preference that never filters), editing the account (name, email, a profile photo checked by type, size and magic bytes), the frozen seed, and the full deal loop over HTTP (offer, accept, lease,
+the business profile form against the domain, Find spaces with preferred districts (a preference that never filters), editing the account (name, email, a profile photo checked by type, size and magic bytes), listing photos (at most six, safe addresses only, upload, storage and display), the frozen seed, and the full deal loop over HTTP (offer, accept, lease,
 simulated payment, status on both sides, leased spaces, someone else's offer or rent refused; the Stripe test gateway
 against a fake fetch, test keys only).
 

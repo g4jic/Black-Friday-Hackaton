@@ -1,4 +1,4 @@
-import { Building2, Eye, Mail, MapPin, Pencil, Phone, Play, Plus, Trash2 } from "lucide-react"
+import { Building2, ChevronLeft, ChevronRight, Eye, Mail, MapPin, Pencil, Phone, Play, Plus, Trash2 } from "lucide-react"
 import { SaveButton } from "./SaveButton"
 import { OfferForm } from "../deals/DealViews"
 import { dealsApi } from "../deals/deals-api"
@@ -70,13 +70,21 @@ export function BrowseListingsPage() {
   )
 }
 
+/** The owner's photos, the cover first (an older listing may have one linked image instead). */
+const photosOf = (l: PublicListing): string[] => (l.photos?.length ? l.photos : l.imageUrl ? [l.imageUrl] : [])
+
 /**
- * The photo the owner linked in the listing form (the "Image link" field), or nothing: no stock photo stands in
- * for a space nobody photographed. A link that does not load hides itself. No referrer goes to the image host.
+ * The cover on a listing card. A space nobody photographed gets a plain tile, never a stock photo, so every card
+ * keeps the same shape. A photo that does not load falls back to the tile. No referrer goes to the image host.
  */
-function ListingPhoto({ url, title, className }: { url: string | null; title: string; className?: string }) {
+function CoverPhoto({ url, title }: { url: string | undefined; title: string }) {
   const [failed, setFailed] = useState(false)
-  if (!url || failed) return null
+  if (!url || failed)
+    return (
+      <div className="flex aspect-[16/9] w-full items-center justify-center rounded-[18px] bg-white/50 text-ink-3" aria-hidden>
+        <Building2 size={26} strokeWidth={1.5} />
+      </div>
+    )
   return (
     <img
       src={url}
@@ -85,15 +93,75 @@ function ListingPhoto({ url, title, className }: { url: string | null; title: st
       decoding="async"
       referrerPolicy="no-referrer"
       onError={() => setFailed(true)}
-      className={cx("aspect-[16/9] w-full rounded-[18px] bg-white/60 object-cover", className)}
+      className="aspect-[16/9] w-full rounded-[18px] bg-white/60 object-cover"
     />
+  )
+}
+
+/** The listing page's photos: one large photo, arrows and thumbnails to move between them. Nothing without photos. */
+function PhotoGallery({ photos, title }: { photos: string[]; title: string }) {
+  const [index, setIndex] = useState(0)
+  if (photos.length === 0) return null
+  const current = Math.min(index, photos.length - 1)
+  const go = (step: number) => setIndex((current + step + photos.length) % photos.length)
+  return (
+    <div
+      className="mb-4"
+      role="group"
+      aria-roledescription="carousel"
+      aria-label={`Photos of ${title}`}
+      tabIndex={photos.length > 1 ? 0 : undefined}
+      onKeyDown={(event) => {
+        if (event.key === "ArrowLeft") go(-1)
+        if (event.key === "ArrowRight") go(1)
+      }}
+    >
+      <div className="relative">
+        <img
+          src={photos[current]}
+          alt={`Photo ${current + 1} of ${photos.length}: ${title}`}
+          decoding="async"
+          referrerPolicy="no-referrer"
+          className="aspect-[16/9] w-full rounded-[18px] bg-white/60 object-cover"
+        />
+        {photos.length > 1 && (
+          <>
+            <button type="button" onClick={() => go(-1)} aria-label="Previous photo" className="absolute top-1/2 left-3 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow-sm hover:bg-white">
+              <ChevronLeft size={18} aria-hidden />
+            </button>
+            <button type="button" onClick={() => go(1)} aria-label="Next photo" className="absolute top-1/2 right-3 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow-sm hover:bg-white">
+              <ChevronRight size={18} aria-hidden />
+            </button>
+            <span className="tnum absolute right-3 bottom-3 rounded-full bg-ink/70 px-2.5 py-1 text-[11px] font-medium text-white">
+              {current + 1} / {photos.length}
+            </span>
+          </>
+        )}
+      </div>
+      {photos.length > 1 && (
+        <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+          {photos.map((url, i) => (
+            <button
+              key={url}
+              type="button"
+              onClick={() => setIndex(i)}
+              aria-label={`Show photo ${i + 1}`}
+              aria-current={i === current}
+              className={cx("h-14 w-20 shrink-0 overflow-hidden rounded-[12px] ring-2", i === current ? "ring-ink" : "ring-transparent opacity-70 hover:opacity-100")}
+            >
+              <img src={url} alt="" loading="lazy" referrerPolicy="no-referrer" className="h-full w-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 
 function ListingCard({ listing: l }: { listing: PublicListing }) {
   return (
     <Link to={paths.listing(l.id)} className="flex h-full flex-col gap-3 rounded-[24px] glass p-5 hover:bg-white/90">
-      <ListingPhoto url={l.imageUrl} title={l.title} />
+      <CoverPhoto url={photosOf(l)[0]} title={l.title} />
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-base leading-6 font-semibold text-ink">{l.title}</h3>
         {l.leased && <LeasedPill />}
@@ -165,7 +233,7 @@ export function ListingDetailPage({ id }: { id: string }) {
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
       <div className="flex flex-col gap-4">
         <Card>
-          <ListingPhoto url={l.imageUrl} title={l.title} className="mb-4" />
+          <PhotoGallery photos={photosOf(l)} title={l.title} />
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 text-[13px] text-ink-2">
               <MapPin size={14} aria-hidden /> {l.district}, {l.street}, {l.city}

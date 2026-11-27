@@ -43,8 +43,10 @@ export type SpaceListingInput = {
   /** Optional: the landlord's lease draft, as text. */
   readonly leaseDraft?: string | null
   readonly description?: string | null
-  /** Optional: a link to a photo (http or https). */
+  /** Optional: a link to a photo (http or https). Older listings only; new ones upload photos. */
   readonly imageUrl?: string | null
+  /** Optional: the owner's uploaded photos, the first is the cover (at most LISTING_LIMITS.photosMax). */
+  readonly photos?: readonly string[] | null
 }
 
 export type SpaceListingProps = SpaceListingInput & {
@@ -81,6 +83,8 @@ export const LISTING_LIMITS = {
   descriptionMax: 4000,
   leaseDraftMax: MAX_LISTING_TEXT_LENGTH,
   urlMax: 2048,
+  photosMax: 6,
+  photoUrlMax: 300,
 } as const
 
 const INDEXATION_KINDS: readonly IndexationKind[] = ["none", "cpi", "fixed_rate", "landlord_unilateral"]
@@ -149,6 +153,12 @@ export function validateListingInput(input: SpaceListingInput): SpaceListingInpu
     if (!ok) fail("imageUrl", "must be a plain http(s) address")
   }
 
+  // A photo address is an absolute http(s) URL or a path on this server ("/api/..."), never a protocol-relative one.
+  const photos = Array.isArray(input.photos) ? input.photos : []
+  if (photos.length > L.photosMax) fail("photos", `at most ${L.photosMax} photos`)
+  else if (photos.some((p) => !isPhotoAddress(p, L.photoUrlMax))) fail("photos", "contains an address that is not a photo link")
+  else if (new Set(photos).size !== photos.length) fail("photos", "contains the same photo twice")
+
   if (problems.length > 0) throw new ListingValidationError(problems)
   return Object.freeze({
     title,
@@ -168,7 +178,19 @@ export function validateListingInput(input: SpaceListingInput): SpaceListingInpu
     leaseDraft,
     description,
     imageUrl,
+    photos: Object.freeze([...photos]),
   })
+}
+
+function isPhotoAddress(value: unknown, max: number): boolean {
+  if (typeof value !== "string" || value.length === 0 || value.length > max || /\s/.test(value)) return false
+  if (value.startsWith("/")) return !value.startsWith("//")
+  try {
+    const u = new URL(value)
+    return (u.protocol === "http:" || u.protocol === "https:") && !u.username && !u.password
+  } catch {
+    return false
+  }
 }
 
 /** The listing entity. Only its owner may change or delete it; demo listings cannot be changed by anyone. */

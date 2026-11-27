@@ -24,6 +24,8 @@ export type ListingInput = {
   leaseDraft: string | null
   description: string | null
   imageUrl: string | null
+  /** Uploaded photos, the cover first. */
+  photos: string[]
 }
 
 /** leased: the space has a lease (only the flag, never the tenant; demo listings are never leased). */

@@ -30,7 +30,7 @@ source. Each space gets a score range, a verdict, a rent share of revenue, a bad
 comparison and a list of what to check before signing. The business can then make an offer; once the landlord accepts,
 both sides see the same lease with its rent due dates, and the tenant pays rent through one payment port (Stripe
 Checkout in a test sandbox with test keys, a simulated checkout without them; no real money ever
-moves). 280 automated tests, no key needed.
+moves). 284 automated tests, no key needed.
 All listings, landlords and businesses are synthetic. Not financial or legal advice.
 
 ## How the agents run concurrently

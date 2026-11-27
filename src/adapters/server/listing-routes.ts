@@ -38,6 +38,7 @@ export function publicListing(listing: SpaceListing) {
     tenantPaysStructuralRepairs: p.tenantPaysStructuralRepairs,
     description: p.description ?? null,
     imageUrl: p.imageUrl ?? null,
+    photos: p.photos ?? [],
     leaseDraft: p.leaseDraft ?? null,
   }
 }

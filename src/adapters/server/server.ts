@@ -19,8 +19,8 @@ import { StripeTestGateway, stripeTestConfig } from "../payments/stripe-test-gat
 import { LOCAL_DEALS_FILE, LocalDealStore } from "../storage/local-deal-store.js"
 import { SupabaseDealStore } from "../storage/supabase-deal-store.js"
 import { registerDealRoutes } from "./deal-routes.js"
-import { LocalAvatarStore, SupabaseAvatarStore, type AvatarStore } from "../auth/avatar-store.js"
-import { registerAvatarRoutes } from "./avatar-routes.js"
+import { LISTING_PHOTO_BUCKET, LocalImageStore, MAX_LISTING_PHOTO_BYTES, SupabaseImageStore, type ImageStore } from "../storage/image-store.js"
+import { registerAvatarRoutes, registerListingPhotoRoutes } from "./image-routes.js"
 import { registerResearchRoutes, type DemoCatalogue, type ResearchRoutesOptions } from "./research-routes.js"
 
 const webDist = fileURLToPath(new URL("../../../web/dist", import.meta.url))
@@ -48,7 +48,9 @@ export type ServerOptions = {
   /** For tests: the payment gateway (default: Stripe test mode with test keys, else simulated). */
   readonly paymentGateway?: PaymentGateway
   /** For tests: where profile photos go (default: Supabase Storage with Supabase, else data/avatars). */
-  readonly avatarStore?: AvatarStore
+  readonly avatarStore?: ImageStore
+  /** For tests: where listing photos go (default: Supabase Storage with Supabase, else data/listing-photos). */
+  readonly listingPhotoStore?: ImageStore
   /** For tests: the area data lookup (default: recorded data for the seed, OpenStreetMap for any other address). */
   readonly areaLookup?: ResearchRoutesOptions["areaLookup"]
 }
@@ -74,8 +76,11 @@ export async function buildServer(options: ServerOptions = {}): Promise<FastifyI
   const dealStore = options.dealStore ?? (storeConfig ? new SupabaseDealStore(storeConfig) : new LocalDealStore(LOCAL_DEALS_FILE))
   registerListingRoutes(app, { store: listingStore, resolveActor, backend: auth ? "supabase" : "local", leasedListingIds: () => dealStore.leasedListingIds() })
   // Profile photos: Supabase Storage with Supabase, else a local folder (data/avatars, git-ignored).
-  const avatarStore = options.avatarStore ?? (auth && storeConfig ? new SupabaseAvatarStore(storeConfig) : new LocalAvatarStore())
+  const avatarStore = options.avatarStore ?? (auth && storeConfig ? new SupabaseImageStore(storeConfig) : new LocalImageStore())
   registerAvatarRoutes(app, { store: avatarStore, resolveActor, localAccounts })
+  const listingPhotoStore =
+    options.listingPhotoStore ?? (auth && storeConfig ? new SupabaseImageStore(storeConfig, LISTING_PHOTO_BUCKET, MAX_LISTING_PHOTO_BYTES) : new LocalImageStore("data/listing-photos", "/api/listing-photos"))
+  registerListingPhotoRoutes(app, { store: listingPhotoStore, resolveActor })
   // Deals: offers, tenancies and rent. Payments go through one port: Stripe Checkout in test mode when both test keys
   // are set, otherwise the simulated checkout (same flow, labelled "Simulated payment, no real money").
   const stripe = stripeTestConfig()

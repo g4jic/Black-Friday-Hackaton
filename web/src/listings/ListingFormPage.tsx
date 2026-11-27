@@ -1,6 +1,7 @@
 import { Save } from "lucide-react"
 import { useEffect, useState, type ReactNode } from "react"
 import { useAuth } from "../app/auth"
+import { PhotoPicker } from "./PhotoPicker"
 import { Link, navigate, paths } from "../app/router"
 import { BUSINESS_TYPE_LABELS, type BusinessType } from "../app/settings"
 import { Card, EmptyState } from "../app/Shell"
@@ -30,6 +31,7 @@ export type Form = {
   leaseDraft: string
   description: string
   imageUrl: string
+  photos: string[]
   phone: string
   email: string
   consent: boolean
@@ -55,6 +57,7 @@ export const EMPTY_LISTING_FORM: Form = {
   leaseDraft: "",
   description: "",
   imageUrl: "",
+  photos: [],
   phone: "",
   email: "",
   consent: false,
@@ -90,6 +93,7 @@ export function toInput(f: Form): ListingInput {
     leaseDraft: text(f.leaseDraft),
     description: text(f.description),
     imageUrl: text(f.imageUrl),
+    photos: f.photos,
   }
 }
 
@@ -114,6 +118,7 @@ function fromListing(l: ListingInput, contact: { phone: string | null; email: st
     leaseDraft: l.leaseDraft ?? "",
     description: l.description ?? "",
     imageUrl: l.imageUrl ?? "",
+    photos: [...(l.photos ?? [])],
     phone: contact?.phone ?? "",
     email: contact?.email ?? "",
     consent: true,
@@ -141,6 +146,7 @@ export const FIELD_NAMES: Record<string, string> = {
   leaseDraft: "Lease draft",
   description: "Description",
   imageUrl: "Image link",
+  photos: "Photos",
   contact: "Contact",
   "contact.phone": "Phone",
   "contact.email": "Email",
@@ -217,6 +223,9 @@ export function ListingFormPage({ id }: { id?: string }) {
     >
       <div className="flex flex-col gap-4">
         <ListingTermsFields form={form} set={set} problemFor={problemFor} />
+        <Card title="Photos">
+          <PhotoPicker photos={form.photos} onChange={(photos) => setForm((current) => (current ? { ...current, photos } : current))} problem={problemFor("photos")} />
+        </Card>
         <Card title="Optional" collapsible id="listing-optional">
           <div className="grid gap-3">
             <Field label="Description" problem={problemFor("description")}>
@@ -231,7 +240,6 @@ export function ListingFormPage({ id }: { id?: string }) {
                 className={cx(INPUT, "h-auto py-3")}
               />
             </Field>
-            {field("imageUrl", "Image link", { placeholder: "https://..." })}
           </div>
         </Card>
       </div>

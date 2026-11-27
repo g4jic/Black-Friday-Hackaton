@@ -86,7 +86,7 @@ export function rowToProps(r: ListingRow): SpaceListingProps {
     tenantPaysStructuralRepairs: r.tenant_pays_structural_repairs,
     leaseDraft: r.lease_draft,
     description: r.description,
-    imageUrl: r.image_url,
+    ...photoColumnToProps(r.image_url),
     createdAt: new Date(r.created_at).toISOString(),
     updatedAt: new Date(r.updated_at).toISOString(),
   }
@@ -117,8 +117,26 @@ export function propsToRow(p: SpaceListingProps): Omit<ListingRow, "created_at" 
     tenant_pays_structural_repairs: p.tenantPaysStructuralRepairs,
     lease_draft: p.leaseDraft ?? null,
     description: p.description ?? null,
-    image_url: p.imageUrl ?? null,
+    image_url: photoPropsToColumn(p),
   }
+}
+
+/**
+ * The photos live in the existing image_url column (text, at most 2048 characters, must start with http): the uploaded
+ * photo addresses separated by one space, the cover first. Six Storage addresses fit well inside the limit. A single
+ * address that is not an uploaded photo is an older listing's image link. A photos column would be cleaner; this keeps
+ * the deployed schema unchanged.
+ */
+const UPLOADED_PHOTO = /\/storage\/v1\/object\/public\/listing-photos\//
+
+export function photoPropsToColumn(p: Pick<SpaceListingProps, "imageUrl" | "photos">): string | null {
+  return p.photos && p.photos.length > 0 ? p.photos.join(" ") : (p.imageUrl ?? null)
+}
+
+export function photoColumnToProps(value: string | null): { imageUrl: string | null; photos: string[] } {
+  const parts = (value ?? "").split(/\s+/).filter(Boolean)
+  if (parts.length > 0 && parts.every((part) => UPLOADED_PHOTO.test(part))) return { imageUrl: null, photos: parts }
+  return { imageUrl: value, photos: [] }
 }
 
 export const contactToRow = (c: ListingContact): ContactRow => ({ listing_id: c.listingId, name: c.name, phone: c.phone, email: c.email, consent_to_publish: true })

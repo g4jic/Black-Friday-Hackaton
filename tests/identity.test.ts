@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { afterAll, describe, expect, it } from "vitest"
-import { AvatarError, LocalAvatarStore, MAX_AVATAR_BYTES, parseAvatarDataUrl } from "../src/adapters/auth/avatar-store.js"
+import { ImageError, LocalImageStore, MAX_AVATAR_BYTES, parseImageDataUrl } from "../src/adapters/storage/image-store.js"
 import { LocalAccounts, MAX_DISPLAY_NAME_LENGTH } from "../src/adapters/auth/local-accounts.js"
 import { buildServer } from "../src/adapters/server/server.js"
 import { LocalListingStore } from "../src/adapters/storage/local-listing-store.js"
@@ -17,26 +17,26 @@ afterAll(() => rmSync(tmp, { recursive: true, force: true }))
 
 describe("profile photo checks", () => {
   it("accepts a real JPEG, PNG or WebP", () => {
-    expect(parseAvatarDataUrl(dataUrl("image/png", PNG_HEADER)).contentType).toBe("image/png")
-    expect(parseAvatarDataUrl(dataUrl("image/jpeg", JPEG_HEADER)).contentType).toBe("image/jpeg")
+    expect(parseImageDataUrl(dataUrl("image/png", PNG_HEADER)).contentType).toBe("image/png")
+    expect(parseImageDataUrl(dataUrl("image/jpeg", JPEG_HEADER)).contentType).toBe("image/jpeg")
     const webp = Buffer.concat([Buffer.from("RIFF"), Buffer.from([0, 0, 0, 0]), Buffer.from("WEBPVP8 ")])
-    expect(parseAvatarDataUrl(dataUrl("image/webp", webp)).contentType).toBe("image/webp")
+    expect(parseImageDataUrl(dataUrl("image/webp", webp)).contentType).toBe("image/webp")
   })
 
   it("refuses no photo, another type, a renamed file and a photo over the size limit", () => {
-    expect(() => parseAvatarDataUrl(undefined)).toThrow(AvatarError)
-    expect(() => parseAvatarDataUrl(dataUrl("image/svg+xml", Buffer.from("<svg/>")))).toThrow(/JPEG, PNG or WebP/)
-    expect(() => parseAvatarDataUrl(dataUrl("image/png", JPEG_HEADER))).toThrow(/not the image type/)
+    expect(() => parseImageDataUrl(undefined)).toThrow(ImageError)
+    expect(() => parseImageDataUrl(dataUrl("image/svg+xml", Buffer.from("<svg/>")))).toThrow(/JPEG, PNG or WebP/)
+    expect(() => parseImageDataUrl(dataUrl("image/png", JPEG_HEADER))).toThrow(/not the image type/)
     const huge = Buffer.concat([PNG_HEADER, Buffer.alloc(MAX_AVATAR_BYTES)])
-    expect(() => parseAvatarDataUrl(dataUrl("image/png", huge))).toThrow(/too large/)
+    expect(() => parseImageDataUrl(dataUrl("image/png", huge))).toThrow(/too large/)
   })
 
   it("the local store keeps one photo per account and refuses an unsafe account id", async () => {
-    const store = new LocalAvatarStore(tmp)
-    const url = await store.save("local-abc", parseAvatarDataUrl(dataUrl("image/png", PNG_HEADER)))
+    const store = new LocalImageStore(tmp)
+    const url = await store.save("local-abc", parseImageDataUrl(dataUrl("image/png", PNG_HEADER)))
     expect(url).toMatch(/^\/api\/avatars\/local-abc\?v=\d+$/)
     expect(store.read("local-abc")?.bytes.equals(PNG_HEADER)).toBe(true)
-    await expect(store.save("../etc", parseAvatarDataUrl(dataUrl("image/png", PNG_HEADER)))).rejects.toThrow(AvatarError)
+    await expect(store.save("../etc", parseImageDataUrl(dataUrl("image/png", PNG_HEADER)))).rejects.toThrow(ImageError)
     expect(store.read("../etc")).toBeNull()
   })
 })
@@ -74,7 +74,7 @@ describe("editing the account (local accounts)", () => {
 
 describe("profile photo over HTTP", () => {
   it("a signed-in user uploads a photo, sees it on the account and the server serves it; a guest is refused", async () => {
-    const app = await buildServer({ auth: null, localAccountsFile: null, avatarStore: new LocalAvatarStore(tmp), listingStore: new LocalListingStore({ seed: seedCatalogue(), file: null }) })
+    const app = await buildServer({ auth: null, localAccountsFile: null, avatarStore: new LocalImageStore(tmp), listingStore: new LocalListingStore({ seed: seedCatalogue(), file: null }) })
     const image = dataUrl("image/jpeg", JPEG_HEADER)
     expect((await app.inject({ method: "POST", url: "/api/me/avatar", payload: { image } })).statusCode).toBe(401)
     const up = (await app.inject({ method: "POST", url: "/api/local-auth/sign-up", payload: { email: "ana@example.com", password: "long-enough-1", displayName: "Ana" } })).json() as { token: string }

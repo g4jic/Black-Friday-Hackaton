@@ -3,6 +3,19 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
+## Update (27 Nov 2026, 23:00, Andrej + Claude): listing photos
+- Owners add up to six photos in the listing form and in onboarding's first space (PhotoPicker: several at once,
+  remove, make cover). The browser shrinks each to 1600 px JPEG; POST /api/me/listing-photos checks type, size (1.5 MB)
+  and magic bytes and stores it (Supabase Storage public bucket `listing-photos`, made on first upload, or
+  `data/listing-photos` served by GET /api/listing-photos/:id). Domain rule: at most 6, http(s) or a server path,
+  no duplicates (`LISTING_LIMITS.photosMax`).
+- No schema change: in Supabase the photos live in the existing `image_url` column as space-separated Storage
+  addresses (`photoPropsToColumn` / `photoColumnToProps`); an older single image link stays a link. A `photos`
+  column would be cleaner (needs a migration through the Supabase MCP).
+- Cards show the cover or a plain tile (seed listings have no photos); the listing page has a gallery with arrows,
+  counter and thumbnails. The image store is shared with profile photos (`src/adapters/storage/image-store.ts`).
+- Not yet tested online (needs a signed-in owner on the deploy).
+
 ## Update (27 Nov 2026, 22:30, Andrej + Claude): final pass, every flow works without a key
 - Fresh clone (npm install 15 s, no .env) walked as a judge: sign up, both roles, Fill with example, publish, Find
   spaces, candidate, save, offer, accept, simulated rent payment. All worked.

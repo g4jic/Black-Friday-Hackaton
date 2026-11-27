@@ -10,6 +10,7 @@ import { loadSettings, saveSettings } from "../app/settings"
 import { spaceExtrasDescription, type Storefront } from "../app/space-extras"
 import { EMPTY_LISTING_FORM, Field, FIELD_NAMES, ListingTermsFields, SECTION_LABEL, toInput, type Form as ListingForm } from "../listings/ListingFormPage"
 import { ApiError, listingsApi, type ListingProblem } from "../listings/listings-api"
+import { PhotoPicker } from "../listings/PhotoPicker"
 import { cx } from "../ui"
 import { Select } from "../Select"
 import { Logo } from "../Logo"
@@ -412,14 +413,14 @@ function OwnerStep({ label, onBack, onDone }: { label: string; onBack: () => voi
           title="Add your first space"
           text="You can add more spaces later from My listings."
           onExample={() => {
-            setForm({ ...EXAMPLE_LISTING, phone: form.phone, email: form.email, consent: form.consent })
+            setForm({ ...EXAMPLE_LISTING, photos: form.photos, phone: form.phone, email: form.email, consent: form.consent })
             setStorefront("yes")
             setParking("Public parking in front")
             setProblems([])
             setExample(true)
           }}
         />
-        {example && <ExampleNote text="Example values. Replace them with your own and add your contact." />}
+        {example && <ExampleNote text="Example values. Replace them with your own." />}
         {/* Wide screens: the fields on the left scroll with the page, Contact and Publish stay in view on the right. */}
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
           <div className="flex min-w-0 flex-col gap-6">
@@ -457,6 +458,10 @@ function OwnerStep({ label, onBack, onDone }: { label: string; onBack: () => voi
                 className={cx(INPUT, "h-auto py-3")}
               />
             </Field>
+            <section className="flex flex-col gap-3">
+              <h2 className={SECTION_LABEL}>Photos</h2>
+              <PhotoPicker photos={form.photos} onChange={(photos) => setForm((current) => ({ ...current, photos }))} problem={problemFor("photos")} />
+            </section>
           </div>
           <div className="flex flex-col gap-6 lg:sticky lg:top-6">
             <section className="flex flex-col gap-3">
