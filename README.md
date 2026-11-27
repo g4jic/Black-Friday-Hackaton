@@ -386,7 +386,7 @@ against a fake fetch).
 | Find spaces shows only demo scenarios | Expected without a key. Add `ANTHROPIC_API_KEY` to `.env` and restart for live runs. |
 | A live run answers 401 | The server has `SUITESPOT_ACCESS_CODE` set; enter the code under Settings. |
 | A live run answers 429 | One live run at a time per server; wait for it to finish. |
-| `npm install` warns that install scripts were skipped (npm 11) | Usually nothing to do. If `npm run dev` then fails with an esbuild error, run `npm rebuild esbuild`. |
+| `npm install` warns that install scripts were skipped (npm 11) | Nothing to do: tested on a fresh clone with npm 11.20 and Node 26 (install, tests, build and the keyless demo all work). If `npm run dev` ever fails with an esbuild error, run `npm rebuild esbuild`. |
 | Signing up asks for an email confirmation (Supabase) | Turn off "Confirm email" in Supabase Auth, or use the local accounts (leave SUPABASE_* empty). |
 
 ## Credits

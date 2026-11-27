@@ -4,8 +4,8 @@ Read this at the start of every session. Update it before every push. Newest ent
 No long dashes in this file; use a plain hyphen.
 
 ## HANDOFF (27 Nov 2026, evening, Andrej + Claude): READ THIS FIRST
-Supersedes every handoff below. Blocks A, B and D of the work order are done and merged; block C (deploy, README,
-submission text) is in progress. Submissions close at midnight CET.
+Supersedes every handoff below. Blocks A, B, C and D of the work order are done: merged, deployed, README and
+submission text written (`SUBMISSION.md`). Submissions close at midnight CET. What is left is listed under "Left".
 
 ### Exact state
 - **main** holds everything (merges e5a1a61 wip/agents, 97ddfb5 wip/ui, e742e02 wip/deals). Typecheck clean, 227
@@ -16,7 +16,9 @@ submission text) is in progress. Submissions close at midnight CET.
   audit counts; "For the video" below has the table.
 - **Block B (UI):** sign in required (local accounts in `data/local-accounts.json` when SUPABASE_* are empty, Supabase
   otherwise), How it works page (replaces Assumptions), one Research menu (Find spaces default tab, Evaluate a space),
-  plain texts, "How your research ran" timeline, run animation, dropdowns, login zoom, lens cursor.
+  plain texts, "How your research ran" timeline, run animation, dropdowns. Since the evening: a welcome after sign in
+  (the map widens over the window, zooms into a space, a veil fades into the app; the sign in screen is held while it
+  plays, `web/src/app/welcome.ts`) and a minimal dot cursor (`web/public/cursor-lens*.svg`).
 - **Block D (deals):** offer, accept or decline, lease with rent due dates on both sides, rent payment through one port
   (`src/application/payments/payment-gateway.ts`) with two adapters: Stripe Checkout in test mode when
   `STRIPE_SECRET_KEY=sk_test_...` and `STRIPE_PUBLISHABLE_KEY=pk_test_...` are set (live keys refused), otherwise a
@@ -33,8 +35,16 @@ submission text) is in progress. Submissions close at midnight CET.
   has the value, never in the repo), SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY. Health "live", demo
   Office in Beograd run checked on the deploy (10.1 s, 32 loops, peak 30). Railway says railway.json works until
   2026-12-01; after that its defaults still run npm run build and npm start.
-  STILL TO DO by hand: Supabase Auth Site URL and redirect = the Railway address, "Confirm email" off, and one
-  full deal loop on the deploy (Claude may not make accounts on a production host).
+  Supabase Auth is connected to the Railway address (Andrej). Tested on the deploy with Andrej's account: the three
+  demo scenarios, results, report, timeline, a space page, How it works, Settings, History, Listings, My listings and
+  the full deal loop (offer on listing-ns001, accept as demo landlord, December 2026 paid, simulated). No console errors.
+  Fixed from that test: a visitor without the access code now gets the recorded demo scenarios (before, the jury saw a
+  disabled live form), no "Loading..." flash on reload, demo offer text, "SuiteSpot" in reasons, unknown points match
+  the score range.
+- **Fresh clone (27 Nov evening, Node 26, npm 11.20, no .env):** npm install 21 s (npm 11 warns that install scripts
+  were skipped; nothing breaks), 227/227 tests, typecheck, build, `npm start` keyless and a Shop in Novi Sad demo run
+  with an audit of 0 removed. Ports 3000 and 5173 were taken by another project, so dev mode was not run from the clone.
+  A run with a key from the clone was not made (it costs money); the deploy runs in live mode.
 - **Mozaik Cloud screenshot:** `design/screenshots/mozaik-cloud.png` is the older one (before Location analyst and
   Premises inspector). A new one needs a sign in at app.jigjoy.ai; optional.
 
@@ -45,7 +55,16 @@ submission text) is in progress. Submissions close at midnight CET.
 | Office in Beograd | 10.0 s | 32 | 30 | 2 | 5 | 10 checked, 0 corrected, 0 removed |
 | Shop in Novi Sad | 7.3 s | 29 | 28 | 4 | 10 | 10 checked, 0 corrected, 0 removed |
 
-### Next steps, in order (block C)
+### Left
+- Optional: a new Mozaik Cloud screenshot (sign in at app.jigjoy.ai, run one live scenario, save it as
+  `design/screenshots/mozaik-cloud.png`), the demo video link in the README, and submitting `SUBMISSION.md` in the form.
+- Known wording left on purpose (changing it changes the recorded model input, so it needs `npm run record:demo`,
+  about $0.30): "1 cafes, restaurants and bars" and "but location" in a reason, "1 industrial buildings", and "Exit
+  after 12 months: Needs lease terms" when only the notice period is missing.
+- The simulated checkout keeps open checkouts in memory: a redeploy while someone is on the payment page loses that
+  checkout (press Pay rent again); paid months are stored.
+
+### Done steps of block C (kept for the record)
 1. **C2 README:** new features (sign in, How it works, rent share, noise and land use, bad year / good year, lease or
    buy, Location analyst and Premises inspector rows in the agent table, deals with payment), the metrics table above,
    the keyless jury walkthrough (offer, accept as demo landlord, lease, simulated payment, status on both sides), the
