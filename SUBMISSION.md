@@ -16,7 +16,7 @@ live run at a time, and rent paid through a real Stripe Checkout in a Stripe tes
 4242, fake money.)
 
 Locally, from the README with no key and no database: `npm install`, `npm run dev`. The agents replay three recorded
-real model runs (labelled "Recorded run") and rent is paid through a simulated checkout (no card, no money); everything
+real model runs and rent is paid through a simulated checkout (no card, no money); everything
 else is the same code and works the same.
 
 ## Description
@@ -47,4 +47,4 @@ room is quiet, a code Ranker scores worst case first, the Report writer drafts f
 checks every sentence against the facts it cites (sends it back once, then removes failing sentences; 0 removed in all
 three demo runs). While a run is going, every running agent loop is a dot on the screen, drawn from the runtime's own
 events (the peak shows as many dots as loops: 27, 30 and 28 in the three scenarios); the Timeline tab draws every
-loop as a lane, and each run appears in Mozaik Cloud. Without a key the agents replay recorded real claude-haiku-4-5 runs, labelled "Recorded run".
+loop as a lane, and each run appears in Mozaik Cloud. Without a key the agents replay recorded real claude-haiku-4-5 runs (stated in the README).

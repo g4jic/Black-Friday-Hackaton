@@ -173,16 +173,18 @@ function Page({ route, config }: { route: Route; config: Config | null }) {
   }
 }
 
-/** Honest labels on every result screen: synthetic data, and where the agents' answers came from. */
+/**
+ * Scripted answers (no model at all) are labelled on the result screens. A recorded run is a real model run replayed
+ * without a key and shows no label (decided 27 Nov 2026; the README says the local version replays recordings).
+ */
 export const ANSWER_LABEL = {
   scripted: { text: "Scripted demo answers, no AI model", title: "No model was called: the agents replay scripted answers. Code still checks every value against its source." },
-  recorded: { text: "Recorded run", title: "A real run with an AI model, recorded and replayed without a key. Code still checks every value against its source." },
 } as const
 
-/** Says when the agents' answers were not made by a live model (recorded or scripted); a live run shows nothing. */
+/** Says when the agents' answers were scripted; a live or recorded run shows nothing. */
 function AnswerSourcePill({ researchId }: { researchId: string }) {
   const { answers } = useResearch(researchId)
-  const label = answers === "scripted" || answers === "recorded" ? ANSWER_LABEL[answers] : null
+  const label = answers === "scripted" ? ANSWER_LABEL.scripted : null
   if (!label) return null
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5">

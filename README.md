@@ -21,7 +21,7 @@ ship; put your own keys in `.env` and the local version does everything the onli
 |---|---|---|
 | Setup | `npm install`, `npm run dev`: no key, no database, about two minutes | None: open the link and sign up |
 | Accounts | Kept on your computer (`data/local-accounts.json`) | Supabase Auth |
-| Agents | Three recorded real runs of claude-haiku-4-5, replayed with their timing and labelled "Recorded run" | The live model (claude-haiku-4-5) on our key, with your own questionnaire or an outside listing |
+| Agents | Three recorded real runs of claude-haiku-4-5, replayed with their timing (the screen does not label them; this README does) | The live model (claude-haiku-4-5) on our key, with your own questionnaire or an outside listing |
 | Rent payment | A simulated checkout (no card, no money) | A real Stripe Checkout in a Stripe test sandbox (test card `4242 4242 4242 4242`), fake money |
 | The same in both | The Mozaik runtime, every rule, calculation, hard flag, ranking, verdict and audit; onboarding with roles; listings, offers, leases and the rent schedule | The same |
 
@@ -121,8 +121,8 @@ What you see:
   checked".
 - **Timeline tab** ("How your research ran"): one lane per agent loop over time, calculator calls as dots, the loop
   that a hard flag cut, and the totals (duration, loops, peak at once, calculator calls, ruled out, loops stopped).
-- Every result screen says **"Recorded run"**: without a key the agents replay a recorded real run of
-  claude-haiku-4-5 (see [What is real, recorded and scripted](#what-is-real-recorded-and-scripted)).
+- Without a key the agents replay a recorded real run of claude-haiku-4-5 (see
+  [What is real, recorded and scripted](#what-is-real-recorded-and-scripted)); the screen does not label it.
 - **How it works** (avatar menu): every weight, threshold and assumption, served from the code itself.
 
 ![The run at its peak: 27 agent loops as dots on the eight candidates, one candidate already ruled out by a deal breaker](design/screenshots/run-mid.png)
@@ -366,7 +366,7 @@ quality check").
 | Mozaik runtime, concurrency, interception, shared state | Real, in every mode |
 | Domain rules, calculations, hard flags, ranking, verdict, audit | Real code, in every mode |
 | Model answers with a key | Real: claude-haiku-4-5, live |
-| Model answers without a key, Find spaces | **Recorded**: three real claude-haiku-4-5 runs (`fixtures/recordings/*.json`, recorded 27 Nov 2026: 23, 27 and 21 model calls) replayed with their latencies; code still checks every value. A request that is not in the recording fails as a provider error, it is never invented. Labelled "Recorded run" |
+| Model answers without a key, Find spaces | **Recorded**: three real claude-haiku-4-5 runs (`fixtures/recordings/*.json`, recorded 27 Nov 2026: 23, 27 and 21 model calls) replayed with their latencies; code still checks every value. A request that is not in the recording fails as a provider error, it is never invented. Not labelled on screen (stated here) |
 | Model answers without a key, "Evaluate for my business" on a demo listing | **Scripted**: answers built from the seed's own clause sentences, still checked by code. Labelled "Scripted demo answers, no AI model" |
 | Listings, landlords, contacts, businesses | **Synthetic**: 100 generated listings (50 Novi Sad, 50 Beograd) from a frozen seed (stated in this README and on the How it works page). Prices per m2 are a synthetic assumption roughly aligned with public 2025-2026 ranges (Kurir Biznis, Biznis.rs): medians Novi Sad 10, Beograd 16.2 EUR/m2 |
 | Accounts, saved spaces, view counts | Real: Supabase Auth with Supabase, local accounts on this computer without it |
