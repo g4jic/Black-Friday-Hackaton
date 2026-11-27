@@ -16,6 +16,8 @@ import {
   leaseTextOf,
   listingFromSpaceListing,
   matchListings,
+  districtKey,
+  parsePreferredDistricts,
   validateSource,
 } from "../src/domain/index.js"
 
@@ -60,6 +62,33 @@ describe("SuiteSpot listings as candidates (built by code from the form)", () =>
     expect(matchListings(listings, demoProfile).map((l) => l.id)).toEqual(matched.map((l) => l.id)) // deterministic
     const nowhere = BusinessProfile.create({ ...demoProfile.input, city: "Kragujevac" })
     expect(matchListings(listings, nowhere)).toEqual([])
+  })
+
+  it("preferred districts come first but never filter: the hard filters are the same, other districts still follow", () => {
+    // a wide questionnaire, so more spaces match than the limit and the preference decides who gets in
+    const wide = BusinessProfile.create({ ...demoProfile.input, areaMinM2: 20, areaMaxM2: 400, monthlyBudget: 5000 })
+    const all = listings.filter((l) => l.props.published && l.props.city === wide.input.city && l.props.permittedUses.includes(wide.input.businessType))
+    const plain = matchListings(listings, wide)
+    expect(plain).toHaveLength(MAX_LISTINGS)
+    // a district that the plain order leaves out entirely, so the preference has to bring it in
+    const district = all.map((l) => l.props.district).find((d) => !plain.some((l) => l.props.district === d))!
+    expect(district).toBeTruthy()
+    const matched = matchListings(listings, wide, [`  ${district.toUpperCase()} `])
+    const inDistrict = matched.filter((l) => l.props.district === district).length
+    expect(inDistrict).toBeGreaterThan(0)
+    // the district's spaces lead, the others still follow
+    expect(matched.slice(0, inDistrict).every((l) => l.props.district === district)).toBe(true)
+    expect(matched.slice(inDistrict).every((l) => l.props.district !== district)).toBe(true)
+    // without a preference the order is the plain one; an unknown district changes nothing
+    expect(matchListings(listings, wide, ["Nowhere"]).map((l) => l.id)).toEqual(matchListings(listings, wide).map((l) => l.id))
+  })
+
+  it("preferred districts are parsed from text or a list: trimmed, accents ignored, duplicates and empties dropped", () => {
+    expect(parsePreferredDistricts("Liman, Grbavica; ,liman\nCentar")).toEqual(["Liman", "Grbavica", "Centar"])
+    expect(parsePreferredDistricts(["Savski venac", 7, "  "])).toEqual(["Savski venac"])
+    expect(parsePreferredDistricts(undefined)).toEqual([])
+    expect(districtKey("  Šumice  Đeram ")).toBe("sumice djeram")
+    expect(parsePreferredDistricts(Array.from({ length: 30 }, (_, i) => `D${i}`))).toHaveLength(10)
   })
 
   it("the scripted Lease reader answers pass the same quote checks as a real model, and the rules find the bad terms", () => {

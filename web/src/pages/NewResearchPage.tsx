@@ -152,6 +152,8 @@ export function NewResearchPage({ config }: { config: Config | null }) {
     if (demoOnly) return void start(request.source === "search" ? { source: "demo", scenario } : request)
     const checked = profileFromForm(form)
     if ("error" in checked) return setError(checked.error)
+    // Find spaces: the saved preferred districts lead the search (a preference, not a filter; see matchListings).
+    if (request.source === "search") return void start({ mode: "live", ...request, profile: checked.profile, preferredDistricts: settings.districts })
     void start({ mode: "live", ...request, profile: checked.profile })
   }
 

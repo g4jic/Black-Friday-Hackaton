@@ -24,6 +24,7 @@ import {
   leaseTextOf,
   sourced,
   matchListings,
+  parsePreferredDistricts,
   type BusinessProfileInput,
   type CatalogueCandidate,
   SpaceListing,
@@ -93,7 +94,7 @@ export type ResearchRoutesOptions = {
 }
 
 type OutsideBody = { listing?: unknown; leaseDraft?: unknown; url?: unknown; text?: unknown }
-type Body = { scenario?: unknown; mode?: ResearchMode; source?: "demo" | "pasted" | "search" | "listing" | "outside"; listingId?: unknown; outside?: OutsideBody; listings?: { text?: unknown; lease?: unknown; url?: unknown }[]; profile?: Partial<BusinessProfileInput> }
+type Body = { preferredDistricts?: unknown; scenario?: unknown; mode?: ResearchMode; source?: "demo" | "pasted" | "search" | "listing" | "outside"; listingId?: unknown; outside?: OutsideBody; listings?: { text?: unknown; lease?: unknown; url?: unknown }[]; profile?: Partial<BusinessProfileInput> }
 
 
 /** The questionnaire of a live run, validated by the domain. Fields the form does not ask keep the demo values. */
@@ -224,7 +225,7 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
       } else if (source === "search") {
         if (mode !== "live") throw new HttpError(400, "Searching with your own questionnaire needs live mode. The demo searches with the demo questionnaire.")
         if (!options.listingStore) throw new HttpError(503, "The listing catalogue is not available on this server.")
-        const matched = matchListings(await options.listingStore.listPublished(), profile)
+        const matched = matchListings(await options.listingStore.listPublished(), profile, parsePreferredDistricts(body.preferredDistricts))
         if (matched.length === 0) throw new HttpError(400, NO_MATCH)
         ;({ catalogue, leases } = fromCatalogue(matched))
       } else if (source === "listing") {

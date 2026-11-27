@@ -69,9 +69,30 @@ export function BrowseListingsPage() {
   )
 }
 
+/**
+ * The photo the landlord linked in the listing form (the "Image link" field), or nothing: no stock photo stands in
+ * for a space nobody photographed. A link that does not load hides itself. No referrer goes to the image host.
+ */
+function ListingPhoto({ url, title, className }: { url: string | null; title: string; className?: string }) {
+  const [failed, setFailed] = useState(false)
+  if (!url || failed) return null
+  return (
+    <img
+      src={url}
+      alt={`Photo of ${title}`}
+      loading="lazy"
+      decoding="async"
+      referrerPolicy="no-referrer"
+      onError={() => setFailed(true)}
+      className={cx("aspect-[16/9] w-full rounded-[18px] bg-white/60 object-cover", className)}
+    />
+  )
+}
+
 function ListingCard({ listing: l }: { listing: PublicListing }) {
   return (
     <Link to={paths.listing(l.id)} className="flex h-full flex-col gap-3 rounded-[24px] glass p-5 hover:bg-white/90">
+      <ListingPhoto url={l.imageUrl} title={l.title} />
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-base leading-6 font-semibold text-ink">{l.title}</h3>
         {l.leased && <LeasedPill />}
@@ -141,6 +162,7 @@ export function ListingDetailPage({ id }: { id: string }) {
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
       <div className="flex flex-col gap-4">
         <Card>
+          <ListingPhoto url={l.imageUrl} title={l.title} className="mb-4" />
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 text-[13px] text-ink-2">
               <MapPin size={14} aria-hidden /> {l.district}, {l.street}, {l.city}

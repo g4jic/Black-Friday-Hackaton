@@ -66,22 +66,41 @@ export function leaseTextOf(space: SpaceListing): LeaseText | null {
   return draft && draft.trim() ? createLeaseText(space.id, draft, space.props.isDemo) : null
 }
 
+/** At most this many preferred districts are taken from a request (each at most 40 characters). */
+export const MAX_PREFERRED_DISTRICTS = 10
+
+/** "Savski venac", "savski  Venac " and "Šavski" style spellings compare the same: lower case, no accents, single spaces. */
+export const districtKey = (name: string): string =>
+  name.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/gi, "dj").toLowerCase().replace(/\s+/g, " ").trim()
+
+/** "Liman, Grbavica; Centar" as a clean list (empty parts dropped, duplicates removed, at most MAX_PREFERRED_DISTRICTS). */
+export function parsePreferredDistricts(value: unknown): string[] {
+  const parts: unknown[] = Array.isArray(value) ? value : typeof value === "string" ? value.split(/[,;\n]/) : []
+  const names = parts.filter((p): p is string => typeof p === "string").map((p) => p.trim().slice(0, 40)).filter(Boolean)
+  const seen = new Set<string>()
+  return names.filter((n) => !seen.has(districtKey(n)) && seen.add(districtKey(n))).slice(0, MAX_PREFERRED_DISTRICTS)
+}
+
 /**
- * "Find spaces": the published listings that fit the questionnaire. Same city, area inside the range, the use the
- * business needs, and rent plus monthly costs within the budget plus the budget tolerance (the same tolerance as the
- * budget hard flag). At most MAX_LISTINGS, closest to the budget first, then by id (deterministic).
+ * "Find spaces": the published listings that fit the questionnaire. Hard filters: same city, area inside the range,
+ * the use the business needs, and rent plus monthly costs within the budget plus the budget tolerance (the same
+ * tolerance as the budget hard flag). The preferred districts are a preference, not a filter: listings in one of them
+ * come first (so they are not cut by the MAX_LISTINGS limit), the others still follow. Then closest to the budget,
+ * then by id (deterministic). The must haves are not on the listing form, so the agents judge them from the texts.
  */
-export function matchListings(listings: readonly SpaceListing[], profile: BusinessProfile): SpaceListing[] {
+export function matchListings(listings: readonly SpaceListing[], profile: BusinessProfile, preferredDistricts: readonly string[] = []): SpaceListing[] {
   const q = profile.input
   const limit = q.monthlyBudget * (1 + BUDGET_TOLERANCE)
   const monthly = (l: SpaceListing) => l.props.rentMonthly + l.props.serviceChargeMonthly
+  const preferred = new Set(preferredDistricts.map(districtKey).filter(Boolean))
+  const outside = (l: SpaceListing) => (preferred.size === 0 || preferred.has(districtKey(l.props.district)) ? 0 : 1)
   return listings
     .filter((l) => l.props.published)
     .filter((l) => l.props.city.toLowerCase() === q.city.trim().toLowerCase())
     .filter((l) => l.props.areaM2 >= q.areaMinM2 && l.props.areaM2 <= q.areaMaxM2)
     .filter((l) => l.props.permittedUses.includes(q.businessType))
     .filter((l) => monthly(l) <= limit)
-    .sort((a, b) => Math.abs(monthly(a) - q.monthlyBudget) - Math.abs(monthly(b) - q.monthlyBudget) || a.id.localeCompare(b.id))
+    .sort((a, b) => outside(a) - outside(b) || Math.abs(monthly(a) - q.monthlyBudget) - Math.abs(monthly(b) - q.monthlyBudget) || a.id.localeCompare(b.id))
     .slice(0, MAX_LISTINGS)
 }
 
