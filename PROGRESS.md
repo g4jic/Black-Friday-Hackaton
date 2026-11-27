@@ -3,7 +3,54 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
-## HANDOFF (27 Nov 2026, branch wip/agents, Aleksa -> Andrej): READ THIS FIRST (phase 2 done, see below)
+## HANDOFF (27 Nov 2026, ~13:00, Aleksa -> Andrej): READ THIS FIRST
+Supersedes the "main is untouched (2db1917)" line in the handoff below; the phase details below are still valid.
+
+### Branches
+- **main = 45d150f.** New logo in the sidebar and as the favicon, plus the sign in concept (docs only). Typecheck
+  clean, 180 of 180 tests pass, keyless Office in Beograd run checked in the browser with no console errors.
+- **wip/agents = this commit**, on top of the merge of main (1309c24). Phases 1 (Location analyst) and 2 (Premises
+  inspector) done and wired. Typecheck clean; 197 of 200 tests pass; only `tests/recorded-demo.test.ts` (3 tests)
+  fails until the demo runs are re-recorded (phase 4).
+- **design/logo = 45d150f** (same as main): logo files in `design/brand/`, sign in concept in `design/login/`.
+
+### Run without a key (PowerShell)
+`.env` may hold ANTHROPIC_API_KEY, and then plain `npm run dev` runs LIVE (costs money). Keyless:
+`$env:ANTHROPIC_API_KEY=' '; npm run dev` (a blank value counts as set, so dotenv does not load the key).
+
+### Next steps, in order
+1. **Phase 3 (about 45-60 min):** rent to revenue rule in the Ranker (code), the threshold as a labelled ASSUMPTION
+   on the Assumptions screen, no revenue = MissingData. In the same phase reword the misleading Location text: "the
+   address was not found in OpenStreetMap" (`web/src/results/CandidatePage.tsx` and `COMPONENT_MISSING` in
+   `web/src/results/results-model.ts`) also shows when only the recording is missing.
+2. **Phase 4:** `npm run record:demo` (about $0.30, needs ANTHROPIC_API_KEY in `.env`); the audit must have 0
+   removed; check that Office in Beograd (Voždovac) and Shop in Novi Sad still cut Finance mid-run (more than 1 s);
+   if the mid-run cut disappears, tell Aleksa before committing; new "For the video" table; Mozaik Cloud screenshot;
+   README. Merge wip/agents into main only if EVERYTHING passes.
+3. **Feature freeze 18:00.** If phases 3 and 4 are not done by about 17:00, main stays as it is and the time goes to
+   the video, the README and a clean clone check.
+
+### Decisions to explain to the jury
+- `pointsToCheck` on `CandidateScore`: premises concerns are not scored twice (they are in `checks.notCountedTwice`),
+  but they block a Good verdict (`src/domain/verdict.ts` needs `pointsToCheck === 0`).
+- Weights: cost 35, area 15, lease 15, location 10, premises 10, checks 15 (sum 100, tested).
+
+### Sign in page (optional, a new feature: only if there is time before 18:00)
+Concept in `design/login/` and DESIGN.md 7.5.
+- Left: white glass card, logo + "SuiteSpot" top left, "Welcome back", email, password, black "Sign in", "Continue as
+  guest", "Don't have an account? Sign up", footer "© 2026 SuiteSpot · Not financial or legal advice". No "Remember
+  me" and no "Forgot password" until we check that our Supabase sign in supports them.
+- Right: animated map in the DESIGN.md colours that slides slowly; the magnifying glass from the logo stops over the
+  coral dots (listings), the building from the logo pops up with a pill naming the listing; pills "Demo data" and
+  "100 synthetic listings".
+- Build suggestion: SVG + CSS/JS animation, `prefers-reduced-motion` = a static image. The existing auth routes and
+  logic do not change.
+
+### Video
+`design/brand/suitespot-logo-reveal.mp4` is the intro (7 s, 1920x1080, no sound, as delivered by Aleksa). The best
+scenario for a mid-run cut is still Office in Beograd (see "For the video" below).
+
+## HANDOFF (27 Nov 2026, branch wip/agents, Aleksa -> Andrej): phase 1 and 2 details
 Aleksa ran out of limit mid-phase. **main is untouched** (last good: 2db1917, all tests pass there, keyless demo works).
 Everything below is on the branch `wip/agents`, committed even though tests do not all pass. Do not merge it into
 main until the steps below are done. Feature freeze 18:00, submissions close at midnight.
