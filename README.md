@@ -196,7 +196,7 @@ same time.
 
 | Participant | AI or code | Wakes on | Does | Publishes |
 |---|---|---|---|---|
-| Catalogue match and listing form check | code | the user starts Find spaces or an evaluation | Picks the listings that fit the questionnaire (city, area, business type, budget + 10%) and adds each as a candidate, every value sourced to a listing form field; checks permitted use on every candidate, and applies the lease rules to the form terms when there is no lease draft | `catalogue.matched`, `candidate.found` (one per candidate), `candidate.rejected` on a deal breaker |
+| Catalogue match and listing form check | code | the user starts Find spaces or an evaluation | Picks the listings that fit the questionnaire (city, area, business type, budget + 10%; listings in the preferred districts first, the others still follow) and adds each as a candidate, every value sourced to a listing form field; checks permitted use on every candidate, and applies the lease rules to the form terms when there is no lease draft | `catalogue.matched`, `candidate.found` (one per candidate), `candidate.rejected` on a deal breaker |
 | **Finance analyst** | **AI** (one loop per candidate) | `candidate.found` | Calls the `calculate` tool (code) for monthly cost, initial costs, cost per m2; waits in state for the lease terms; then cost over the term, exit cost, share of revenue, break-even, payback; explains in at most 120 words using only returned numbers | `finance.explained`, `candidate.rejected` (budget hard flag, decided by code) |
 | **Lease reader** | **AI** (one loop per lease draft) | `candidate.found` with a draft | Reads the draft into clauses, each with an exact quote; code checks every quote against the draft and decides hard flags and concerns | `lease.read`, `candidate.rejected` |
 | **Location analyst** | **AI** (one loop per candidate) | `candidate.found` | Calls `area_data` (code counts places mapped in OpenStreetMap within 300 m: same business, transport, schools, offices, parking, and the land use around the address); explains them for this business using only returned numbers; code decides the location score and whether noisy work next to housing is a point to check | `location.explained` |
@@ -395,12 +395,12 @@ npm test
 ```powershell
 npm run typecheck
 ```
-270 tests in 36 files, no key and no network needed (`tests/setup.ts` turns Mozaik Cloud off and blocks any request
+278 tests in 37 files, no key and no network needed (`tests/setup.ts` turns Mozaik Cloud off and blocks any request
 to another host): every domain rule and invariant (with the violation it rejects), the schema
 rules for every structured output, cancellation mid-run, a failing agent that does not stop the others, the server
 and its cost guards, the three recorded scenarios replayed end to end to an audited report, the run animation
 replayed against the real bus events of those recordings (every dot is a real loop), the onboarding and role rules,
-the business profile form against the domain, the frozen seed, and the full deal loop over HTTP (offer, accept, lease,
+the business profile form against the domain, Find spaces with preferred districts (a preference that never filters), editing the account (name, email, a profile photo checked by type, size and magic bytes), the frozen seed, and the full deal loop over HTTP (offer, accept, lease,
 simulated payment, status on both sides, leased spaces, someone else's offer or rent refused; the Stripe test gateway
 against a fake fetch, test keys only).
 

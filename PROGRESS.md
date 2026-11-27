@@ -3,6 +3,22 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
+## Update (27 Nov 2026, 21:00, Andrej + Claude): account identity, phone and browser pass, preferred districts
+- Settings, Account: edit the name and the email (Supabase sends a confirmation link for a new email; until then the
+  old one signs in), upload or remove a profile photo. The browser crops it to a 256 px square JPEG; the server checks
+  type, size (512 KB) and magic bytes, then stores it in Supabase Storage (public bucket `avatars`, created by the
+  server on first upload with the service role key) or `data/avatars` locally. The photo shows in the rail and menu.
+- Phone (375 px) and other browsers: 16 px form fields (no iOS zoom), the bottom bar fits every role and the iPhone
+  home indicator, the Timeline scrolls inside its card, source pills open on tap (they had only a hover title),
+  run counters in a 2x2 grid, no `Array.prototype.at` (Safari before 15.4). Every page checked for sideways scroll.
+- Animations: the background gradient is a fixed layer (no repaint per scroll frame, right on iOS), cards skip the
+  backdrop blur on touch screens, the orbit ring and busy pulse run on the compositor, hover lifts only with a mouse.
+- Find spaces: preferred districts from the profile go first (a preference, not a filter). Must haves stay in the
+  description for the agents (the listing form has no such fields). Results say the verdict orders before the score.
+- Listing photos: the form already had an "Image link"; it is now shown on the card and the page. The 100 seed
+  listings stay frozen without photos (open decision with Aleksa).
+- 278 tests in 37 files. Deployed to Railway.
+
 ## Update (27 Nov 2026, 20:30, Andrej + Claude): README and submission text for the two ways to try it
 - README: "Two ways to try it" table under the links (local from the README with no key: recorded runs, simulated
   checkout; online: live model, Supabase, Stripe test sandbox), Stripe sandbox keys (`rkcs_test_`) and `stripe sandbox
