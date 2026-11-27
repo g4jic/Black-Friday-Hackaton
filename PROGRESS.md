@@ -3,7 +3,37 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
-## Onboarding (27 Nov 2026, night, Aleksa + Claude, branch wip/onboarding): IN PROGRESS
+## HANDOFF (27 Nov 2026, evening, Aleksa + Claude): onboarding with roles, branch wip/onboarding
+Phases A, B and C are done on `wip/onboarding` (pushed). main is not changed yet: merge only with typecheck and every
+test green (262 tests in 34 files at the end of phase C).
+
+### Supabase role backfill (done 27 Nov, `scripts/backfill-roles.ts`)
+Accounts made before the onboarding got a role in `user_metadata` so they skip the role choice: 102 accounts written,
+owner 100 (the 100 synthetic demo landlords, each with a listing), both 2 (Aleksa's and Andrej's accounts, named with
+`--both`), 0 failures; a second dry run shows 102 with a role. Accounts without a role still go to the role choice
+(tested), so an account made between the backfill and the deploy works.
+
+### Phase C (interface by role)
+- `web/src/app/roles.ts` (pure, `tests/roles.test.ts`): `navKeysFor(role)` picks the sidebar items from `NAV_ITEMS`
+  in `Shell.tsx` (one Shell). Owner: Home, My listings, Add a space, Offers. Seeker: Home, Research, Listings, My
+  spaces, History. Both: Home plus the seeker items plus My listings and Offers (Add a space is the button on My
+  listings, so the rail stays short). Listings stays with the seeker (browsing is where "Evaluate for my business"
+  starts).
+- `pageBlockedFor(role, route)`: a page of the other role (typed or old link) goes Home with a notice
+  (`/?notice=seeker|owner`, "Open Settings" link, dismiss). Home, a listing page, How it works, Settings and payments
+  are open to all.
+- Owner Home (`web/src/pages/OwnerHome.tsx`, like OwnerHome.dc.html): "Your spaces", tiles Published spaces, Views
+  (all time: SuiteSpot only counts total views, so not "this week"), Open offers (pending), and the My listings table
+  (space, rent, views, Published). Both: the seeker Home and "Your spaces" under it.
+- New route `/offers` (Offers received and Leased spaces, moved from My listings). Header button: New research for a
+  seeker or both, Add a space for an owner. The avatar menu keeps "Also ...", How it works, Settings, Sign out.
+- README Quick start has the onboarding step; the landlord side of the deal walkthrough now says Offers.
+
+### Redeploy after merge (Andrej)
+`git pull` on main in his folder, then `npx @railway/cli up --ci`. No new Railway variables and no Supabase migration
+(the role lives in user_metadata).
+
+## Onboarding details (27 Nov 2026, Aleksa + Claude, branch wip/onboarding)
 - **Phase A done (role choice):** after sign up, or a sign in while the onboarding is not finished, the welcome veil
   fades into `/onboarding` (no sidebar) instead of the app; the reduced-motion / narrow screen path goes there too.
   Two cards, "List my space" (owner) and "Find a space" (seeker), plus "I do both" (both). A returning user who
@@ -38,7 +68,7 @@ No long dashes in this file; use a plain hyphen.
   - Avatar menu like OwnerHome.dc.html: avatar, name, email, role pill, "Also find a space (add Space seeker)" or
     "Also list a space (add Space owner)" (opens that form with `?add=1`), "Settings · role and profile". Settings
     shows the role and the same business profile fields (hidden for an owner only).
-- Next: phase C (menu by role).
+- Phase C: see the HANDOFF above.
 
 ## HANDOFF (27 Nov 2026, late evening, Andrej + Claude): READ THIS FIRST
 Changes since the handoff below (commit 39f5f9c, deployed and checked on Railway):

@@ -77,10 +77,12 @@ Wait for the line `Local: http://localhost:5173/`, then open **http://localhost:
 Then:
 1. **Sign up** with any email and password. Without Supabase the account is kept on this computer only
    (`data/local-accounts.json`, password stored as a scrypt hash); the page says so.
-2. Click **Research** in the top menu; the **Find spaces** tab is open.
-3. Under "Demo scenario" pick one of the three: **Cafe in Novi Sad**, **Office in Beograd** or **Shop in Novi Sad**.
+2. **Onboarding:** choose **Find a space** (or "I do both"); the role decides what the menu shows. On the business
+   profile form press **Skip for now** (or "Fill with example", then save) and you are in the app.
+3. Click **Research** in the side menu; the **Find spaces** tab is open.
+4. Under "Demo scenario" pick one of the three: **Cafe in Novi Sad**, **Office in Beograd** or **Shop in Novi Sad**.
    The questionnaire on the left is locked to that scenario.
-4. Click **Search and evaluate**.
+5. Click **Search and evaluate**.
 
 What you see:
 - **The run** (about 7 to 13 seconds): the agents travel on a path around the candidate spaces. Counters show the
@@ -109,8 +111,8 @@ What you see:
 3. Under **My spaces** the lease shows every month as upcoming, due, overdue or paid. Click **Pay rent (simulated)**: the
    checkout page is labelled **"Simulated payment, no real money"**; confirm it and the month turns **Paid
    (simulated)**, with the payment reference.
-4. A landlord sees the same lease and the same paid month under **My listings** (sign in with a second account,
-   publish a listing, and make the offer from the first one to see both sides).
+4. A landlord sees the same lease and the same paid month under **Offers** (sign in with a second account that chose
+   "List my space", publish a listing, and make the offer from the first one to see both sides).
 
 With `STRIPE_SECRET_KEY=sk_test_...` and `STRIPE_PUBLISHABLE_KEY=pk_test_...` in `.env`, the same button opens a
 **Stripe Checkout in test mode** instead (test card `4242 4242 4242 4242`); live keys are refused. Both go through one

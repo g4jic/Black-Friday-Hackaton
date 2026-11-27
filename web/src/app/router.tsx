@@ -19,6 +19,7 @@ export type Route =
   | { name: "editListing"; listingId: string }
   | { name: "myListings" }
   | { name: "mySpaces" }
+  | { name: "offers" }
   | { name: "login" }
   | { name: "signup" }
   | { name: "onboarding" }
@@ -36,6 +37,7 @@ const STATIC_ROUTES: Record<string, Route> = {
   "/listings/new": { name: "newListing" },
   "/my-listings": { name: "myListings" },
   "/my-spaces": { name: "mySpaces" },
+  "/offers": { name: "offers" },
   "/login": { name: "login" },
   "/signup": { name: "signup" },
   "/onboarding": { name: "onboarding" },
@@ -75,6 +77,7 @@ export const paths = {
   editListing: (listingId: string) => `/listings/${listingId}/edit`,
   myListings: () => "/my-listings",
   mySpaces: () => "/my-spaces",
+  offers: () => "/offers",
   findSpaces: () => "/research/new?mode=find",
   evaluateSpace: () => "/research/new?mode=evaluate",
   login: () => "/login",

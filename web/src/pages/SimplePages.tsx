@@ -1,10 +1,53 @@
-import { ArrowRight, FileSearch, Search } from "lucide-react"
-import { Link, paths } from "../app/router"
+import { ArrowRight, FileSearch, Info, Search, X } from "lucide-react"
+import { useAuth } from "../app/auth"
+import { BLOCKED_NOTICE } from "../app/roles"
+import { Link, paths, setSearchParam, useLocation } from "../app/router"
+import { OwnerOverview } from "./OwnerHome"
 import { EmptyState } from "../app/Shell"
 import { RunRow, useHistory } from "./HistoryPages"
 
-/** Home: find spaces, evaluate an outside listing, or open a past run. */
+/**
+ * Home, shaped by the role: a seeker finds or evaluates spaces and opens past runs; an owner sees their spaces, views
+ * and offers; "both" sees both. A page of the other role sends the user here with a notice (?notice=seeker|owner).
+ */
 export function DashboardPage() {
+  const role = useAuth().landlord?.role ?? null
+  const { search } = useLocation()
+  const notice = search.get("notice")
+  const noticeText = notice === "seeker" || notice === "owner" ? BLOCKED_NOTICE[notice] : null
+  return (
+    <div className="flex flex-col gap-4">
+      {noticeText && (
+        <div role="status" className="glass-strong flex flex-wrap items-center gap-3 rounded-[20px] px-5 py-3.5 text-sm text-ink">
+          <Info size={18} className="shrink-0" aria-hidden />
+          <span className="min-w-0 flex-1">{noticeText}</span>
+          <Link to={paths.settings()} className="font-semibold underline underline-offset-4">
+            Open Settings
+          </Link>
+          <button type="button" onClick={() => setSearchParam("notice", null)} aria-label="Dismiss" className="rounded-full p-1.5 hover:bg-white">
+            <X size={16} aria-hidden />
+          </button>
+        </div>
+      )}
+      {role === "owner" ? (
+        <OwnerOverview showIntro />
+      ) : (
+        <>
+          <SeekerHome />
+          {role === "both" && (
+            <section className="mt-2 flex flex-col gap-3">
+              <h2 className="text-xl leading-7 font-semibold tracking-[-0.015em] text-ink">Your spaces</h2>
+              <OwnerOverview showIntro />
+            </section>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+/** The seeker half of Home: find spaces, evaluate an outside listing, or open a past run. */
+function SeekerHome() {
   const recent = useHistory().slice(0, 3)
   return (
     <div className="flex flex-col gap-4">

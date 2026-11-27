@@ -1,20 +1,25 @@
-import { Bookmark, Building2, CircleHelp, History, House, Info, LayoutList, LogOut, Plus, Search, Settings as SettingsIcon, type LucideIcon } from "lucide-react"
+import { Bookmark, Building2, CircleHelp, History, House, Info, LayoutList, LogOut, MessageSquare, Plus, Search, Settings as SettingsIcon, type LucideIcon } from "lucide-react"
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { cx } from "../ui"
 import { logOut, updateOnboarding, useAuth } from "./auth"
 import { onboardingPath } from "./onboarding-gate"
-import { listsSpaces, ROLE_LABELS, seeksSpaces } from "./roles"
+import { navKeysFor, ROLE_LABELS, seeksSpaces, type NavKey } from "./roles"
 import { Link, navigate, paths, useLocation, type Route } from "./router"
 
 /** label: under the icon (the rail is narrow); name: the full name for the tooltip and screen readers. */
 type NavItem = { label: string; name: string; to: string; icon: LucideIcon; isActive: (route: Route) => boolean }
 
-const NAV_ITEMS: NavItem[] = [
-  { label: "Home", name: "Home", to: paths.dashboard(), icon: House, isActive: (r) => r.name === "dashboard" },
-  { label: "Research", name: "Research: find spaces or evaluate one", to: paths.findSpaces(), icon: Search, isActive: (r) => r.name === "newResearch" },
-  { label: "Listings", name: "Listings", to: paths.listings(), icon: Building2, isActive: (r) => r.name === "listings" || r.name === "listing" },
-  { label: "History", name: "History", to: paths.history(), icon: History, isActive: (r) => r.name === "history" || r.name === "run" || r.name === "results" || r.name === "candidate" },
-]
+/** Every sidebar item; navKeysFor (roles.ts) picks and orders them for the user's role. */
+const NAV_ITEMS: Record<NavKey, NavItem> = {
+  home: { label: "Home", name: "Home", to: paths.dashboard(), icon: House, isActive: (r) => r.name === "dashboard" },
+  research: { label: "Research", name: "Research: find spaces or evaluate one", to: paths.findSpaces(), icon: Search, isActive: (r) => r.name === "newResearch" },
+  listings: { label: "Listings", name: "Listings", to: paths.listings(), icon: Building2, isActive: (r) => r.name === "listings" || r.name === "listing" },
+  mySpaces: { label: "My spaces", name: "My spaces: saved spaces, your offers and leases", to: paths.mySpaces(), icon: Bookmark, isActive: (r) => r.name === "mySpaces" },
+  history: { label: "History", name: "History", to: paths.history(), icon: History, isActive: (r) => r.name === "history" || r.name === "run" || r.name === "results" || r.name === "candidate" },
+  myListings: { label: "My listings", name: "My listings", to: paths.myListings(), icon: LayoutList, isActive: (r) => r.name === "myListings" || r.name === "editListing" },
+  addSpace: { label: "Add a space", name: "Add a space", to: paths.newListing(), icon: Plus, isActive: (r) => r.name === "newListing" },
+  offers: { label: "Offers", name: "Offers received and leased spaces", to: paths.offers(), icon: MessageSquare, isActive: (r) => r.name === "offers" },
+}
 
 export const NOT_ADVICE = "Not financial or legal advice. SuiteSpot shows numbers with their sources; the decision is yours."
 
@@ -22,7 +27,10 @@ export const NOT_ADVICE = "Not financial or legal advice. SuiteSpot shows number
  * The frame around every page: sidebar (a bottom bar on a phone, so pages keep the full width), page header (title,
  * optional pills, New research) and the advice footer.
  */
+const HEADER_CTA = "inline-flex h-10 items-center gap-2 rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e]"
+
 export function Shell({ route, title, titleExtra, children }: { route: Route; title: string; titleExtra?: ReactNode; children: ReactNode }) {
+  const role = useAuth().landlord?.role ?? null
   return (
     <div className="min-h-screen px-4 pb-28 text-ink sm:pr-6 sm:pb-6 sm:pl-[116px]">
       <Sidebar route={route} />
@@ -32,11 +40,18 @@ export function Shell({ route, title, titleExtra, children }: { route: Route; ti
             {title}
             {titleExtra}
           </h1>
-          {route.name !== "newResearch" && (
-            <Link to={paths.newResearch()} className="inline-flex h-10 items-center gap-2 rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e]">
-              <Plus size={16} strokeWidth={2} aria-hidden /> New research
-            </Link>
-          )}
+          {/* One primary action per screen: New research for a seeker, Add a space for an owner only. */}
+          {seeksSpaces(role)
+            ? route.name !== "newResearch" && (
+                <Link to={paths.newResearch()} className={HEADER_CTA}>
+                  <Plus size={16} strokeWidth={2} aria-hidden /> New research
+                </Link>
+              )
+            : route.name !== "newListing" && (
+                <Link to={paths.newListing()} className={HEADER_CTA}>
+                  <Plus size={16} strokeWidth={2} aria-hidden /> Add a space
+                </Link>
+              )}
         </header>
         <main className="mt-5">{children}</main>
         <footer className="mt-6 flex justify-center">
@@ -51,6 +66,7 @@ export function Shell({ route, title, titleExtra, children }: { route: Route; ti
 }
 
 function Sidebar({ route }: { route: Route }) {
+  const role = useAuth().landlord?.role ?? null
   return (
     <aside
       className="fixed z-30 flex items-center glass-strong max-sm:inset-x-3 max-sm:bottom-3 max-sm:h-[68px] max-sm:justify-around max-sm:rounded-[28px] max-sm:px-1 sm:top-4 sm:bottom-4 sm:left-4 sm:w-[88px] sm:flex-col sm:rounded-[32px] sm:py-5"
@@ -60,7 +76,8 @@ function Sidebar({ route }: { route: Route }) {
         <img src="/suitespot-logo.svg" alt="SuiteSpot" width={56} height={56} className="h-14 w-14" />
       </Link>
       <nav className="flex flex-col items-center gap-2.5 max-sm:contents">
-        {NAV_ITEMS.map((item) => {
+        {navKeysFor(role).map((key) => {
+          const item = NAV_ITEMS[key]
           const active = item.isActive(route)
           const Icon = item.icon
           return (
@@ -159,21 +176,6 @@ function AvatarMenu({ settingsActive }: { settingsActive: boolean }) {
             <button type="button" role="menuitem" onClick={() => void addRole("owner")} className={ITEM}>
               <Building2 size={16} aria-hidden /> Also list a space (add Space owner)
             </button>
-          )}
-          {seeksSpaces(role) && (
-            <button type="button" role="menuitem" onClick={() => go(paths.mySpaces())} className={ITEM}>
-              <Bookmark size={16} aria-hidden /> My spaces
-            </button>
-          )}
-          {listsSpaces(role) && (
-            <>
-              <button type="button" role="menuitem" onClick={() => go(paths.myListings())} className={ITEM}>
-                <LayoutList size={16} aria-hidden /> My listings
-              </button>
-              <button type="button" role="menuitem" onClick={() => go(paths.newListing())} className={ITEM}>
-                <Plus size={16} aria-hidden /> Add a space
-              </button>
-            </>
           )}
           <button type="button" role="menuitem" onClick={() => go(paths.howItWorks())} className={ITEM}>
             <CircleHelp size={16} aria-hidden /> How it works

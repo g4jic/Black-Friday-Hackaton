@@ -11,6 +11,8 @@ import { RunView } from "./run/RunView"
 import { ListingFormPage } from "./listings/ListingFormPage"
 import { BrowseListingsPage, ListingDetailPage, MyListingsPage } from "./listings/ListingPages"
 import { MySpacesPage } from "./pages/MySpacesPage"
+import { OffersPage } from "./pages/OwnerHome"
+import { pageBlockedFor } from "./app/roles"
 import { SimulatedPaymentPage } from "./deals/DealViews"
 import { CandidatePage } from "./results/CandidatePage"
 import { DashboardPage, NotFoundPage } from "./pages/SimplePages"
@@ -38,6 +40,7 @@ const TITLES: Record<Route["name"], string> = {
   editListing: "Edit listing",
   myListings: "My listings",
   mySpaces: "My spaces",
+  offers: "Offers",
   login: "Sign in",
   signup: "Sign up",
   onboarding: "Welcome",
@@ -65,10 +68,6 @@ export function App() {
     void startResearch({ source: "demo" }).then((id) => navigate(paths.run(id), { replace: true }))
   }, [search])
 
-  useEffect(() => {
-    document.title = `${TITLES[route.name]} - SuiteSpot`
-  }, [route.name])
-
   const auth = useAuth()
   const welcoming = useWelcomeHold()
   const { pathname } = useLocation()
@@ -84,6 +83,16 @@ export function App() {
     if (to) navigate(to, { replace: true })
   }, [signedIn, onboardedAt, route.name, here, search])
 
+  const role = auth.landlord?.role ?? null
+  const title = route.name === "dashboard" && role === "owner" ? "Your spaces" : TITLES[route.name]
+  useEffect(() => {
+    document.title = `${title} - SuiteSpot`
+  }, [title])
+  const blocked = signedIn && !onboarding ? pageBlockedFor(role, route.name) : null
+  useEffect(() => {
+    if (blocked) navigate(`${paths.dashboard()}?notice=${blocked}`, { replace: true })
+  }, [blocked])
+
   // No guest mode: /login and /signup stand alone; every other page needs a signed-in user, who comes back to it after.
   if (route.name === "login" || route.name === "signup") return <AuthRoute mode={route.name === "login" ? "signin" : "signup"} />
   if (auth.status === "loading") return <div className="min-h-dvh" aria-busy="true" />
@@ -94,10 +103,12 @@ export function App() {
   if (onboarding || (route.name === "onboarding" && isFormStep(search.get("step")))) return <OnboardingPage />
   if (route.name === "onboarding") return <div className="min-h-dvh" aria-busy="true" />
 
+  // A page of the other role (a typed or old link): Home with a notice instead (see the effect above).
+  if (blocked) return <div className="min-h-dvh" aria-busy="true" />
   const titleExtra = route.name === "run" || route.name === "results" || route.name === "candidate" ? <AnswerSourcePill researchId={route.researchId} /> : null
 
   return (
-    <Shell route={route} title={TITLES[route.name]} titleExtra={titleExtra}>
+    <Shell route={route} title={title} titleExtra={titleExtra}>
       <Page route={route} config={config} />
     </Shell>
   )
@@ -149,6 +160,8 @@ function Page({ route, config }: { route: Route; config: Config | null }) {
           <MySpacesPage />
         </RequireLandlord>
       )
+    case "offers":
+      return <OffersPage />
     case "login":
     case "signup":
     case "onboarding":

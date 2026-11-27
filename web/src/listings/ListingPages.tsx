@@ -1,7 +1,8 @@
 import { Building2, Eye, Mail, MapPin, Pencil, Phone, Play, Plus, Trash2 } from "lucide-react"
 import { SaveButton } from "./SaveButton"
-import { LandlordDeals, OfferForm } from "../deals/DealViews"
+import { OfferForm } from "../deals/DealViews"
 import { useEffect, useMemo, useState } from "react"
+import { useAuth } from "../app/auth"
 import { Link, navigate, paths } from "../app/router"
 import { BUSINESS_TYPE_LABELS } from "../app/settings"
 import { Card, EmptyState } from "../app/Shell"
@@ -208,6 +209,7 @@ function ContactBox({ contact }: { contact: RevealedContact }) {
 
 /** The landlord's own listings: edit or delete (deleting removes the contact too). */
 export function MyListingsPage() {
+  const role = useAuth().landlord?.role ?? null
   const { data, error, reload } = useLoad("my-listings", listingsApi.mine)
   const [busy, setBusy] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -224,10 +226,19 @@ export function MyListingsPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-ink-2">Spaces you list. Everyone sees them under Listings and can evaluate them for their business.</p>
-        <Link to={paths.newListing()} className={PRIMARY}>
-          <Plus size={16} aria-hidden /> List a space
-        </Link>
+        <p className="text-sm text-ink-2">
+          Spaces you list. Everyone sees them under Listings and can evaluate them for their business. Offers on them are under{" "}
+          <Link to={paths.offers()} className="font-medium text-ink underline underline-offset-4">
+            Offers
+          </Link>
+          .
+        </p>
+        {/* An owner has Add a space in the header; "both" has New research there, so the button sits here. */}
+        {role === "both" && (
+          <Link to={paths.newListing()} className={PRIMARY}>
+            <Plus size={16} aria-hidden /> Add a space
+          </Link>
+        )}
       </div>
       {actionError && (
         <p role="alert" className="text-[13px] text-hard">
@@ -235,7 +246,7 @@ export function MyListingsPage() {
         </p>
       )}
       {!data && <p className="text-sm text-ink-2">Loading...</p>}
-      {data && data.length === 0 && <EmptyState text="You have not listed a space yet." action={<Link to={paths.newListing()} className={PRIMARY}>List a space</Link>} />}
+      {data && data.length === 0 && <EmptyState text="You have not listed a space yet." action={<Link to={paths.newListing()} className={PRIMARY}>Add a space</Link>} />}
       <ul className="flex flex-col gap-2.5">
         {data?.map((l) => (
           <li key={l.id} className="glass flex flex-wrap items-center gap-4 rounded-[24px] p-4">
@@ -256,9 +267,6 @@ export function MyListingsPage() {
           </li>
         ))}
       </ul>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <LandlordDeals />
-      </div>
     </div>
   )
 }
