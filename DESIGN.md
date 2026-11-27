@@ -55,7 +55,8 @@ Sentence case everywhere, no ALL CAPS.
 | `brand` | `#F25C54` | **Brand coral.** Active tab, active sidebar button, count circles, tool dots, busy ring. Text on it is `ink` |
 | `brand-600` | `#E5483F` | Hover on brand fills |
 | `brand-50` | `#FDE7E3` | Brand tint |
-| `lilac` | `#C19BE9` | "Demo data" pill, running bars on the Timeline. Text on it is `ink` |
+| `brand-soft` | `#F6857B` | Active sidebar item and the account avatar while Settings is open (a lighter coral that matches the other oranges) |
+| `lilac` | `#C19BE9` | Answer source pill ("Recorded run" / "Scripted demo answers"), running bars on the Timeline. Text on it is `ink` |
 | `lilac-600` | `#8F5FD0` | Left edge of a running Timeline bar |
 | `lilac-100` | `#EEE3FB` | Lilac tint |
 | `hard` | `#9F1B12` | **Hard flag only**, darker than the brand. Fill with white text, or text on `hard-50`; always with the octagon icon |
@@ -273,7 +274,7 @@ Note: "Check before signing" is a **view group**, not a domain status. The domai
 Candidate (name + area, m2, floor) / Monthly cost / Rent share of revenue / Exit cost after 12 months / Flags /
 Agents (live chips) / Score / more. Reports drop the Agents column and add Rank.
 
-### 7.5 Sign in page (concept 27 Nov, not built)
+### 7.5 Sign in page (concept 27 Nov, BUILT 27 Nov: `web/src/pages/AuthScreen.tsx`; no guest button and no Demo pills in the build)
 Files: `design/login/suitespot-login-mockup.png` (static mockup) and `design/login/suitespot-login-animacija.mp4`
 (the animation).
 - **Left:** a white glass card. Logo + "SuiteSpot" top left; "Welcome back" with "Sign in to save spaces and publish

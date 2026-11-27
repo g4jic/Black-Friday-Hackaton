@@ -3,8 +3,23 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
-## HANDOFF (27 Nov 2026, evening, Andrej + Claude): READ THIS FIRST
-Supersedes every handoff below. Blocks A, B, C and D of the work order are done: merged, deployed, README and
+## HANDOFF (27 Nov 2026, late evening, Andrej + Claude): READ THIS FIRST
+**Next: Aleksa builds the onboarding flow** (`docs/handoff-aleksa-onboarding.md`, on a branch `wip/onboarding`).
+**Then Andrej builds billing** (`docs/billing-plan.md`); it waits for onboarding, the two do not run in parallel.
+Changes since the handoff below (commit 39f5f9c, deployed and checked on Railway):
+- **Every feature is open: the access code is gone** (server, web, tests, scripts, `.env.example`; the Railway
+  variable SUITESPOT_ACCESS_CODE is deleted). Cost guard: the usage limit in the Anthropic Console plus one live run
+  at a time per server (429). On the deploy `/api/config` says `liveAvailable: true` and the questionnaire form is
+  enabled. No paid run was made for the check.
+- **No "Demo" labels in the UI** (Demo data, Demo listing, Demo contact pills removed). The README and the first card
+  of How it works ("About the data") state that all data is synthetic. The answer source pill ("Recorded run" /
+  "Scripted demo answers") stays. Deal texts say "simulated landlord".
+- **Default cursor** again (the lens cursor CSS and `web/public/cursor-lens*.svg` are removed).
+- **Nav orange:** active sidebar item (and the avatar while Settings is open) use the token `brand-soft` `#f6857b` (DESIGN.md 3.1).
+- Where the handoff below still says "access code", "Demo listing" or "dot cursor", this entry wins.
+
+## HANDOFF (27 Nov 2026, evening, Andrej + Claude)
+Superseded by the entry above where they differ. Blocks A, B, C and D of the work order are done: merged, deployed, README and
 submission text written (`SUBMISSION.md`). Submissions close at midnight CET. What is left is listed under "Left".
 
 ### Exact state
