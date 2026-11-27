@@ -190,7 +190,8 @@ describe("result wording (honest and readable)", () => {
       { text: "The space has no storefront", ok: false, checkBeforeSigning: "how customers will find the space without a shop window", source: 'from the listing: "Bez izloga"' },
     ])
     expect(p.notStated).toEqual(["Kitchen ventilation", "Water and drain"])
-    expect(unknowns(c).items).toContainEqual({ text: "The space itself: not stated in the listing or the lease (kitchen ventilation, water and drain)", points: 3 })
+    // The only unknown part carries the whole range (76-80), not its own rounding (3): the card and the range agree.
+    expect(unknowns(c).items).toContainEqual({ text: "The space itself: not stated in the listing or the lease (kitchen ventilation, water and drain)", points: 4 })
     expect(premisesSection(candidate("x", "Liman", 60)).read).toBe(false)
   })
 })
