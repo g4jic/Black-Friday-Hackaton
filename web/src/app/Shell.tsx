@@ -3,7 +3,6 @@ import { useEffect, useRef, useState, type ReactNode } from "react"
 import { cx } from "../ui"
 import { logOut, useAuth } from "./auth"
 import { currentUser } from "./identity"
-import { LogoMark } from "./Logo"
 import { Link, navigate, paths, useLocation, type Route } from "./router"
 
 /** label: under the icon (the rail is narrow); name: the full name for the tooltip and screen readers. */
@@ -59,8 +58,8 @@ function Sidebar({ route }: { route: Route }) {
       className="fixed z-30 flex items-center glass-strong max-sm:inset-x-3 max-sm:bottom-3 max-sm:h-[68px] max-sm:justify-around max-sm:rounded-[28px] max-sm:px-1 sm:top-4 sm:bottom-4 sm:left-4 sm:w-[88px] sm:flex-col sm:rounded-[32px] sm:py-5"
       aria-label="Main"
     >
-      <Link to={paths.dashboard()} className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-brand text-ink max-sm:hidden" aria-label="SuiteSpot home" title="SuiteSpot">
-        <LogoMark size={32} />
+      <Link to={paths.dashboard()} className="mb-4 flex h-14 w-14 items-center justify-center max-sm:hidden" aria-label="SuiteSpot home" title="SuiteSpot">
+        <img src="/suitespot-logo.svg" alt="SuiteSpot" width={56} height={56} className="h-14 w-14" />
       </Link>
       <nav className="flex flex-col items-center gap-2.5 max-sm:contents">
         {NAV_ITEMS.map((item) => {

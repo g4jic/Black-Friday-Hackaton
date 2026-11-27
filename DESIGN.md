@@ -2,6 +2,7 @@
 
 The single source of truth for how SuiteSpot looks. If code and this file disagree, this file wins; change this file
 first, then the code. Decided 26 Nov 2026 by Aleksa (Era and Spade concepts in `design/concepts/` are superseded).
+Logo decided 27 Nov 2026 by Aleksa.
 
 **Writing rule:** no long dashes anywhere (UI text, docs, comments). Use a plain hyphen `-` or rewrite the sentence.
 
@@ -119,7 +120,11 @@ Colour is never the only signal: every flag pill also has an icon and a word ("H
 +--------+--------------------------------------------------------------+
 ```
 - **Sidebar:** floating white panel, 88 px wide, radius 28, 16 px from the window edges, full height, `shadow-soft`.
-  Top: the SuiteSpot mark (a simple coral monogram "S" in a 48 px circle, our own, no photo). Then the nav buttons,
+  Top: the SuiteSpot mark: a magnifying glass with a short handle (coral ring, black handle) and an isometric
+  commercial building inside the lens, our own, no photo; file `design/brand/suitespot-logo.svg`. In the app it
+  is `web/public/suitespot-logo.svg`, shown at 56 px with no circle behind it, centred over the nav buttons and linked
+  to Home ("SuiteSpot home"); hidden in the bottom bar on narrow screens. The same SVG is the favicon, with
+  `favicon-64.png` as the PNG fallback. Then the nav buttons,
   44 px strong-glass circles with an ink icon, 16 px apart. **Active:** filled `brand`, white icon (an icon, 3:1 is enough). Hover: white.
   Each button has a tooltip and an `aria-label` with its name. Bottom: a round "collapse" chevron button.
 - **Header (top left):** breadcrumb in `text-small`, `ink-2`, with a `>` chevron; under it the page title in
@@ -268,6 +273,19 @@ Note: "Check before signing" is a **view group**, not a domain status. The domai
 Candidate (name + area, m2, floor) / Monthly cost / Rent share of revenue / Exit cost after 12 months / Flags /
 Agents (live chips) / Score / more. Reports drop the Agents column and add Rank.
 
+### 7.5 Sign in page (concept 27 Nov, not built)
+Files: `design/login/suitespot-login-mockup.png` (static mockup) and `design/login/suitespot-login-animacija.mp4`
+(the animation).
+- **Left:** a white glass card. Logo + "SuiteSpot" top left; "Welcome back" with "Sign in to save spaces and publish
+  your listings."; Email and Password fields; black "Sign in" button; white "Continue as guest" button; "Don't have
+  an account? Sign up"; footer "© 2026 SuiteSpot · Not financial or legal advice". No "Remember me" and no "Forgot
+  password" until we check that our Supabase sign in supports them.
+- **Right:** an animated map in the DESIGN.md colours that slides slowly; the magnifying glass from the logo stops
+  over the coral dots (listings), the building from the logo pops up with a pill naming the listing (for example
+  "Liman 1 · 77 m2"); pills "Demo data" and "100 synthetic listings" at the bottom.
+- **Build suggestion:** SVG + CSS/JS animation; with `prefers-reduced-motion` a static image. The existing auth
+  routes and logic do not change.
+
 ## 8. Motion
 - Every interactive element (buttons, links, inputs, tabs) transitions background, colour, border, shadow, opacity and
   transform in **200 ms** with the iOS ease `cubic-bezier(0.2, 0, 0, 1)`; buttons scale to 0.97 while pressed.
@@ -279,7 +297,9 @@ Agents (live chips) / Score / more. Reports drop the Agents column and add Rank.
   Icon names in this file follow lucide.dev; a few were renamed between lucide versions, so check each name against
   the installed version and keep the closest match.
 - Font: Hanken Grotesk via Google Fonts (OFL 1.1).
-- No photos of people, no stock images. Agents are icons, the brand is a monogram.
+- No photos of people, no stock images. Agents are icons. The brand files are in `design/brand/`:
+  `suitespot-logo.svg` (the logo), `suitespot-logo-1024.png` (PNG, 1024 px), `favicon-64.png` (favicon, 64 px) and
+  `suitespot-logo-reveal.mp4` (logo reveal video, 1920x1080, 30 fps, 7 s, for the demo video).
 - Credit both in the README.
 
 ## 10. Tokens for Tailwind 4
