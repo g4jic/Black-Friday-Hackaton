@@ -1,4 +1,5 @@
-import { ArrowRight, Building2, Check, Layers, LogOut, Search, type LucideIcon } from "lucide-react"
+import { ArrowRight, Check, LogOut } from "lucide-react"
+import { ROLE_ICONS } from "../app/role-icons"
 import { useRef, useState, type FormEvent, type KeyboardEvent } from "react"
 import { logOut, ROLES, updateOnboarding, useAuth, type Role } from "../app/auth"
 import { checkProfileFields, toProfileFields, type ProfileFields, type ProfileProblems } from "../app/business-profile"
@@ -52,7 +53,6 @@ function AccountSection() {
   )
 }
 
-const ROLE_ICONS: Record<Role, LucideIcon> = { owner: Building2, seeker: Search, both: Layers }
 const ROLE_MEANING: Record<Role, string> = {
   owner: "You list spaces, see how many people opened them and answer offers. Research is hidden.",
   seeker: "You research spaces for your business, save them and make offers. Listing a space is hidden.",

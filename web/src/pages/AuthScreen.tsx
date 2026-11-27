@@ -118,10 +118,18 @@ export function AuthScreen({ mode, next }: { mode: "signin" | "signup"; next: st
           <span className="text-xl font-semibold text-ink">SuiteSpot</span>
         </div>
         <div className="mx-auto flex w-full max-w-[380px] flex-1 flex-col justify-center py-10">
-          <h1 className="text-center text-[34px] leading-tight font-semibold tracking-tight text-ink">{mode === "signin" ? "Welcome back" : "Create your account"}</h1>
-          <p className="mt-2 text-center text-sm text-ink-2">{mode === "signin" ? "Sign in to research spaces, save them and publish your listings." : "One account to research spaces, save them and list your own."}</p>
+          <h1 className="text-center text-[34px] leading-tight font-semibold tracking-tight text-ink">
+            {mode === "signin" ? "Welcome back" : "Create your account"}
+          </h1>
+          <p className="mt-2 text-center text-sm text-ink-2">
+            {mode === "signin"
+              ? "Sign in to research spaces, save them and publish your listings."
+              : "One account to research spaces, save them and list your own."}
+          </p>
           {auth.mode === "local" && auth.status === "ready" && (
-            <p className="mt-4 rounded-[16px] bg-white/70 px-4 py-2.5 text-center text-xs leading-5 text-ink-2">This copy of SuiteSpot keeps accounts on this computer only.</p>
+            <p className="mt-4 rounded-[16px] bg-white/70 px-4 py-2.5 text-center text-xs leading-5 text-ink-2">
+              This copy of SuiteSpot keeps accounts on this computer only.
+            </p>
           )}
           {confirmSent ? (
             <p className="mt-8 text-center text-sm text-ink">Check your email to confirm the account, then sign in.</p>
@@ -135,13 +143,28 @@ export function AuthScreen({ mode, next }: { mode: "signin" | "signup"; next: st
               )}
               <label>
                 <span className={LABEL}>Email</span>
-                <input type="email" autoComplete="email" required placeholder="you@company.com" value={email} onChange={(e) => setEmail(e.target.value)} className={INPUT} />
+                <input
+                  type="email"
+                  autoComplete="email"
+                  required
+                  placeholder="you@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={INPUT}
+                />
               </label>
               <label>
                 <span className={LABEL}>
                   Password{mode === "signup" && <span className="font-normal text-ink-3"> (at least {MIN_PASSWORD_LENGTH} characters)</span>}
                 </span>
-                <input type="password" autoComplete={mode === "signin" ? "current-password" : "new-password"} required value={password} onChange={(e) => setPassword(e.target.value)} className={INPUT} />
+                <input
+                  type="password"
+                  autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={INPUT}
+                />
               </label>
               {error && (
                 <p role="alert" className="text-[13px] text-hard">
@@ -190,7 +213,7 @@ export function AuthRoute({ mode }: { mode: "signin" | "signup" }) {
 
 // ---------------------------------------------------------------------------------------------------------------
 // The map: city blocks, a river, listings as coral dots. The map pans slowly (transform only); the lens visits the
-// listings one by one and the building pops up with a pill naming the listing. Static with reduced motion.
+// listings one by one and a building pops up inside it. Static with reduced motion.
 
 const MAP_W = 900
 const MAP_H = 1000
@@ -220,7 +243,7 @@ function cityBlocks(): Block[] {
   return blocks
 }
 
-/** Where the lens stops (percent of the panel). The pill names a real SuiteSpot demo listing (synthetic data). */
+/** Where the lens stops (percent of the panel). */
 const STOPS = [
   { x: 33, y: 33 },
   { x: 64, y: 56 },
@@ -236,21 +259,8 @@ const LENS_FIRST_STOP_MS = 1400
 const LENS_GLIDE_MS = 1300
 const LENS_DWELL_MS = 2400
 
-/** Four demo listings for the pills ("Liman 1 · 77 m2"), from the public listings API; empty while loading. */
-function useListingLabels(): string[] {
-  const [labels, setLabels] = useState<string[]>([])
-  useEffect(() => {
-    fetch("/api/listings")
-      .then((r) => r.json() as Promise<{ listings: { district: string; areaM2: number }[] }>)
-      .then((body) => setLabels(body.listings.slice(0, STOPS.length).map((l) => `${l.district} · ${l.areaM2} m2`)))
-      .catch(() => setLabels([]))
-  }, [])
-  return labels
-}
-
 function MapPanel({ lensRef, welcome }: { lensRef: RefObject<HTMLDivElement>; welcome: boolean }) {
   const blocks = useMemo(cityBlocks, [])
-  const labels = useListingLabels()
   const [stop, setStop] = useState(0)
   // Every stop of the lens counts one visit; the visit picks the building (round the list, the logo's first).
   const [visit, setVisit] = useState(0)
@@ -279,48 +289,50 @@ function MapPanel({ lensRef, welcome }: { lensRef: RefObject<HTMLDivElement>; we
   const here = welcome ? WELCOME_STOP : STOPS[stop]!
   // The welcome zoom (and reduced motion, where visit stays 0) always shows the building from the logo.
   const building = AUTH_BUILDINGS[welcome ? 0 : visit % AUTH_BUILDINGS.length]!
-  const label = labels[stop]
   return (
     <section aria-hidden className="auth-map relative hidden flex-1 overflow-hidden rounded-[32px] border border-white/70 bg-[#F6EEF6] lg:block">
       <div className="auth-map-zoom absolute inset-0">
-      <svg className="auth-map-pan absolute -inset-[10%] h-[120%] w-[120%]" viewBox={`0 0 ${MAP_W} ${MAP_H}`} preserveAspectRatio="xMidYMid slice">
-        {blocks.map((b, i) => (
-          <rect key={i} x={b.x} y={b.y} width={b.w} height={b.h} rx={8} fill={b.fill} opacity={0.92} />
+        <svg className="auth-map-pan absolute -inset-[10%] h-[120%] w-[120%]" viewBox={`0 0 ${MAP_W} ${MAP_H}`} preserveAspectRatio="xMidYMid slice">
+          {blocks.map((b, i) => (
+            <rect key={i} x={b.x} y={b.y} width={b.w} height={b.h} rx={8} fill={b.fill} opacity={0.92} />
+          ))}
+          <path d="M -40 640 C 200 700, 420 560, 560 470 S 820 300, 960 250" fill="none" stroke="#E2D2F6" strokeWidth={70} strokeLinecap="round" />
+          <path d="M -40 640 C 200 700, 420 560, 560 470 S 820 300, 960 250" fill="none" stroke="#D5BFF1" strokeWidth={6} opacity={0.8} />
+        </svg>
+        {STOPS.map((s, i) => (
+          <span
+            key={i}
+            className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand ring-4 ring-white/70"
+            style={{ left: `${s.x}%`, top: `${s.y}%` }}
+          />
         ))}
-        <path d="M -40 640 C 200 700, 420 560, 560 470 S 820 300, 960 250" fill="none" stroke="#E2D2F6" strokeWidth={70} strokeLinecap="round" />
-        <path d="M -40 640 C 200 700, 420 560, 560 470 S 820 300, 960 250" fill="none" stroke="#D5BFF1" strokeWidth={6} opacity={0.8} />
-      </svg>
-      {STOPS.map((s, i) => (
-        <span key={i} className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand ring-4 ring-white/70" style={{ left: `${s.x}%`, top: `${s.y}%` }} />
-      ))}
-      <div className="auth-lens-move pointer-events-none absolute inset-0" style={{ transform: `translate(${here.x - 50}%, ${here.y - 50}%)` }}>
-        <div className="auth-lens-float absolute top-1/2 left-1/2">
-        {label && <span className={`auth-pill absolute -top-[132px] left-1/2 rounded-full border border-brand/40 bg-white px-3 py-1 text-xs font-medium whitespace-nowrap text-ink ${shown ? "is-shown" : ""}`}>{label}</span>}
-        <div ref={lensRef} className="auth-lens absolute -left-[100px] -top-[100px] h-[200px] w-[200px]">
-          <svg viewBox="0 0 480 480" width="100%" height="100%">
-            <defs>
-              <radialGradient id="authLens" cx="40%" cy="35%" r="70%">
-                <stop offset="0" stopColor="#FFFFFF" />
-                <stop offset="1" stopColor="#FBF1F8" />
-              </radialGradient>
-              <linearGradient id="authCoral" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stopColor="#F7A48C" />
-                <stop offset="0.55" stopColor="#F25C54" />
-                <stop offset="1" stopColor="#E5483F" />
-              </linearGradient>
-            </defs>
-            <line x1="337.9" y1="337.9" x2="398" y2="398" stroke="#0B0B0F" strokeWidth={64} strokeLinecap="round" />
-            <circle cx="212" cy="212" r="164" fill="url(#authLens)" />
-            <g className={`auth-building ${shown ? "is-shown" : ""}`}>
-              {building.polygons.map(([points, fill], i) => (
-                <polygon key={`${building.id}-${i}`} points={points} fill={fill} />
-              ))}
-            </g>
-            <circle cx="212" cy="212" r="164" fill="none" stroke="url(#authCoral)" strokeWidth={40} />
-          </svg>
+        <div className="auth-lens-move pointer-events-none absolute inset-0" style={{ transform: `translate(${here.x - 50}%, ${here.y - 50}%)` }}>
+          <div className="auth-lens-float absolute top-1/2 left-1/2">
+            <div ref={lensRef} className="auth-lens absolute -left-[100px] -top-[100px] h-[200px] w-[200px]">
+              <svg viewBox="0 0 480 480" width="100%" height="100%">
+                <defs>
+                  <radialGradient id="authLens" cx="40%" cy="35%" r="70%">
+                    <stop offset="0" stopColor="#FFFFFF" />
+                    <stop offset="1" stopColor="#FBF1F8" />
+                  </radialGradient>
+                  <linearGradient id="authCoral" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stopColor="#F7A48C" />
+                    <stop offset="0.55" stopColor="#F25C54" />
+                    <stop offset="1" stopColor="#E5483F" />
+                  </linearGradient>
+                </defs>
+                <line x1="337.9" y1="337.9" x2="398" y2="398" stroke="#0B0B0F" strokeWidth={64} strokeLinecap="round" />
+                <circle cx="212" cy="212" r="164" fill="url(#authLens)" />
+                <g className={`auth-building ${shown ? "is-shown" : ""}`}>
+                  {building.polygons.map(([points, fill], i) => (
+                    <polygon key={`${building.id}-${i}`} points={points} fill={fill} />
+                  ))}
+                </g>
+                <circle cx="212" cy="212" r="164" fill="none" stroke="url(#authCoral)" strokeWidth={40} />
+              </svg>
+            </div>
+          </div>
         </div>
-        </div>
-      </div>
       </div>
     </section>
   )

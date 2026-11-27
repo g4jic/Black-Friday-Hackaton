@@ -1,8 +1,9 @@
-import { ArrowRight, Building2, Search, Sparkles, type LucideIcon } from "lucide-react"
+import { ArrowLeft, ArrowRight, LogOut, Sparkles, type LucideIcon } from "lucide-react"
 import { useState, type ReactNode } from "react"
 import { logOut, updateOnboarding, useAuth, type Role } from "../app/auth"
 import { checkProfileFields, EXAMPLE_PROFILE, toProfileFields, type ProfileFields, type ProfileProblems } from "../app/business-profile"
 import { isFormStep, onboardingPath, safeNext } from "../app/onboarding-gate"
+import { ROLE_ICONS } from "../app/role-icons"
 import { ROLE_LABELS } from "../app/roles"
 import { navigate, paths, useLocation } from "../app/router"
 import { loadSettings, saveSettings } from "../app/settings"
@@ -85,34 +86,28 @@ function RoleStep({ next }: { next: string | null }) {
         <StepDots current={1} total={2} />
       </header>
 
-      <main className="flex flex-1 flex-col items-center justify-center gap-10 py-12">
+      <main className="flex flex-1 flex-col items-center justify-center gap-12 py-12">
         <div className="max-w-[640px] text-center">
           <h1 className="onb-enter text-[40px] leading-[1.1] font-bold tracking-[-0.03em] sm:text-[48px]">How will you use SuiteSpot?</h1>
           <p className="onb-enter mt-4 text-lg leading-normal text-ink-2" style={{ animationDelay: "60ms" }}>
-            Pick one to start. You can switch or add the other role any time in Settings.
+            You can switch or add the other role any time in Settings.
           </p>
         </div>
 
-        <div className="grid w-full max-w-[920px] gap-6 md:grid-cols-2">
+        <div className="grid w-full max-w-[860px] gap-6 md:grid-cols-2">
           <RoleCard
-            icon={Building2}
-            iconClass="bg-brand text-white"
+            icon={ROLE_ICONS.owner}
             title="List my space"
-            text="I rent out a commercial space. Publish listings, see how many people viewed them and answer offers."
-            pills={["Publish listings", "View counts", "Offers"]}
-            cta="Continue as Space owner"
+            text="Rent out a commercial space and answer offers."
             busy={busy === "owner"}
             disabled={busy !== null}
             delay={120}
             onChoose={() => void choose("owner")}
           />
           <RoleCard
-            icon={Search}
-            iconClass="bg-lilac text-ink"
+            icon={ROLE_ICONS.seeker}
             title="Find a space"
-            text="I need a space for my business. Agents find spaces that fit, check the lease and the numbers, and show every source."
-            pills={["Matched spaces", "Lease check", "Audited report"]}
-            cta="Continue as Space seeker"
+            text="Find spaces that fit your business and check the lease."
             busy={busy === "seeker"}
             disabled={busy !== null}
             delay={180}
@@ -120,87 +115,71 @@ function RoleStep({ next }: { next: string | null }) {
           />
         </div>
 
-        <p className="onb-enter text-[15px] text-ink-2" style={{ animationDelay: "240ms" }}>
-          I do both.{" "}
-          <button
-            type="button"
-            onClick={() => void choose("both")}
-            disabled={busy !== null}
-            className="font-semibold text-ink underline underline-offset-4 disabled:opacity-50"
-          >
-            {busy === "both" ? "Saving..." : "Set up both roles"}
-          </button>
-        </p>
+        <button
+          type="button"
+          onClick={() => void choose("both")}
+          disabled={busy !== null}
+          className="onb-enter inline-flex h-12 items-center gap-2 rounded-full glass-strong px-7 text-base font-semibold text-ink hover:bg-white disabled:opacity-50"
+          style={{ animationDelay: "240ms" }}
+        >
+          {(() => {
+            const Both = ROLE_ICONS.both
+            return <Both size={18} strokeWidth={1.75} aria-hidden />
+          })()}
+          {busy === "both" ? "Saving..." : "Set up both roles"}
+        </button>
         {error && (
-          <p role="alert" className="-mt-6 text-[13px] text-hard">
+          <p role="alert" className="-mt-8 text-[13px] text-hard">
             {error}
           </p>
         )}
       </main>
 
-      <footer className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[13px] text-ink-2">
-        <span>Demo data is synthetic.</span>
-        <button type="button" onClick={() => void logOut()} className="font-medium text-ink underline underline-offset-4">
-          Sign out
+      <footer className="flex items-center">
+        <button
+          type="button"
+          onClick={() => void logOut()}
+          className="inline-flex h-10 items-center gap-2 rounded-full glass-strong px-4 text-sm font-medium text-ink hover:bg-white"
+        >
+          <LogOut size={16} aria-hidden /> Sign out
         </button>
       </footer>
     </div>
   )
 }
 
+/** The step indicator: one pill per step, the current ones black; the step is said in the label, not in text. */
 function StepDots({ current, total }: { current: number; total: number }) {
   return (
-    <span className="flex items-center gap-2 text-sm text-ink-2">
-      <span>
-        Step {current} of {total}
-      </span>
-      <span className="inline-flex gap-1" aria-hidden>
-        {Array.from({ length: total }, (_, i) => (
-          <span key={i} className={cx("h-1.5 w-7 rounded-full", i < current ? "bg-ink" : "bg-ink/15")} />
-        ))}
-      </span>
+    <span role="img" aria-label={`Step ${current} of ${total}`} className="inline-flex items-center gap-1.5 rounded-full glass-strong px-2.5 py-2">
+      {Array.from({ length: total }, (_, i) => (
+        <span key={i} className={cx("h-2 rounded-full transition-all duration-300", i < current ? "w-8 bg-ink" : "w-5 bg-ink/20")} />
+      ))}
     </span>
   )
 }
 
-function RoleCard(props: {
-  icon: LucideIcon
-  iconClass: string
-  title: string
-  text: string
-  pills: string[]
-  cta: string
-  busy: boolean
-  disabled: boolean
-  delay: number
-  onChoose: () => void
-}) {
+/** A role card (DESIGN.md glass): the whole card is the button; it lifts a little on hover and focus. */
+function RoleCard(props: { icon: LucideIcon; title: string; text: string; busy: boolean; disabled: boolean; delay: number; onChoose: () => void }) {
   const Icon = props.icon
   return (
     <button
       type="button"
       onClick={props.onChoose}
       disabled={props.disabled}
-      className={cx("onb-enter role-card glass flex flex-col gap-5 rounded-[28px] p-8 text-left disabled:cursor-default", props.busy && "is-busy")}
+      aria-busy={props.busy}
+      className={cx("onb-enter role-card glass flex flex-col gap-7 rounded-[28px] p-9 text-left disabled:cursor-default", props.busy && "is-busy")}
       style={{ animationDelay: `${props.delay}ms` }}
     >
-      <span className={cx("flex h-16 w-16 items-center justify-center rounded-full", props.iconClass)}>
-        <Icon size={30} strokeWidth={1.75} aria-hidden />
+      <span className="flex w-full items-start justify-between">
+        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-soft text-ink">
+          <Icon size={24} strokeWidth={1.75} aria-hidden />
+        </span>
+        <ArrowRight size={20} className="mt-4 text-ink-2" aria-hidden />
       </span>
       <span className="flex flex-col gap-2">
-        <span className="text-[28px] leading-tight font-bold tracking-[-0.02em] text-ink">{props.title}</span>
+        <span className="text-[26px] leading-tight font-bold tracking-[-0.02em] text-ink">{props.busy ? "Saving..." : props.title}</span>
         <span className="text-base leading-normal text-ink-2">{props.text}</span>
-      </span>
-      <span className="flex flex-wrap gap-2">
-        {props.pills.map((p) => (
-          <span key={p} className="rounded-full bg-white px-3 py-1.5 text-[13px] text-ink">
-            {p}
-          </span>
-        ))}
-      </span>
-      <span className="mt-auto inline-flex items-center gap-2 text-base font-semibold text-ink">
-        {props.busy ? "Saving..." : props.cta}
-        <ArrowRight size={18} aria-hidden />
       </span>
     </button>
   )
@@ -209,17 +188,29 @@ function RoleCard(props: {
 // ---------------------------------------------------------------------------------------------------------------
 // Step 2 (and 3): the forms, centred on the screen with "Skip for now" above the card on the right
 
-function FormStepFrame({ wide, onSkip, skipping, children }: { wide?: boolean; onSkip: () => void; skipping: boolean; children: ReactNode }) {
+const TOP_PILL = "inline-flex h-10 items-center gap-1.5 rounded-full glass-strong px-[18px] text-sm font-semibold text-ink hover:bg-white disabled:opacity-50"
+
+function FormStepFrame({
+  wide,
+  onBack,
+  onSkip,
+  skipping,
+  children,
+}: {
+  wide?: boolean
+  onBack: () => void
+  onSkip: () => void
+  skipping: boolean
+  children: ReactNode
+}) {
   return (
     <div className="flex min-h-dvh items-center justify-center px-5 py-12 text-ink">
       <div className={cx("onb-enter flex w-full flex-col gap-3", wide ? "max-w-[760px] lg:max-w-[1100px]" : "max-w-[720px]")}>
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={onSkip}
-            disabled={skipping}
-            className="inline-flex h-10 items-center gap-1.5 rounded-full glass-strong px-[18px] text-sm font-semibold text-ink hover:bg-white disabled:opacity-50"
-          >
+        <div className="flex items-center justify-between gap-3">
+          <button type="button" onClick={onBack} className={TOP_PILL}>
+            <ArrowLeft size={14} aria-hidden /> Back
+          </button>
+          <button type="button" onClick={onSkip} disabled={skipping} className={TOP_PILL}>
             {skipping ? "One moment..." : "Skip for now"} <ArrowRight size={14} aria-hidden />
           </button>
         </div>
@@ -252,13 +243,10 @@ function ExampleNote({ text }: { text: string }) {
   return <p className="rounded-[16px] bg-lilac-100 px-4 py-2.5 text-[13px] text-ink">{text}</p>
 }
 
-function FormFooter({ onBack, primary, busy, note }: { onBack: () => void; primary: string; busy: boolean; note?: string }) {
+function FormFooter({ primary, busy, note }: { primary: string; busy: boolean; note?: string }) {
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
-        <button type="button" onClick={onBack} className="text-[15px] font-medium text-ink-2 hover:text-ink">
-          Back
-        </button>
+      <div className="flex flex-wrap items-center justify-end gap-3 border-t border-line pt-4">
         <button
           type="submit"
           disabled={busy}
@@ -313,7 +301,7 @@ function SeekerStep({
   }
 
   return (
-    <FormStepFrame onSkip={() => void run("skip", () => onDone(false))} skipping={busy === "skip"}>
+    <FormStepFrame onBack={onBack} onSkip={() => void run("skip", () => onDone(false))} skipping={busy === "skip"}>
       <form
         className={CARD}
         noValidate
@@ -344,12 +332,7 @@ function SeekerStep({
             {error}
           </p>
         )}
-        <FormFooter
-          onBack={onBack}
-          primary={saveLabel}
-          busy={busy === "save"}
-          note="You can change this profile later in Settings."
-        />
+        <FormFooter primary={saveLabel} busy={busy === "save"} note="You can change this profile later in Settings." />
       </form>
     </FormStepFrame>
   )
@@ -413,7 +396,7 @@ function OwnerStep({ label, onBack, onDone }: { label: string; onBack: () => voi
   }
 
   return (
-    <FormStepFrame wide onSkip={() => void skip()} skipping={busy === "skip"}>
+    <FormStepFrame wide onBack={onBack} onSkip={() => void skip()} skipping={busy === "skip"}>
       <form
         className={CARD}
         noValidate
@@ -511,7 +494,7 @@ function OwnerStep({ label, onBack, onDone }: { label: string; onBack: () => voi
                 )}
               </div>
             )}
-            <FormFooter onBack={onBack} primary="Publish listing" busy={busy === "save"} />
+            <FormFooter primary="Publish listing" busy={busy === "save"} />
           </div>
         </div>
       </form>
