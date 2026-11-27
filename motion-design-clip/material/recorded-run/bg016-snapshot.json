@@ -1,0 +1,1678 @@
+{
+ "seq": 216,
+ "at": 6774,
+ "type": "candidate.snapshot",
+ "candidateId": "listing-bg016",
+ "data": {
+  "candidate": {
+   "id": "listing-bg016",
+   "synthetic": true,
+   "listingUrl": null,
+   "status": "scored",
+   "hasLease": true,
+   "fields": {
+    "title": {
+     "value": {
+      "kind": "text",
+      "value": "Poslovni prostor 45 m2, Palilula"
+     },
+     "source": {
+      "kind": "listing",
+      "ref": "listing-bg016",
+      "field": "title",
+      "form": true
+     }
+    },
+    "kind": {
+     "value": {
+      "kind": "text",
+      "value": "rent"
+     },
+     "source": {
+      "kind": "listing",
+      "ref": "listing-bg016",
+      "field": "kind",
+      "form": true
+     }
+    },
+    "city": {
+     "value": {
+      "kind": "text",
+      "value": "Beograd"
+     },
+     "source": {
+      "kind": "listing",
+      "ref": "listing-bg016",
+      "field": "city",
+      "form": true
+     }
+    },
+    "address": {
+     "value": {
+      "kind": "text",
+      "value": "Palilula, Starine Novaka"
+     },
+     "source": {
+      "kind": "listing",
+      "ref": "listing-bg016",
+      "field": "address",
+      "form": true
+     }
+    },
+    "rentMonthly": {
+     "value": {
+      "kind": "money",
+      "amount": 790,
+      "currency": "EUR"
+     },
+     "source": {
+      "kind": "listing",
+      "ref": "listing-bg016",
+      "field": "rentMonthly",
+      "form": true
+     }
+    },
+    "area": {
+     "value": {
+      "kind": "area",
+      "m2": 45
+     },
+     "source": {
+      "kind": "listing",
+      "ref": "listing-bg016",
+      "field": "areaM2",
+      "form": true
+     }
+    },
+    "deposit": {
+     "value": {
+      "kind": "money",
+      "amount": 1580,
+      "currency": "EUR"
+     },
+     "source": {
+      "kind": "listing",
+      "ref": "listing-bg016",
+      "field": "deposit",
+      "form": true
+     }
+    },
+    "serviceChargeMonthly": {
+     "value": {
+      "kind": "money",
+      "amount": 50,
+      "currency": "EUR"
+     },
+     "source": {
+      "kind": "listing",
+      "ref": "listing-bg016",
+      "field": "serviceChargeMonthly",
+      "form": true
+     }
+    },
+    "floor": {
+     "value": {
+      "kind": "text",
+      "value": "floor 1"
+     },
+     "source": {
+      "kind": "listing",
+      "ref": "listing-bg016",
+      "field": "floor",
+      "form": true
+     }
+    },
+    "heating": {
+     "value": {
+      "kind": "missing",
+      "missing": [
+       "heating"
+      ]
+     }
+    },
+    "parking": {
+     "value": {
+      "kind": "missing",
+      "missing": [
+       "parking"
+      ]
+     }
+    }
+   },
+   "unverified": [],
+   "rejection": null,
+   "laterFlags": [],
+   "findings": [
+    {
+     "id": "listing-bg016:finance:monthly_cost",
+     "aspect": "finance",
+     "severity": "info",
+     "claim": "Monthly cost 840.00 EUR; unknown: Whether VAT is charged on top of the rent, Utilities cost",
+     "author": "Finance analyst",
+     "value": {
+      "kind": "money",
+      "amount": 840,
+      "currency": "EUR"
+     },
+     "source": {
+      "kind": "calc",
+      "ref": "sum of monthly cost lines",
+      "inputs": [
+       {
+        "kind": "listing",
+        "ref": "listing-bg016",
+        "field": "rentMonthly",
+        "form": true
+       },
+       {
+        "kind": "listing",
+        "ref": "listing-bg016",
+        "field": "serviceChargeMonthly",
+        "form": true
+       }
+      ]
+     }
+    },
+    {
+     "id": "listing-bg016:finance:initial_costs",
+     "aspect": "finance",
+     "severity": "info",
+     "claim": "Initial costs 14580.00 EUR",
+     "author": "Finance analyst",
+     "value": {
+      "kind": "money",
+      "amount": 14580,
+      "currency": "EUR"
+     },
+     "source": {
+      "kind": "calc",
+      "ref": "sum of initial cost lines",
+      "inputs": [
+       {
+        "kind": "listing",
+        "ref": "listing-bg016",
+        "field": "deposit",
+        "form": true
+       },
+       {
+        "kind": "profile",
+        "ref": "questionnaire",
+        "field": "fitOutBudget"
+       },
+       {
+        "kind": "profile",
+        "ref": "questionnaire",
+        "field": "equipmentBudget"
+       }
+      ]
+     }
+    },
+    {
+     "id": "listing-bg016:finance:rent_per_m2",
+     "aspect": "finance",
+     "severity": "info",
+     "claim": "Rent per m2 17.56 EUR",
+     "author": "Finance analyst",
+     "value": {
+      "kind": "number",
+      "value": 17.56
+     },
+     "source": {
+      "kind": "calc",
+      "ref": "rent / area",
+      "inputs": [
+       {
+        "kind": "listing",
+        "ref": "listing-bg016",
+        "field": "rentMonthly",
+        "form": true
+       },
+       {
+        "kind": "listing",
+        "ref": "listing-bg016",
+        "field": "areaM2",
+        "form": true
+       }
+      ]
+     }
+    },
+    {
+     "id": "listing-bg016:location:food",
+     "aspect": "location",
+     "severity": "info",
+     "claim": "39 cafes, restaurants and bars within 300 m",
+     "author": "Location analyst",
+     "value": {
+      "kind": "number",
+      "value": 39
+     },
+     "source": {
+      "kind": "osm",
+      "ref": "Overpass count within 300 m of 44.80948,20.47514 (way/521052116, street)",
+      "field": "food"
+     }
+    },
+    {
+     "id": "listing-bg016:location:shops",
+     "aspect": "location",
+     "severity": "info",
+     "claim": "68 shops within 300 m",
+     "author": "Location analyst",
+     "value": {
+      "kind": "number",
+      "value": 68
+     },
+     "source": {
+      "kind": "osm",
+      "ref": "Overpass count within 300 m of 44.80948,20.47514 (way/521052116, street)",
+      "field": "shops"
+     }
+    },
+    {
+     "id": "listing-bg016:location:offices",
+     "aspect": "location",
+     "severity": "info",
+     "claim": "8 offices within 300 m",
+     "author": "Location analyst",
+     "value": {
+      "kind": "number",
+      "value": 8
+     },
+     "source": {
+      "kind": "osm",
+      "ref": "Overpass count within 300 m of 44.80948,20.47514 (way/521052116, street)",
+      "field": "offices"
+     }
+    },
+    {
+     "id": "listing-bg016:location:crafts",
+     "aspect": "location",
+     "severity": "info",
+     "claim": "0 workshops and crafts within 300 m",
+     "author": "Location analyst",
+     "value": {
+      "kind": "number",
+      "value": 0
+     },
+     "source": {
+      "kind": "osm",
+      "ref": "Overpass count within 300 m of 44.80948,20.47514 (way/521052116, street)",
+      "field": "crafts"
+     }
+    },
+    {
+     "id": "listing-bg016:location:transit",
+     "aspect": "location",
+     "severity": "info",
+     "claim": "7 bus and tram stops within 300 m",
+     "author": "Location analyst",
+     "value": {
+      "kind": "number",
+      "value": 7
+     },
+     "source": {
+      "kind": "osm",
+      "ref": "Overpass count within 300 m of 44.80948,20.47514 (way/521052116, street)",
+      "field": "transit"
+     }
+    },
+    {
+     "id": "listing-bg016:location:schools",
+     "aspect": "location",
+     "severity": "info",
+     "claim": "7 schools and faculties within 300 m",
+     "author": "Location analyst",
+     "value": {
+      "kind": "number",
+      "value": 7
+     },
+     "source": {
+      "kind": "osm",
+      "ref": "Overpass count within 300 m of 44.80948,20.47514 (way/521052116, street)",
+      "field": "schools"
+     }
+    },
+    {
+     "id": "listing-bg016:location:parking",
+     "aspect": "location",
+     "severity": "info",
+     "claim": "6 parking areas within 300 m",
+     "author": "Location analyst",
+     "value": {
+      "kind": "number",
+      "value": 6
+     },
+     "source": {
+      "kind": "osm",
+      "ref": "Overpass count within 300 m of 44.80948,20.47514 (way/521052116, street)",
+      "field": "parking"
+     }
+    },
+    {
+     "id": "listing-bg016:location:zone",
+     "aspect": "location",
+     "severity": "info",
+     "claim": "Land use: dense housing (150 homes and 1 industrial buildings mapped within 300 m)",
+     "author": "Location analyst",
+     "source": {
+      "kind": "osm",
+      "ref": "Overpass land use within 300 m of 44.80948,20.47514 (way/521052116, street)",
+      "field": "landuse"
+     }
+    },
+    {
+     "id": "listing-bg016:premises:no_renovation",
+     "aspect": "premises",
+     "severity": "info",
+     "claim": "The space needs no renovation",
+     "author": "Premises inspector",
+     "source": {
+      "kind": "listing",
+      "ref": "listing-bg016",
+      "field": "needsRenovation",
+      "quote": "renoviran pre dve godine"
+     }
+    },
+    {
+     "id": "listing-bg016:lease:term",
+     "aspect": "lease",
+     "severity": "info",
+     "claim": "Lease term: 24 months",
+     "author": "Lease reader",
+     "value": {
+      "kind": "number",
+      "value": 24
+     },
+     "source": {
+      "kind": "lease",
+      "ref": "lease-listing-bg016",
+      "clause": "term",
+      "quote": "Ugovor se zaključuje na period od 24 meseca"
+     }
+    },
+    {
+     "id": "listing-bg016:lease:indexationKind",
+     "aspect": "lease",
+     "severity": "info",
+     "claim": "Rent increases: no increase during the lease",
+     "author": "Lease reader",
+     "value": {
+      "kind": "text",
+      "value": "none"
+     },
+     "source": {
+      "kind": "lease",
+      "ref": "lease-listing-bg016",
+      "clause": "indexationKind",
+      "quote": "Zakupnina je fiksna tokom celog trajanja ugovora"
+     }
+    },
+    {
+     "id": "listing-bg016:lease:deposit",
+     "aspect": "lease",
+     "severity": "info",
+     "claim": "Deposit: 1,580 EUR",
+     "author": "Lease reader",
+     "value": {
+      "kind": "money",
+      "amount": 1580,
+      "currency": "EUR"
+     },
+     "source": {
+      "kind": "lease",
+      "ref": "lease-listing-bg016",
+      "clause": "deposit",
+      "quote": "Zakupac pri potpisivanju uplaćuje depozit od 1.580 EUR"
+     }
+    },
+    {
+     "id": "listing-bg016:lease:tenantPaysStructuralRepairs",
+     "aspect": "lease",
+     "severity": "info",
+     "claim": "Tenant pays structural repairs: no",
+     "author": "Lease reader",
+     "value": {
+      "kind": "bool",
+      "value": false
+     },
+     "source": {
+      "kind": "lease",
+      "ref": "lease-listing-bg016",
+      "clause": "tenantPaysStructuralRepairs",
+      "quote": "Investiciono održavanje (krov, fasada, instalacije) snosi zakupodavac"
+     }
+    },
+    {
+     "id": "listing-bg016:lease:permittedUse",
+     "aspect": "lease",
+     "severity": "info",
+     "claim": "Permitted use (check before signing, not a legal opinion): kancelarijsko poslovanje",
+     "author": "Lease reader",
+     "value": {
+      "kind": "text",
+      "value": "kancelarijsko poslovanje"
+     },
+     "source": {
+      "kind": "lease",
+      "ref": "lease-listing-bg016",
+      "clause": "permittedUse",
+      "quote": "Prostor se izdaje za kancelarijsko poslovanje"
+     }
+    },
+    {
+     "id": "listing-bg016:finance:total_cost_over_term",
+     "aspect": "finance",
+     "severity": "info",
+     "claim": "Total cost over 24 months 33160.00 EUR",
+     "author": "Finance analyst",
+     "value": {
+      "kind": "money",
+      "amount": 33160,
+      "currency": "EUR"
+     },
+     "source": {
+      "kind": "calc",
+      "ref": "total cost of occupancy over the term",
+      "inputs": [
+       {
+        "kind": "calc",
+        "ref": "sum over months of rent x (1 + indexation)^year",
+        "inputs": [
+         {
+          "kind": "listing",
+          "ref": "listing-bg016",
+          "field": "rentMonthly",
+          "form": true
+         },
+         {
+          "kind": "lease",
+          "ref": "lease-listing-bg016",
+          "clause": "term",
+          "quote": "Ugovor se zaključuje na period od 24 meseca"
+         },
+         {
+          "kind": "calc",
+          "ref": "no indexation clause",
+          "inputs": [
+           {
+            "kind": "lease",
+            "ref": "lease-listing-bg016",
+            "clause": "indexationKind",
+            "quote": "Zakupnina je fiksna tokom celog trajanja ugovora"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "kind": "calc",
+        "ref": "(monthly cost - rent) x months",
+        "inputs": [
+         {
+          "kind": "calc",
+          "ref": "sum of monthly cost lines",
+          "inputs": [
+           {
+            "kind": "listing",
+            "ref": "listing-bg016",
+            "field": "rentMonthly",
+            "form": true
+           },
+           {
+            "kind": "listing",
+            "ref": "listing-bg016",
+            "field": "serviceChargeMonthly",
+            "form": true
+           }
+          ]
+         },
+         {
+          "kind": "lease",
+          "ref": "lease-listing-bg016",
+          "clause": "term",
+          "quote": "Ugovor se zaključuje na period od 24 meseca"
+         }
+        ]
+       },
+       {
+        "kind": "profile",
+        "ref": "questionnaire",
+        "field": "fitOutBudget"
+       },
+       {
+        "kind": "profile",
+        "ref": "questionnaire",
+        "field": "equipmentBudget"
+       }
+      ]
+     }
+    },
+    {
+     "id": "listing-bg016:finance:exit_cost_after_12_months",
+     "aspect": "finance",
+     "severity": "info",
+     "claim": "Exit cost after 12 months: needs lease terms (notice period unknown)",
+     "author": "Finance analyst",
+     "value": {
+      "kind": "missing",
+      "missing": [
+       "Notice period for early exit (needs lease terms)"
+      ]
+     },
+     "source": {
+      "kind": "calc",
+      "ref": "known part of the exit cost after 12 months",
+      "inputs": [
+       {
+        "kind": "calc",
+        "ref": "fit-out x (term - 12) / term",
+        "inputs": [
+         {
+          "kind": "profile",
+          "ref": "questionnaire",
+          "field": "fitOutBudget"
+         },
+         {
+          "kind": "lease",
+          "ref": "lease-listing-bg016",
+          "clause": "term",
+          "quote": "Ugovor se zaključuje na period od 24 meseca"
+         }
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "id": "listing-bg016:finance:exit_cost_part_1",
+     "aspect": "finance",
+     "severity": "info",
+     "claim": "Unrecovered fit-out",
+     "author": "Finance analyst",
+     "value": {
+      "kind": "money",
+      "amount": 2500,
+      "currency": "EUR"
+     },
+     "source": {
+      "kind": "calc",
+      "ref": "fit-out x (term - 12) / term",
+      "inputs": [
+       {
+        "kind": "profile",
+        "ref": "questionnaire",
+        "field": "fitOutBudget"
+       },
+       {
+        "kind": "lease",
+        "ref": "lease-listing-bg016",
+        "clause": "term",
+        "quote": "Ugovor se zaključuje na period od 24 meseca"
+       }
+      ]
+     }
+    },
+    {
+     "id": "listing-bg016:finance:exit_cost_known_part",
+     "aspect": "finance",
+     "severity": "info",
+     "claim": "Known part of the exit cost after 12 months 2500.00 EUR (unrecovered fit-out)",
+     "author": "Finance analyst",
+     "value": {
+      "kind": "money",
+      "amount": 2500,
+      "currency": "EUR"
+     },
+     "source": {
+      "kind": "calc",
+      "ref": "known part of the exit cost after 12 months",
+      "inputs": [
+       {
+        "kind": "calc",
+        "ref": "fit-out x (term - 12) / term",
+        "inputs": [
+         {
+          "kind": "profile",
+          "ref": "questionnaire",
+          "field": "fitOutBudget"
+         },
+         {
+          "kind": "lease",
+          "ref": "lease-listing-bg016",
+          "clause": "term",
+          "quote": "Ugovor se zaključuje na period od 24 meseca"
+         }
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "id": "listing-bg016:finance:cost_share_of_revenue",
+     "aspect": "finance",
+     "severity": "info",
+     "claim": "Space costs 7% of expected revenue",
+     "author": "Finance analyst",
+     "value": {
+      "kind": "number",
+      "value": 0.07
+     },
+     "source": {
+      "kind": "calc",
+      "ref": "monthly cost / expected monthly revenue",
+      "inputs": [
+       {
+        "kind": "calc",
+        "ref": "sum of monthly cost lines",
+        "inputs": [
+         {
+          "kind": "listing",
+          "ref": "listing-bg016",
+          "field": "rentMonthly",
+          "form": true
+         },
+         {
+          "kind": "listing",
+          "ref": "listing-bg016",
+          "field": "serviceChargeMonthly",
+          "form": true
+         }
+        ]
+       },
+       {
+        "kind": "profile",
+        "ref": "questionnaire",
+        "field": "expectedMonthlyRevenue"
+       }
+      ]
+     }
+    },
+    {
+     "id": "listing-bg016:finance:break_even_revenue",
+     "aspect": "finance",
+     "severity": "info",
+     "claim": "Break-even revenue 1050.00 EUR",
+     "author": "Finance analyst",
+     "value": {
+      "kind": "money",
+      "amount": 1050,
+      "currency": "EUR"
+     },
+     "source": {
+      "kind": "calc",
+      "ref": "monthly cost / gross margin",
+      "inputs": [
+       {
+        "kind": "calc",
+        "ref": "sum of monthly cost lines",
+        "inputs": [
+         {
+          "kind": "listing",
+          "ref": "listing-bg016",
+          "field": "rentMonthly",
+          "form": true
+         },
+         {
+          "kind": "listing",
+          "ref": "listing-bg016",
+          "field": "serviceChargeMonthly",
+          "form": true
+         }
+        ]
+       },
+       {
+        "kind": "profile",
+        "ref": "questionnaire",
+        "field": "grossMarginRate"
+       }
+      ]
+     }
+    },
+    {
+     "id": "listing-bg016:finance:payback_months",
+     "aspect": "finance",
+     "severity": "info",
+     "claim": "Pays back in 2 months",
+     "author": "Finance analyst",
+     "value": {
+      "kind": "number",
+      "value": 2
+     },
+     "source": {
+      "kind": "calc",
+      "ref": "initial costs / (revenue x margin - monthly cost)",
+      "inputs": [
+       {
+        "kind": "calc",
+        "ref": "initial costs - refundable deposit",
+        "inputs": [
+         {
+          "kind": "calc",
+          "ref": "sum of initial cost lines",
+          "inputs": [
+           {
+            "kind": "lease",
+            "ref": "lease-listing-bg016",
+            "clause": "deposit",
+            "quote": "Zakupac pri potpisivanju uplaćuje depozit od 1.580 EUR"
+           },
+           {
+            "kind": "profile",
+            "ref": "questionnaire",
+            "field": "fitOutBudget"
+           },
+           {
+            "kind": "profile",
+            "ref": "questionnaire",
+            "field": "equipmentBudget"
+           }
+          ]
+         },
+         {
+          "kind": "lease",
+          "ref": "lease-listing-bg016",
+          "clause": "deposit",
+          "quote": "Zakupac pri potpisivanju uplaćuje depozit od 1.580 EUR"
+         }
+        ]
+       },
+       {
+        "kind": "profile",
+        "ref": "questionnaire",
+        "field": "expectedMonthlyRevenue"
+       },
+       {
+        "kind": "profile",
+        "ref": "questionnaire",
+        "field": "grossMarginRate"
+       },
+       {
+        "kind": "calc",
+        "ref": "sum of monthly cost lines",
+        "inputs": [
+         {
+          "kind": "listing",
+          "ref": "listing-bg016",
+          "field": "rentMonthly",
+          "form": true
+         },
+         {
+          "kind": "listing",
+          "ref": "listing-bg016",
+          "field": "serviceChargeMonthly",
+          "form": true
+         }
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "id": "listing-bg016:location:explanation",
+     "aspect": "location",
+     "severity": "info",
+     "claim": "Design studio near Starine Novaka, Palilula benefits from 68 shops and 39 food venues for client meetings and breaks. 8 nearby offices suggest relevant networking. 7 bus/tram stops and 6 parking areas support access. 150 homes provide potential local clients. Dense urban setting suits collaboration, though limited crafts (0) means no specialized maker suppliers nearby. Data doesn't capture foot traffic, rent costs, or specific office amenities.",
+     "author": "Location analyst",
+     "source": {
+      "kind": "calc",
+      "ref": "Location analyst explanation of the OpenStreetMap counts",
+      "inputs": [
+       {
+        "kind": "osm",
+        "ref": "Overpass count within 300 m of 44.80948,20.47514 (way/521052116, street)",
+        "field": "food"
+       },
+       {
+        "kind": "osm",
+        "ref": "Overpass count within 300 m of 44.80948,20.47514 (way/521052116, street)",
+        "field": "shops"
+       },
+       {
+        "kind": "osm",
+        "ref": "Overpass count within 300 m of 44.80948,20.47514 (way/521052116, street)",
+        "field": "offices"
+       },
+       {
+        "kind": "osm",
+        "ref": "Overpass count within 300 m of 44.80948,20.47514 (way/521052116, street)",
+        "field": "crafts"
+       },
+       {
+        "kind": "osm",
+        "ref": "Overpass count within 300 m of 44.80948,20.47514 (way/521052116, street)",
+        "field": "transit"
+       },
+       {
+        "kind": "osm",
+        "ref": "Overpass count within 300 m of 44.80948,20.47514 (way/521052116, street)",
+        "field": "schools"
+       },
+       {
+        "kind": "osm",
+        "ref": "Overpass count within 300 m of 44.80948,20.47514 (way/521052116, street)",
+        "field": "parking"
+       }
+      ]
+     }
+    },
+    {
+     "id": "listing-bg016:finance:explanation",
+     "aspect": "finance",
+     "severity": "info",
+     "claim": "Monthly cost: 840.00 EUR (rent 790.00 EUR + service charge 50.00 EUR). Initial costs: 14580.00 EUR (deposit 1580.00 EUR, fit-out 5000.00 EUR, equipment 8000.00 EUR). Rent per m2: 17.56 EUR/m2. Total cost over 24 months: 33160.00 EUR. Exit cost after 12 months: at least 2500.00 EUR (unrecovered fit-out). Cost represents 7% of expected revenue. Break-even revenue: 1050.00 EUR monthly. Payback period: 2 months. Missing: VAT treatment, utilities cost, agency fee, complete exit cost calculation.",
+     "author": "Finance analyst",
+     "source": {
+      "kind": "calc",
+      "ref": "Finance analyst explanation of the calculator results",
+      "inputs": [
+       {
+        "kind": "calc",
+        "ref": "sum of monthly cost lines",
+        "inputs": [
+         {
+          "kind": "listing",
+          "ref": "listing-bg016",
+          "field": "rentMonthly",
+          "form": true
+         },
+         {
+          "kind": "listing",
+          "ref": "listing-bg016",
+          "field": "serviceChargeMonthly",
+          "form": true
+         }
+        ]
+       },
+       {
+        "kind": "calc",
+        "ref": "sum of initial cost lines",
+        "inputs": [
+         {
+          "kind": "listing",
+          "ref": "listing-bg016",
+          "field": "deposit",
+          "form": true
+         },
+         {
+          "kind": "profile",
+          "ref": "questionnaire",
+          "field": "fitOutBudget"
+         },
+         {
+          "kind": "profile",
+          "ref": "questionnaire",
+          "field": "equipmentBudget"
+         }
+        ]
+       },
+       {
+        "kind": "calc",
+        "ref": "rent / area",
+        "inputs": [
+         {
+          "kind": "listing",
+          "ref": "listing-bg016",
+          "field": "rentMonthly",
+          "form": true
+         },
+         {
+          "kind": "listing",
+          "ref": "listing-bg016",
+          "field": "areaM2",
+          "form": true
+         }
+        ]
+       },
+       {
+        "kind": "calc",
+        "ref": "total cost of occupancy over the term",
+        "inputs": [
+         {
+          "kind": "calc",
+          "ref": "sum over months of rent x (1 + indexation)^year",
+          "inputs": [
+           {
+            "kind": "listing",
+            "ref": "listing-bg016",
+            "field": "rentMonthly",
+            "form": true
+           },
+           {
+            "kind": "lease",
+            "ref": "lease-listing-bg016",
+            "clause": "term",
+            "quote": "Ugovor se zaključuje na period od 24 meseca"
+           },
+           {
+            "kind": "calc",
+            "ref": "no indexation clause",
+            "inputs": [
+             {
+              "kind": "lease",
+              "ref": "lease-listing-bg016",
+              "clause": "indexationKind",
+              "quote": "Zakupnina je fiksna tokom celog trajanja ugovora"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "kind": "calc",
+          "ref": "(monthly cost - rent) x months",
+          "inputs": [
+           {
+            "kind": "calc",
+            "ref": "sum of monthly cost lines",
+            "inputs": [
+             {
+              "kind": "listing",
+              "ref": "listing-bg016",
+              "field": "rentMonthly",
+              "form": true
+             },
+             {
+              "kind": "listing",
+              "ref": "listing-bg016",
+              "field": "serviceChargeMonthly",
+              "form": true
+             }
+            ]
+           },
+           {
+            "kind": "lease",
+            "ref": "lease-listing-bg016",
+            "clause": "term",
+            "quote": "Ugovor se zaključuje na period od 24 meseca"
+           }
+          ]
+         },
+         {
+          "kind": "profile",
+          "ref": "questionnaire",
+          "field": "fitOutBudget"
+         },
+         {
+          "kind": "profile",
+          "ref": "questionnaire",
+          "field": "equipmentBudget"
+         }
+        ]
+       },
+       {
+        "kind": "calc",
+        "ref": "known part of the exit cost after 12 months",
+        "inputs": [
+         {
+          "kind": "calc",
+          "ref": "fit-out x (term - 12) / term",
+          "inputs": [
+           {
+            "kind": "profile",
+            "ref": "questionnaire",
+            "field": "fitOutBudget"
+           },
+           {
+            "kind": "lease",
+            "ref": "lease-listing-bg016",
+            "clause": "term",
+            "quote": "Ugovor se zaključuje na period od 24 meseca"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "kind": "calc",
+        "ref": "fit-out x (term - 12) / term",
+        "inputs": [
+         {
+          "kind": "profile",
+          "ref": "questionnaire",
+          "field": "fitOutBudget"
+         },
+         {
+          "kind": "lease",
+          "ref": "lease-listing-bg016",
+          "clause": "term",
+          "quote": "Ugovor se zaključuje na period od 24 meseca"
+         }
+        ]
+       },
+       {
+        "kind": "calc",
+        "ref": "known part of the exit cost after 12 months",
+        "inputs": [
+         {
+          "kind": "calc",
+          "ref": "fit-out x (term - 12) / term",
+          "inputs": [
+           {
+            "kind": "profile",
+            "ref": "questionnaire",
+            "field": "fitOutBudget"
+           },
+           {
+            "kind": "lease",
+            "ref": "lease-listing-bg016",
+            "clause": "term",
+            "quote": "Ugovor se zaključuje na period od 24 meseca"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "kind": "calc",
+        "ref": "monthly cost / expected monthly revenue",
+        "inputs": [
+         {
+          "kind": "calc",
+          "ref": "sum of monthly cost lines",
+          "inputs": [
+           {
+            "kind": "listing",
+            "ref": "listing-bg016",
+            "field": "rentMonthly",
+            "form": true
+           },
+           {
+            "kind": "listing",
+            "ref": "listing-bg016",
+            "field": "serviceChargeMonthly",
+            "form": true
+           }
+          ]
+         },
+         {
+          "kind": "profile",
+          "ref": "questionnaire",
+          "field": "expectedMonthlyRevenue"
+         }
+        ]
+       },
+       {
+        "kind": "calc",
+        "ref": "monthly cost / gross margin",
+        "inputs": [
+         {
+          "kind": "calc",
+          "ref": "sum of monthly cost lines",
+          "inputs": [
+           {
+            "kind": "listing",
+            "ref": "listing-bg016",
+            "field": "rentMonthly",
+            "form": true
+           },
+           {
+            "kind": "listing",
+            "ref": "listing-bg016",
+            "field": "serviceChargeMonthly",
+            "form": true
+           }
+          ]
+         },
+         {
+          "kind": "profile",
+          "ref": "questionnaire",
+          "field": "grossMarginRate"
+         }
+        ]
+       },
+       {
+        "kind": "calc",
+        "ref": "initial costs / (revenue x margin - monthly cost)",
+        "inputs": [
+         {
+          "kind": "calc",
+          "ref": "initial costs - refundable deposit",
+          "inputs": [
+           {
+            "kind": "calc",
+            "ref": "sum of initial cost lines",
+            "inputs": [
+             {
+              "kind": "lease",
+              "ref": "lease-listing-bg016",
+              "clause": "deposit",
+              "quote": "Zakupac pri potpisivanju uplaćuje depozit od 1.580 EUR"
+             },
+             {
+              "kind": "profile",
+              "ref": "questionnaire",
+              "field": "fitOutBudget"
+             },
+             {
+              "kind": "profile",
+              "ref": "questionnaire",
+              "field": "equipmentBudget"
+             }
+            ]
+           },
+           {
+            "kind": "lease",
+            "ref": "lease-listing-bg016",
+            "clause": "deposit",
+            "quote": "Zakupac pri potpisivanju uplaćuje depozit od 1.580 EUR"
+           }
+          ]
+         },
+         {
+          "kind": "profile",
+          "ref": "questionnaire",
+          "field": "expectedMonthlyRevenue"
+         },
+         {
+          "kind": "profile",
+          "ref": "questionnaire",
+          "field": "grossMarginRate"
+         },
+         {
+          "kind": "calc",
+          "ref": "sum of monthly cost lines",
+          "inputs": [
+           {
+            "kind": "listing",
+            "ref": "listing-bg016",
+            "field": "rentMonthly",
+            "form": true
+           },
+           {
+            "kind": "listing",
+            "ref": "listing-bg016",
+            "field": "serviceChargeMonthly",
+            "form": true
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    }
+   ],
+   "premises": {
+    "notStated": [
+     "parking",
+     "heating"
+    ]
+   },
+   "ranking": {
+    "rank": 1,
+    "score": 91,
+    "scoreHigh": 97,
+    "confidence": "high",
+    "tier": 1,
+    "reasons": [
+     {
+      "text": "Monthly cost 840 EUR is 65% of the 1,300 EUR budget",
+      "effect": "plus",
+      "source": {
+       "kind": "calc",
+       "ref": "monthly cost / monthly budget",
+       "inputs": [
+        {
+         "kind": "calc",
+         "ref": "sum of monthly cost lines",
+         "inputs": [
+          {
+           "kind": "listing",
+           "ref": "listing-bg016",
+           "field": "rentMonthly",
+           "form": true
+          },
+          {
+           "kind": "listing",
+           "ref": "listing-bg016",
+           "field": "serviceChargeMonthly",
+           "form": true
+          }
+         ]
+        },
+        {
+         "kind": "profile",
+         "ref": "questionnaire",
+         "field": "monthlyBudget"
+        }
+       ]
+      }
+     },
+     {
+      "text": "Lease: no rent increase clause",
+      "effect": "plus",
+      "source": {
+       "kind": "lease",
+       "ref": "lease-listing-bg016",
+       "clause": "indexationKind",
+       "quote": "Zakupnina je fiksna tokom celog trajanja ugovora"
+      }
+     }
+    ],
+    "components": [
+     {
+      "name": "cost",
+      "weight": 35,
+      "value": 1
+     },
+     {
+      "name": "area",
+      "weight": 15,
+      "value": 0.83
+     },
+     {
+      "name": "lease",
+      "weight": 15,
+      "value": 1
+     },
+     {
+      "name": "location",
+      "weight": 10,
+      "value": 1
+     },
+     {
+      "name": "premises",
+      "weight": 10,
+      "value": 0.33,
+      "valueHigh": 1
+     },
+     {
+      "name": "checks",
+      "weight": 15,
+      "value": 1
+     }
+    ],
+    "rentShare": {
+     "share": 0.07,
+     "threshold": 0.15,
+     "aboveThreshold": false,
+     "source": {
+      "kind": "calc",
+      "ref": "monthly cost / expected monthly revenue",
+      "inputs": [
+       {
+        "kind": "calc",
+        "ref": "sum of monthly cost lines",
+        "inputs": [
+         {
+          "kind": "listing",
+          "ref": "listing-bg016",
+          "field": "rentMonthly",
+          "form": true
+         },
+         {
+          "kind": "listing",
+          "ref": "listing-bg016",
+          "field": "serviceChargeMonthly",
+          "form": true
+         }
+        ]
+       },
+       {
+        "kind": "profile",
+        "ref": "questionnaire",
+        "field": "expectedMonthlyRevenue"
+       }
+      ]
+     },
+     "thresholdSource": {
+      "kind": "assumption",
+      "ref": "RANKING_ASSUMPTIONS",
+      "field": "rentShare.checkAbove"
+     }
+    },
+    "verdict": {
+     "verdict": "good",
+     "why": "High confidence, a score of 91 and nothing to check before signing"
+    }
+   },
+   "leaseOrBuy": {
+    "known": true,
+    "years": 3,
+    "leaseCost": {
+     "amount": 28440,
+     "currency": "EUR",
+     "source": {
+      "kind": "calc",
+      "ref": "rent x months planned, with the yearly increase",
+      "inputs": [
+       {
+        "kind": "listing",
+        "ref": "listing-bg016",
+        "field": "rentMonthly",
+        "form": true
+       },
+       {
+        "kind": "calc",
+        "ref": "lease length in months / 12 (no years given)",
+        "inputs": [
+         {
+          "kind": "profile",
+          "ref": "questionnaire",
+          "field": "leaseMonths"
+         }
+        ]
+       },
+       {
+        "kind": "calc",
+        "ref": "no indexation clause",
+        "inputs": [
+         {
+          "kind": "lease",
+          "ref": "lease-listing-bg016",
+          "clause": "indexationKind",
+          "quote": "Zakupnina je fiksna tokom celog trajanja ugovora"
+         }
+        ]
+       }
+      ]
+     }
+    },
+    "buyCost": {
+     "amount": 17429,
+     "currency": "EUR",
+     "source": {
+      "kind": "calc",
+      "ref": "down payment + transfer tax + fees + loan payments + loan still owed + property tax and upkeep per year + what the cash put in could have earned - the price the space is still worth",
+      "inputs": [
+       {
+        "kind": "calc",
+        "ref": "price per m2 x area",
+        "inputs": [
+         {
+          "kind": "assumption",
+          "ref": "RGZ, average price of commercial premises sold in the first half of 2026 (reported by Biznis.rs)",
+          "field": "priceEurPerM2.Beograd.Palilula"
+         },
+         {
+          "kind": "listing",
+          "ref": "listing-bg016",
+          "field": "areaM2",
+          "form": true
+         }
+        ]
+       },
+       {
+        "kind": "assumption",
+        "ref": "BUY_ASSUMPTIONS",
+        "field": "downPaymentShare"
+       },
+       {
+        "kind": "assumption",
+        "ref": "NBS: average weighted rate on new euro and euro-indexed loans to companies, August 2026 (reported by Biznis.rs, 28 Sep 2026)",
+        "field": "interestRatePerYear"
+       },
+       {
+        "kind": "assumption",
+        "ref": "BUY_ASSUMPTIONS",
+        "field": "loanYears"
+       },
+       {
+        "kind": "assumption",
+        "ref": "BUY_ASSUMPTIONS",
+        "field": "transferTaxRate"
+       },
+       {
+        "kind": "assumption",
+        "ref": "BUY_ASSUMPTIONS",
+        "field": "buyingFeesRate"
+       },
+       {
+        "kind": "assumption",
+        "ref": "BUY_ASSUMPTIONS",
+        "field": "propertyTaxRatePerYear"
+       },
+       {
+        "kind": "assumption",
+        "ref": "BUY_ASSUMPTIONS",
+        "field": "maintenanceRatePerYear"
+       },
+       {
+        "kind": "assumption",
+        "ref": "SuiteSpot assumption: 3% a year that the cash put in could earn elsewhere (for comparison, NBS reported 3.3% on new household foreign-currency deposits in March 2026, Biznis.rs, 29 Apr 2026)",
+        "field": "cashReturnPerYear"
+       },
+       {
+        "kind": "calc",
+        "ref": "lease length in months / 12 (no years given)",
+        "inputs": [
+         {
+          "kind": "profile",
+          "ref": "questionnaire",
+          "field": "leaseMonths"
+         }
+        ]
+       }
+      ]
+     }
+    },
+    "upFront": {
+     "amount": 27308,
+     "currency": "EUR",
+     "source": {
+      "kind": "calc",
+      "ref": "price x (down payment + transfer tax + fees)",
+      "inputs": [
+       {
+        "kind": "calc",
+        "ref": "price per m2 x area",
+        "inputs": [
+         {
+          "kind": "assumption",
+          "ref": "RGZ, average price of commercial premises sold in the first half of 2026 (reported by Biznis.rs)",
+          "field": "priceEurPerM2.Beograd.Palilula"
+         },
+         {
+          "kind": "listing",
+          "ref": "listing-bg016",
+          "field": "areaM2",
+          "form": true
+         }
+        ]
+       },
+       {
+        "kind": "assumption",
+        "ref": "BUY_ASSUMPTIONS",
+        "field": "downPaymentShare"
+       },
+       {
+        "kind": "assumption",
+        "ref": "BUY_ASSUMPTIONS",
+        "field": "transferTaxRate"
+       },
+       {
+        "kind": "assumption",
+        "ref": "BUY_ASSUMPTIONS",
+        "field": "buyingFeesRate"
+       }
+      ]
+     }
+    },
+    "price": {
+     "amount": 79155,
+     "currency": "EUR",
+     "source": {
+      "kind": "calc",
+      "ref": "price per m2 x area",
+      "inputs": [
+       {
+        "kind": "assumption",
+        "ref": "RGZ, average price of commercial premises sold in the first half of 2026 (reported by Biznis.rs)",
+        "field": "priceEurPerM2.Beograd.Palilula"
+       },
+       {
+        "kind": "listing",
+        "ref": "listing-bg016",
+        "field": "areaM2",
+        "form": true
+       }
+      ]
+     }
+    },
+    "monthlyLoanPayment": {
+     "amount": 601,
+     "currency": "EUR",
+     "source": {
+      "kind": "calc",
+      "ref": "loan annuity: price x (1 - down payment), interest rate, loan years",
+      "inputs": [
+       {
+        "kind": "calc",
+        "ref": "price per m2 x area",
+        "inputs": [
+         {
+          "kind": "assumption",
+          "ref": "RGZ, average price of commercial premises sold in the first half of 2026 (reported by Biznis.rs)",
+          "field": "priceEurPerM2.Beograd.Palilula"
+         },
+         {
+          "kind": "listing",
+          "ref": "listing-bg016",
+          "field": "areaM2",
+          "form": true
+         }
+        ]
+       },
+       {
+        "kind": "assumption",
+        "ref": "BUY_ASSUMPTIONS",
+        "field": "downPaymentShare"
+       },
+       {
+        "kind": "assumption",
+        "ref": "NBS: average weighted rate on new euro and euro-indexed loans to companies, August 2026 (reported by Biznis.rs, 28 Sep 2026)",
+        "field": "interestRatePerYear"
+       },
+       {
+        "kind": "assumption",
+        "ref": "BUY_ASSUMPTIONS",
+        "field": "loanYears"
+       }
+      ]
+     }
+    },
+    "cheaper": "buy",
+    "difference": {
+     "amount": 11011,
+     "currency": "EUR",
+     "source": {
+      "kind": "calc",
+      "ref": "difference between the rent and the net cost of buying over the years planned",
+      "inputs": [
+       {
+        "kind": "calc",
+        "ref": "rent x months planned, with the yearly increase",
+        "inputs": [
+         {
+          "kind": "listing",
+          "ref": "listing-bg016",
+          "field": "rentMonthly",
+          "form": true
+         },
+         {
+          "kind": "calc",
+          "ref": "lease length in months / 12 (no years given)",
+          "inputs": [
+           {
+            "kind": "profile",
+            "ref": "questionnaire",
+            "field": "leaseMonths"
+           }
+          ]
+         },
+         {
+          "kind": "calc",
+          "ref": "no indexation clause",
+          "inputs": [
+           {
+            "kind": "lease",
+            "ref": "lease-listing-bg016",
+            "clause": "indexationKind",
+            "quote": "Zakupnina je fiksna tokom celog trajanja ugovora"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "kind": "calc",
+        "ref": "down payment + transfer tax + fees + loan payments + loan still owed + property tax and upkeep per year + what the cash put in could have earned - the price the space is still worth",
+        "inputs": [
+         {
+          "kind": "calc",
+          "ref": "price per m2 x area",
+          "inputs": [
+           {
+            "kind": "assumption",
+            "ref": "RGZ, average price of commercial premises sold in the first half of 2026 (reported by Biznis.rs)",
+            "field": "priceEurPerM2.Beograd.Palilula"
+           },
+           {
+            "kind": "listing",
+            "ref": "listing-bg016",
+            "field": "areaM2",
+            "form": true
+           }
+          ]
+         },
+         {
+          "kind": "assumption",
+          "ref": "BUY_ASSUMPTIONS",
+          "field": "downPaymentShare"
+         },
+         {
+          "kind": "assumption",
+          "ref": "NBS: average weighted rate on new euro and euro-indexed loans to companies, August 2026 (reported by Biznis.rs, 28 Sep 2026)",
+          "field": "interestRatePerYear"
+         },
+         {
+          "kind": "assumption",
+          "ref": "BUY_ASSUMPTIONS",
+          "field": "loanYears"
+         },
+         {
+          "kind": "assumption",
+          "ref": "BUY_ASSUMPTIONS",
+          "field": "transferTaxRate"
+         },
+         {
+          "kind": "assumption",
+          "ref": "BUY_ASSUMPTIONS",
+          "field": "buyingFeesRate"
+         },
+         {
+          "kind": "assumption",
+          "ref": "BUY_ASSUMPTIONS",
+          "field": "propertyTaxRatePerYear"
+         },
+         {
+          "kind": "assumption",
+          "ref": "BUY_ASSUMPTIONS",
+          "field": "maintenanceRatePerYear"
+         },
+         {
+          "kind": "assumption",
+          "ref": "SuiteSpot assumption: 3% a year that the cash put in could earn elsewhere (for comparison, NBS reported 3.3% on new household foreign-currency deposits in March 2026, Biznis.rs, 29 Apr 2026)",
+          "field": "cashReturnPerYear"
+         },
+         {
+          "kind": "calc",
+          "ref": "lease length in months / 12 (no years given)",
+          "inputs": [
+           {
+            "kind": "profile",
+            "ref": "questionnaire",
+            "field": "leaseMonths"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    },
+    "notes": []
+   }
+  }
+ }
+}

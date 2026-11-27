@@ -5,3 +5,9 @@ web/dist/
 traces/
 *.log
 data/
+
+# Motion design intro video: renders, generated audio and third-party reference clips stay local
+motion-design-clip/out/
+motion-design-clip/material/audio/
+motion-design-clip/public/audio/
+motion-design-clip/references/

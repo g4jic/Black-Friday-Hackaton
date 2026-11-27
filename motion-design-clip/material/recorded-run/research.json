@@ -1,0 +1,1 @@
+{"id":"4778e552-201b-47d8-98c5-09e791ede188","mode":"demo","answers":"recorded","status":"done","events":235,"metrics":{"durationMs":9946,"loops":32,"peakParallel":30,"toolCalls":20,"candidates":8,"rejected":2,"loopsCancelled":5,"softFlags":4,"rejectedExtractions":1,"agentsHalted":0,"tokens":{"input":0,"output":0},"costUsd":null,"timedOut":false}}
