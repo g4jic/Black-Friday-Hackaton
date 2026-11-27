@@ -3,6 +3,22 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
+## Update (27 Nov 2026, 22:30, Andrej + Claude): final pass, every flow works without a key
+- Fresh clone (npm install 15 s, no .env) walked as a judge: sign up, both roles, Fill with example, publish, Find
+  spaces, candidate, save, offer, accept, simulated rent payment. All worked.
+- Keyless now runs every flow: Find spaces offers the three example businesses (recorded real runs) or "Your
+  business" (own questionnaire); "Evaluate for my business" works on any listing, also an owner's own; "Evaluate an
+  outside listing" works. These use the scripted agents with the questionnaire as typed. Without a key a lease draft
+  outside the seed is not read and a new address gets no area data (OSM is live only: a slow OSM held a keyless run
+  until its 60 s timeout). The recordings are untouched (tests/recorded-demo.test.ts passes).
+- Fixes: the candidate page links to its SuiteSpot listing ("View listing", where save and offer live); the listing
+  page shows "Edit listing" on your own listing and no seeker actions to owner-only accounts (`mine` flag from the
+  server); a leased listing cannot be deleted (409) and an offer on a removed listing cannot be accepted; the business
+  profile is stored per account; `ownerWording` never rewrites a quote; the photo dialog can pick the same file again;
+  a new listing starts with the account email as contact.
+- README: keyless rows, Mermaid with Location analyst and Premises inspector, "Built during" instead of "48 hours".
+  Open: the demo video link, a LICENSE (ask Aleksa and Andrej), listing photos.
+
 ## Update (27 Nov 2026, 21:40, Andrej + Claude): plain interface text, photo dialog
 - Decided by Andrej: the interface says "owner", never "landlord", and shows no "simulated", "Stripe test" or
   "simulated landlord" tags; the README and How it works state once that the data is synthetic and payments are

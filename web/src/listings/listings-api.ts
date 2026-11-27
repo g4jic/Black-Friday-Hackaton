@@ -27,7 +27,7 @@ export type ListingInput = {
 }
 
 /** leased: the space has a lease (only the flag, never the tenant; demo listings are never leased). */
-export type PublicListing = ListingInput & { id: string; isDemo: boolean; createdAt: string; updatedAt: string; currency: "EUR"; leased?: boolean }
+export type PublicListing = ListingInput & { id: string; isDemo: boolean; createdAt: string; updatedAt: string; currency: "EUR"; leased?: boolean; mine?: boolean }
 export type ContactInput = { phone: string | null; email: string | null; consentToPublish: boolean }
 export type RevealedContact = { name: string; phone: string | null; email: string | null; isDemo: boolean; links: boolean }
 export type ListingProblem = { field: string; message: string }

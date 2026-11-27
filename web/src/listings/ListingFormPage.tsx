@@ -1,5 +1,6 @@
 import { Save } from "lucide-react"
 import { useEffect, useState, type ReactNode } from "react"
+import { useAuth } from "../app/auth"
 import { Link, navigate, paths } from "../app/router"
 import { BUSINESS_TYPE_LABELS, type BusinessType } from "../app/settings"
 import { Card, EmptyState } from "../app/Shell"
@@ -147,7 +148,9 @@ export const FIELD_NAMES: Record<string, string> = {
 }
 
 export function ListingFormPage({ id }: { id?: string }) {
-  const [form, setForm] = useState<Form | null>(id ? null : EMPTY_LISTING_FORM)
+  // A new listing starts with the account email as its contact (the consent tick is still the owner's).
+  const accountEmail = useAuth().landlord?.email ?? ""
+  const [form, setForm] = useState<Form | null>(id ? null : { ...EMPTY_LISTING_FORM, email: accountEmail })
   const [loadError, setLoadError] = useState<string | null>(null)
   const [problems, setProblems] = useState<ListingProblem[]>([])
   const [error, setError] = useState<string | null>(null)

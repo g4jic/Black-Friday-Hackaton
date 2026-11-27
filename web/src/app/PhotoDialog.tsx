@@ -131,7 +131,10 @@ export function PhotoDialog({ onClose, onSaved }: { onClose: () => void; onSaved
           </button>
         </div>
 
-        <input ref={input} type="file" accept={ACCEPT} className="sr-only" tabIndex={-1} onChange={(event) => choose(event.target.files?.[0])} />
+        <input ref={input} type="file" accept={ACCEPT} className="sr-only" tabIndex={-1} onChange={(event) => {
+            choose(event.target.files?.[0])
+            event.target.value = "" // the same file can be chosen again after an error
+          }} />
         {image ? (
           <>
             <div

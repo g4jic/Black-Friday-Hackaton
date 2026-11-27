@@ -15,8 +15,8 @@ model claude-haiku-4-5 on our key with your own questionnaire, capped by a usage
 live run at a time, and rent paid through a real Stripe Checkout in a Stripe test sandbox, test card 4242 4242 4242
 4242, fake money.)
 
-Locally, from the README with no key and no database: `npm install`, `npm run dev`. The agents replay three recorded
-real model runs and rent is paid through a simulated checkout (no card, no money); everything
+Locally, from the README with no key and no database: `npm install`, `npm run dev`. Every flow runs: the three example
+businesses replay recorded real model runs, every other run uses scripted agents, and rent is paid through a simulated checkout (no card, no money); everything
 else is the same code and works the same.
 
 ## Description
@@ -30,7 +30,7 @@ source. Each space gets a score range, a verdict, a rent share of revenue, a bad
 comparison and a list of what to check before signing. The business can then make an offer; once the landlord accepts,
 both sides see the same lease with its rent due dates, and the tenant pays rent through one payment port (Stripe
 Checkout in a test sandbox with test keys, a simulated checkout without them; no real money ever
-moves). 278 automated tests, no key needed.
+moves). 280 automated tests, no key needed.
 All listings, landlords and businesses are synthetic. Not financial or legal advice.
 
 ## How the agents run concurrently
@@ -47,4 +47,4 @@ room is quiet, a code Ranker scores worst case first, the Report writer drafts f
 checks every sentence against the facts it cites (sends it back once, then removes failing sentences; 0 removed in all
 three demo runs). While a run is going, every running agent loop is a dot on the screen, drawn from the runtime's own
 events (the peak shows as many dots as loops: 27, 30 and 28 in the three scenarios); the Timeline tab draws every
-loop as a lane, and each run appears in Mozaik Cloud. Without a key the agents replay recorded real claude-haiku-4-5 runs (stated in the README).
+loop as a lane, and each run appears in Mozaik Cloud. Without a key the example businesses replay recorded real claude-haiku-4-5 runs and every other run uses scripted agents (stated in the README).

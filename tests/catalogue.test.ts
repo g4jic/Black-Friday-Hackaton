@@ -5,6 +5,7 @@ import { buildServer } from "../src/adapters/server/server.js"
 import { generateSeed } from "../src/adapters/seed/generate-listings.js"
 import { seedCatalogue } from "../src/adapters/seed/seed-catalogue.js"
 import { seedLeaseAnswers } from "../src/adapters/seed/seed-lease-answers.js"
+import { LocalListingStore } from "../src/adapters/storage/local-listing-store.js"
 import type { WireEvent } from "../src/application/research/wire.js"
 import {
   BUDGET_TOLERANCE,
@@ -148,15 +149,55 @@ describe("server: the keyless demo searches the seeded catalogue", () => {
     await app.close()
   })
 
-  it("Evaluate for my business: one demo listing without a key; search needs live mode", async () => {
+  it("Evaluate for my business: one listing without a key; an unknown listing is a 404", async () => {
     const app = await buildServer({ demoPace: FAST_PACE })
     const one = await app.inject({ method: "POST", url: "/api/research", payload: { source: "listing", listingId: "listing-ns001" } })
     expect(one.statusCode).toBe(201)
     expect(one.json()).toMatchObject({ listings: 1 })
     const unknown = await app.inject({ method: "POST", url: "/api/research", payload: { source: "listing", listingId: "listing-zz999" } })
-    expect(unknown.statusCode).toBe(400)
-    const search = await app.inject({ method: "POST", url: "/api/research", payload: { source: "search" } })
-    expect(search.statusCode).toBe(400)
+    expect(unknown.statusCode).toBe(404)
     await app.close()
   })
+})
+
+describe("keyless: every flow runs with scripted agents, the same code checks every value", () => {
+  const OUTSIDE = {
+    title: "Lokal 60 m2 na Limanu", city: "Novi Sad", district: "Liman 3", street: "Bulevar cara Lazara", areaM2: 60, floor: 0,
+    rentMonthly: 900, serviceChargeMonthly: 50, deposit: 1800, minimumTermMonths: 24, earlyTermination: { allowed: true, noticeMonths: 3 },
+    indexation: { kind: "cpi" }, permittedUses: ["cafe_food"], tenantPaysStructuralRepairs: false,
+  } as const
+  const noArea = () => async () => null
+  const eventsOf = async (app: Awaited<ReturnType<typeof buildServer>>, id: string) =>
+    (await app.inject({ method: "GET", url: `/api/research/${id}/events` })).body
+      .split("\n\n")
+      .filter((b) => b.includes("data: "))
+      .map((b) => JSON.parse(b.split("\n").find((l) => l.startsWith("data: "))!.slice(6)) as WireEvent)
+
+  it("an outside listing is evaluated with the questionnaire as typed; a lease draft no script knows is not read", async () => {
+    const app = await buildServer({ demoPace: FAST_PACE, areaLookup: noArea })
+    const profile = { ...demoProfile.input, monthlyBudget: 1200 }
+    const post = await app.inject({ method: "POST", url: "/api/research", payload: { source: "outside", outside: { listing: OUTSIDE, leaseDraft: "Clan 1. Zakupnina iznosi 900 EUR mesecno." }, profile } })
+    expect(post.statusCode).toBe(201)
+    expect(post.json()).toMatchObject({ mode: "demo", answers: "scripted", listings: 1 })
+    const events = await eventsOf(app, (post.json() as { id: string }).id)
+    expect(events.some((e) => e.type === "candidate.found" && e.candidateId === "listing-outside")).toBe(true)
+    expect(events.some((e) => e.type === "lease.read")).toBe(false)
+    expect(events.some((e) => e.type === "ranking.done")).toBe(true)
+    expect(events.at(-1)).toMatchObject({ type: "research.done" })
+    await app.close()
+  }, 30_000)
+
+  it("an owner's own listing and Find spaces with your own questionnaire both run without a key", async () => {
+    const store = new LocalListingStore({ seed: seedCatalogue(seed), file: null })
+    const own = await store.create({ id: "owner-1", displayName: "Owner", kind: "local" }, OUTSIDE, { email: "owner@example.com", consentToPublish: true })
+    const app = await buildServer({ demoPace: FAST_PACE, areaLookup: noArea, listingStore: store })
+    const one = await app.inject({ method: "POST", url: "/api/research", payload: { source: "listing", listingId: own.id, profile: demoProfile.input } })
+    expect(one.statusCode).toBe(201)
+    expect((await eventsOf(app, (one.json() as { id: string }).id)).at(-1)).toMatchObject({ type: "research.done" })
+    const search = await app.inject({ method: "POST", url: "/api/research", payload: { source: "search", profile: demoProfile.input, preferredDistricts: "Liman 3" } })
+    expect(search.statusCode).toBe(201)
+    const found = (await eventsOf(app, (search.json() as { id: string }).id)).filter((e) => e.type === "candidate.found")
+    expect(found[0]).toMatchObject({ candidateId: own.id }) // the preferred district leads
+    await app.close()
+  }, 30_000)
 })

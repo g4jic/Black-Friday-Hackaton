@@ -124,14 +124,17 @@ export function NewResearchPage({ config }: { config: Config | null }) {
   const scenarios = (config?.scenarios ?? []).filter((s) => s.recorded)
   const [scenario, setScenario] = useState("cafe-novi-sad")
   useEffect(() => {
+    if (scenario === OWN_BUSINESS) return
     fetch(`/api/demo-questionnaire?scenario=${encodeURIComponent(scenario)}`)
       .then((response) => response.json() as Promise<{ profile: ProfileInput }>)
       .then((body) => setDemoProfile(body.profile))
       .catch(() => setDemoProfile(null))
   }, [scenario])
-  // Without a key on the server: the recorded demo scenarios, each with its fixed demo profile.
+  // Without a key on the server: Find spaces offers three example businesses (recorded real runs, fixed profile) or
+  // your own questionnaire; every other run uses the questionnaire as typed (scripted agents, the same code checks).
   const demoOnly = !liveAvailable
-  const profileLocked = demoOnly
+  const ownBusiness = scenario === OWN_BUSINESS
+  const profileLocked = demoOnly && mode === "find" && !ownBusiness
   const shownForm = profileLocked && demoProfile ? toForm(demoProfile) : form
 
   const start = async (request: StartRequest) => {
@@ -147,14 +150,15 @@ export function NewResearchPage({ config }: { config: Config | null }) {
     }
   }
 
-  /** Live runs on SuiteSpot listings use the questionnaire as typed; demo runs use the demo profile. */
+  /** With a key every run is live. Without one, an example business replays its recorded run; the rest is scripted. */
+  const live = liveAvailable ? ({ mode: "live" } as const) : {}
   const startOnCatalogue = (request: { source: "search" } | { source: "listing"; listingId: string }) => {
-    if (demoOnly) return void start(request.source === "search" ? { source: "demo", scenario } : request)
+    if (demoOnly && request.source === "search" && !ownBusiness) return void start({ source: "demo", scenario })
     const checked = profileFromForm(form)
     if ("error" in checked) return setError(checked.error)
     // Find spaces: the saved preferred districts lead the search (a preference, not a filter; see matchListings).
-    if (request.source === "search") return void start({ mode: "live", ...request, profile: checked.profile, preferredDistricts: settings.districts })
-    void start({ mode: "live", ...request, profile: checked.profile })
+    if (request.source === "search") return void start({ ...live, ...request, profile: checked.profile, preferredDistricts: settings.districts })
+    void start({ ...live, ...request, profile: checked.profile })
   }
 
   return (
@@ -180,12 +184,11 @@ export function NewResearchPage({ config }: { config: Config | null }) {
 
         {mode === "find" ? (
           <Card title="Find spaces">
-            {demoOnly && <NoKeyNotice />}
             {demoOnly && scenarios.length > 0 && (
-              <div className="mt-4" role="radiogroup" aria-label="Demo scenario">
-                <p className="mb-2 text-xs font-medium text-ink">Example business</p>
+              <div role="radiogroup" aria-label="Business to search for">
+                <p className="mb-2 text-xs font-medium text-ink">Search for</p>
                 <div className="flex flex-wrap gap-2">
-                  {scenarios.map((s) => (
+                  {[...scenarios, { id: OWN_BUSINESS, title: "Your business" }].map((s) => (
                     <button
                       key={s.id}
                       type="button"
@@ -215,15 +218,14 @@ export function NewResearchPage({ config }: { config: Config | null }) {
             )}
           </Card>
         ) : listingId ? (
-          <ListingToEvaluate listingId={listingId} liveAvailable={!demoOnly} starting={starting} error={error} blocked={false} onStart={() => startOnCatalogue({ source: "listing", listingId })} />
+          <ListingToEvaluate listingId={listingId} starting={starting} error={error} blocked={false} onStart={() => startOnCatalogue({ source: "listing", listingId })} />
         ) : (
           <OutsideListingForm
-            liveAvailable={liveAvailable}
             starting={starting}
             onStart={(outside) => {
               const checked = profileFromForm(form)
               if ("error" in checked) return setError(checked.error)
-              void start({ mode: "live", source: "outside", outside, profile: checked.profile })
+              void start({ ...live, source: "outside", outside, profile: checked.profile })
             }}
             error={error}
             problems={problems}
@@ -234,11 +236,14 @@ export function NewResearchPage({ config }: { config: Config | null }) {
   )
 }
 
-/** The SuiteSpot listing chosen with "Evaluate for my business". Without live mode only a demo listing can run. */
-function ListingToEvaluate({ listingId, liveAvailable, starting, error, blocked, onStart }: { listingId: string; liveAvailable: boolean; starting: boolean; error: string | null; blocked: boolean; onStart: () => void }) {
+/** Keyless Find spaces with the questionnaire as typed, next to the three example businesses. */
+const OWN_BUSINESS = "own"
+
+/** The SuiteSpot listing chosen with "Evaluate for my business". */
+function ListingToEvaluate({ listingId, starting, error, blocked, onStart }: { listingId: string; starting: boolean; error: string | null; blocked: boolean; onStart: () => void }) {
   const loaded = useLoad(listingId, () => listingsApi.get(listingId))
   const listing = loaded.data
-  const canRun = Boolean(listing) && (liveAvailable || Boolean(listing?.isDemo))
+  const canRun = Boolean(listing)
   return (
     <Card title="Listing to evaluate">
       {loaded.error ? (
@@ -266,7 +271,6 @@ function ListingToEvaluate({ listingId, liveAvailable, starting, error, blocked,
           </div>
         </div>
       )}
-      {listing && !canRun && <p className="mt-3 text-[13px]">This listing can be evaluated with an AI key on the server.</p>}
       <button
         type="button"
         onClick={onStart}
@@ -356,27 +360,16 @@ function ProfileFields({ form, locked, onChange }: { form: ProfileForm; locked: 
   )
 }
 
-/** The one message shown when the server has no model key: runs still work (recorded or scripted answers, see the README). */
-function NoKeyNotice() {
-  return (
-    <p className="mt-4 rounded-[18px] bg-white/70 px-4 py-3 text-[13px] leading-5 text-ink-2">
-      Without an AI key, Find spaces runs one of three example businesses.
-    </p>
-  )
-}
-
 /**
  * "Evaluate an outside listing": the same required fields as the SuiteSpot listing form, plus an optional lease draft
  * and link. Without the required fields there is no evaluation; the server's domain check lists what is missing.
  */
 function OutsideListingForm({
-  liveAvailable,
   starting,
   onStart,
   error,
   problems,
 }: {
-  liveAvailable: boolean
   starting: boolean
   onStart: (outside: { listing: unknown; leaseDraft?: string; url?: string; text?: string }) => void
   error: string | null
@@ -389,8 +382,7 @@ function OutsideListingForm({
   const problemFor = (...fields: string[]) => problems.find((p) => fields.includes(p.field))?.message
   return (
     <div className="flex flex-col gap-4">
-      {!liveAvailable && <NoKeyNotice />}
-      <fieldset disabled={!liveAvailable} className="flex flex-col gap-4 disabled:opacity-60">
+      <fieldset className="flex flex-col gap-4">
         <ListingTermsFields form={listing} set={(patch) => setListing({ ...listing, ...patch })} problemFor={problemFor} />
         <Card title="Optional">
           <div className="grid gap-3">
@@ -417,7 +409,7 @@ function OutsideListingForm({
         <button
           type="button"
           onClick={() => onStart({ listing: toInput(listing), ...(leaseDraft.trim() ? { leaseDraft } : {}), ...(url.trim() ? { url: url.trim() } : {}), ...(text.trim() ? { text } : {}) })}
-          disabled={!liveAvailable || starting}
+          disabled={starting}
           className="inline-flex h-10 items-center gap-2 rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e] disabled:opacity-40"
         >
           <Play size={16} aria-hidden /> {starting ? "Starting..." : "Evaluate this listing"}

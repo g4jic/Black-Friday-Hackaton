@@ -63,10 +63,10 @@ function toHistoryRecord(snapshot: RunSnapshot): HistoryRecord {
 /**
  * Display wording: the agents and the lease rules say "landlord" (the recorded runs are matched by their exact
  * model input, so those texts stay as they are); the interface says "owner". Only sentences are rewritten (a value
- * with a space), never ids or codes such as landlord_unilateral.
+ * with a space), never ids or codes such as landlord_unilateral, and never a quote (it must match its source word for word).
  */
-export function ownerWording(_key: string, value: unknown): unknown {
-  if (typeof value !== "string" || !value.includes(" ")) return value
+export function ownerWording(key: string, value: unknown): unknown {
+  if (typeof value !== "string" || !value.includes(" ") || key === "quote") return value
   return value.replace(/\b(L|l)andlord(s?)\b/g, (_m, l: string, plural: string) => `${l === "L" ? "O" : "o"}wner${plural}`)
 }
 
@@ -123,8 +123,8 @@ function ensureEntry(researchId: string): void {
 export type StartRequest =
   | { source: "demo"; scenario?: string }
   | { mode: "live"; source: "pasted"; listings: { text: string; url?: string; lease?: string }[]; profile?: unknown }
-  | { mode: "live"; source: "search"; profile?: unknown; preferredDistricts?: string }
-  | { mode: "live"; source: "outside"; outside: { listing: unknown; leaseDraft?: string; url?: string; text?: string }; profile?: unknown }
+  | { mode?: "live"; source: "search"; profile?: unknown; preferredDistricts?: string }
+  | { mode?: "live"; source: "outside"; outside: { listing: unknown; leaseDraft?: string; url?: string; text?: string }; profile?: unknown }
   | { mode?: "live"; source: "listing"; listingId: string; profile?: unknown }
 
 /** A refused start: the server's message, plus the field problems when the typed listing is incomplete. */

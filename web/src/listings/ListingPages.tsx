@@ -4,6 +4,7 @@ import { OfferForm } from "../deals/DealViews"
 import { dealsApi } from "../deals/deals-api"
 import { useEffect, useMemo, useState } from "react"
 import { useAuth } from "../app/auth"
+import { seeksSpaces } from "../app/roles"
 import { Link, navigate, paths } from "../app/router"
 import { BUSINESS_TYPE_LABELS } from "../app/settings"
 import { Card, EmptyState } from "../app/Shell"
@@ -120,6 +121,7 @@ function LeasedPill() {
 const countedViews = new Set<string>()
 
 export function ListingDetailPage({ id }: { id: string }) {
+  const role = useAuth().landlord?.role ?? null
   const { data: l, error } = useLoad(`listing:${id}`, () => listingsApi.get(id))
   // One view per opening of the page (StrictMode runs effects twice in development, so guard per id).
   useEffect(() => {
@@ -146,6 +148,7 @@ export function ListingDetailPage({ id }: { id: string }) {
     setContactError(null)
     listingsApi.revealContact(l.id).then(setContact, (e: unknown) => setContactError(e instanceof Error ? e.message : "Could not load the contact"))
   }
+  const seeker = seeksSpaces(role)
   const rows: [string, string][] = [
     ["Monthly rent", money(l.rentMonthly)],
     ["Monthly costs", money(l.serviceChargeMonthly)],
@@ -203,14 +206,22 @@ export function ListingDetailPage({ id }: { id: string }) {
         <Card>
           <p className="tnum text-2xl font-semibold text-ink">{money(l.rentMonthly)}</p>
           <p className="text-[13px] text-ink-2">per month, plus {money(l.serviceChargeMonthly)} monthly costs</p>
-          <button
-            type="button"
-            onClick={() => navigate(`${paths.newResearch()}?mode=evaluate&listing=${encodeURIComponent(l.id)}`)}
-            className={cx(PRIMARY, "mt-5 w-full justify-center")}
-          >
-            <Play size={16} aria-hidden /> Evaluate for my business
-          </button>
-          <SaveButton listingId={l.id} className="mt-3" />
+          {l.mine ? (
+            <Link to={paths.editListing(l.id)} className={cx(PRIMARY, "mt-5 w-full justify-center")}>
+              <Pencil size={16} aria-hidden /> Edit listing
+            </Link>
+          ) : seeker ? (
+            <>
+              <button
+                type="button"
+                onClick={() => navigate(`${paths.newResearch()}?mode=evaluate&listing=${encodeURIComponent(l.id)}`)}
+                className={cx(PRIMARY, "mt-5 w-full justify-center")}
+              >
+                <Play size={16} aria-hidden /> Evaluate for my business
+              </button>
+              <SaveButton listingId={l.id} className="mt-3" />
+            </>
+          ) : null}
           <div className="mt-3">
             {contact ? (
               <ContactBox contact={contact} />
@@ -226,7 +237,7 @@ export function ListingDetailPage({ id }: { id: string }) {
             )}
           </div>
         </Card>
-        {l.leased ? (
+        {l.mine || !seeker ? null : l.leased ? (
           <Card title="Make an offer">
             <p>This space is already leased.</p>
           </Card>

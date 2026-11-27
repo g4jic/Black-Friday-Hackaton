@@ -90,6 +90,8 @@ export class DealService {
       await this.deals.updateOffer(declined.props)
       return { offer: declined.props, tenancy: null }
     }
+    const listing = await this.listings.get(offer.props.listingId)
+    if (!listing || !listing.props.published) throw new DomainError("listing_not_found", "This listing is no longer published, so the offer cannot be accepted")
     if (!offer.props.isDemoListing && (await this.deals.tenanciesOnListing(offer.props.listingId)).length > 0) throw new DomainError("already_leased", "This space is already leased")
     const accepted = offer.accept(actor.id, now)
     const tenancy = tenancyFromOffer(accepted, { id: shortId("tenancy"), now })

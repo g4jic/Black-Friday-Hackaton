@@ -41,7 +41,8 @@ done, exact state, next steps in order, how to run locally, Supabase, tonight's 
   mailto:). The seed generator is FROZEN. **Keys are never in the repo**: `.env` is ignored; Aleksa gets the
   Supabase keys privately from Andrej; the service role key is server and seed script only.
 - **Keyless honesty:** without a key, "Find spaces" replays recorded real runs of three scenarios
-  (`npm run record:demo`) and "Evaluate for my business" on a demo listing uses scripted answers. Since 27 Nov the
+  (`npm run record:demo`); every other keyless run (own questionnaire, any listing, an outside listing) uses scripted
+  answers (lease drafts outside the seed are not read, new addresses get no area data). Since 27 Nov the
   screens label neither (Andrej's decision); the README table "What is real, recorded and scripted" states both.
   Never describe scripted answers as a model's work in the docs.
 - Deployed on Railway (https://suitespot-production.up.railway.app): ANTHROPIC_API_KEY and the SUPABASE_* values as

@@ -6,7 +6,7 @@ in code stops the agents still working on a deal breaker, and every number on th
 
 ![SuiteSpot results: ranked spaces, each rank circle coloured by its verdict, with score, monthly cost and the main reason](design/screenshots/results-list.png)
 
-> Built in 48 hours for the JigJoy Black Friday AI Hackathon (26-27 Nov 2026), track "AI agents in finance".
+> Built during the JigJoy Black Friday AI Hackathon (26-27 Nov 2026), track "AI agents in finance".
 > **All listings, landlords and businesses are synthetic. Not financial or legal advice.**
 
 - Demo video: **[link coming]** (2-3 min)
@@ -21,7 +21,7 @@ ship; put your own keys in `.env` and the local version does everything the onli
 |---|---|---|
 | Setup | `npm install`, `npm run dev`: no key, no database, about two minutes | None: open the link and sign up |
 | Accounts | Kept on your computer (`data/local-accounts.json`) | Supabase Auth |
-| Agents | Three recorded real runs of claude-haiku-4-5, replayed with their timing (the screen does not label them; this README does) | The live model (claude-haiku-4-5) on our key, with your own questionnaire or an outside listing |
+| Agents | Find spaces for the three example businesses: recorded real runs of claude-haiku-4-5, replayed with their timing. Every other run (your own questionnaire, any listing, an outside listing): scripted agents. The same code checks every value. The screen labels neither; this README does | The live model (claude-haiku-4-5) on our key, with your own questionnaire or an outside listing |
 | Rent payment | A simulated checkout (no card, no money) | A real Stripe Checkout in a Stripe test sandbox (test card `4242 4242 4242 4242`), fake money |
 | The same in both | The Mozaik runtime, every rule, calculation, hard flag, ranking, verdict and audit; onboarding with roles; listings, offers, leases and the rent schedule | The same |
 
@@ -121,8 +121,9 @@ What you see:
   checked".
 - **Timeline tab** ("How your research ran"): one lane per agent loop over time, calculator calls as dots, the loop
   that a hard flag cut, and the totals (duration, loops, peak at once, calculator calls, ruled out, loops stopped).
-- Without a key the agents replay a recorded real run of claude-haiku-4-5 (see
-  [What is real, recorded and scripted](#what-is-real-recorded-and-scripted)); the screen does not label it.
+- Without a key every flow still runs: the three example businesses replay recorded real runs of claude-haiku-4-5,
+  everything else uses scripted agents (see [What is real, recorded and scripted](#what-is-real-recorded-and-scripted));
+  the screen does not label them.
 - **How it works** (avatar menu): every weight, threshold and assumption, served from the code itself.
 
 ![The run at its peak: 27 agent loops as dots on the eight candidates, one candidate already ruled out by a deal breaker](design/screenshots/run-mid.png)
@@ -226,6 +227,9 @@ flowchart LR
   U([Business: questionnaire]) --> CM[Catalogue match and<br/>listing form check, code]
   CM -- "candidate.found x N" --> FA["Finance analyst<br/>AI, N loops in parallel"]
   CM -- "candidate.found (has a draft)" --> LR["Lease reader<br/>AI, 1 loop per draft"]
+  CM -- "candidate.found x N" --> LA["Location analyst<br/>AI, N loops"]
+  CM -- "candidate.found x N" --> PI["Premises inspector<br/>AI, N loops"]
+  LA <-- "area_data tool" --> OSM[[OpenStreetMap counts<br/>code]]
   FA <-- "calculate tool" --> CALC[[Lease cost calculator<br/>code]]
   LR -- "lease terms in shared state" --> FA
   LR -- "hard flag" --> REJ{{candidate.rejected}}
@@ -233,8 +237,12 @@ flowchart LR
   FA -- "budget hard flag" --> REJ
   REJ -. "interception: stop at next breakpoint" .-> FA
   REJ -. "interception: stop at next breakpoint" .-> LR
+  REJ -. "interception: stop at next breakpoint" .-> LA
+  REJ -. "interception: stop at next breakpoint" .-> PI
   FA -- "model.answer" --> RK[Ranker<br/>code]
   LR -- "model.answer" --> RK
+  LA -- "location.explained" --> RK
+  PI -- "premises.read" --> RK
   RK -- "ranking.done" --> RW[Report writer<br/>AI]
   RW -- "report.drafted" --> AU[Auditor<br/>code]
   AU -- "report.audit_failed (once)" --> RW
@@ -367,7 +375,7 @@ quality check").
 | Domain rules, calculations, hard flags, ranking, verdict, audit | Real code, in every mode |
 | Model answers with a key | Real: claude-haiku-4-5, live |
 | Model answers without a key, Find spaces | **Recorded**: three real claude-haiku-4-5 runs (`fixtures/recordings/*.json`, recorded 27 Nov 2026: 23, 27 and 21 model calls) replayed with their latencies; code still checks every value. A request that is not in the recording fails as a provider error, it is never invented. Not labelled on screen (stated here) |
-| Model answers without a key, "Evaluate for my business" on a demo listing | **Scripted**: answers built from the seed's own clause sentences, still checked by code. Not labelled on screen (stated here) |
+| Model answers without a key, every other run (Find spaces with your own questionnaire, "Evaluate for my business" on any listing, an outside listing) | **Scripted**: the agents follow fixed scripts (the calculator calls, the Lease reader's answers for the seed drafts built from the seed's own clause sentences); every number still comes from the calculator and code still checks every quote. A lease draft that is not in the seed is not read without a key (its terms come from the listing form), and the area data of an address outside the seed is not looked up. Not labelled on screen (stated here) |
 | Listings, landlords, contacts, businesses | **Synthetic**: 100 generated listings (50 Novi Sad, 50 Beograd) from a frozen seed (stated in this README and on the How it works page). Prices per m2 are a synthetic assumption roughly aligned with public 2025-2026 ranges (Kurir Biznis, Biznis.rs): medians Novi Sad 10, Beograd 16.2 EUR/m2 |
 | Accounts, saved spaces, view counts | Real: Supabase Auth with Supabase, local accounts on this computer without it |
 | Area data (OpenStreetMap) | Real public data: counted once for the seeded addresses and stored in `fixtures/osm/` (© OpenStreetMap contributors, ODbL); an outside listing is looked up live (at most 1 request per second) |
@@ -396,7 +404,7 @@ npm test
 ```powershell
 npm run typecheck
 ```
-278 tests in 37 files, no key and no network needed (`tests/setup.ts` turns Mozaik Cloud off and blocks any request
+280 tests in 37 files, no key and no network needed (`tests/setup.ts` turns Mozaik Cloud off and blocks any request
 to another host): every domain rule and invariant (with the violation it rejects), the schema
 rules for every structured output, cancellation mid-run, a failing agent that does not stop the others, the server
 and its cost guards, the three recorded scenarios replayed end to end to an audited report, the run animation
@@ -406,8 +414,9 @@ simulated payment, status on both sides, leased spaces, someone else's offer or 
 against a fake fetch, test keys only).
 
 ## Known limitations
-- Without a key, Find spaces runs only the three recorded scenarios with their locked questionnaires; your own
-  questionnaire and "Evaluate an outside listing" need a key.
+- Without a key, only the three example businesses replay real model runs; your own questionnaire, your own listings
+  and outside listings run with scripted agents, which do not read a lease draft outside the seed or look up the area
+  of a new address.
 - A recording matches the agent instructions it was made with; after changing an instruction it must be re-recorded
   (`npm run record:demo`), and `tests/recorded-demo.test.ts` fails until it is.
 - Code removes phone numbers and emails from pasted listing text but cannot reliably detect a person's name; the
@@ -429,7 +438,7 @@ against a fake fetch, test keys only).
 | `npm run dev` says port 3000 is in use, or the page says "The SuiteSpot server is not answering" | Another program uses port 3000. Close it and run `npm run dev` again. |
 | Vite opens on 5174 instead of 5173 | Port 5173 was taken; open the address Vite prints. |
 | `node -v` shows 20 or lower | Install Node.js 22 LTS or newer from nodejs.org. |
-| Find spaces shows only demo scenarios | Expected without a key. Add `ANTHROPIC_API_KEY` to `.env` and restart for live runs. |
+| Find spaces shows example businesses | Expected without a key (pick "Your business" for your own questionnaire). Add `ANTHROPIC_API_KEY` to `.env` and restart for live runs. |
 | A live run answers 429 | One live run at a time per server; wait for it to finish. |
 | `npm install` warns that install scripts were skipped (npm 11) | Nothing to do: tested on a fresh clone with npm 11.20 and Node 26 (install, tests, build and the keyless demo all work). If `npm run dev` ever fails with an esbuild error, run `npm rebuild esbuild`. |
 | Signing up asks for an email confirmation (Supabase) | Turn off "Confirm email" in Supabase Auth, or use the local accounts (leave SUPABASE_* empty). |

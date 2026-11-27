@@ -147,6 +147,8 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
   // One OSM client per server: its cache and request pacing are shared by every research.
   const fixtureAreas = fixtureAreaLookup()
   let osm: OsmClient | null = null
+  // The seed listings have recorded area data. Live runs look any other address up in OpenStreetMap; keyless runs do not
+  // (a slow or blocked OSM would hold the run), so their location of a new address shows as not checked.
   const lookupFor = options.areaLookup ?? ((mode: ResearchMode) => areaLookup(fixtureAreas, mode === "live" ? liveAreaLookup((osm ??= new OsmClient())) : null))
   const secrets = () => [process.env.ANTHROPIC_API_KEY ?? ""].filter((s) => s.length >= 8)
 
@@ -206,7 +208,8 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
       // A demo scenario has a locked questionnaire (its recorded or scripted answers were made for it).
       const scenario: DemoScenarioId = isScenario(body.scenario) ? body.scenario : DEFAULT_SCENARIO
       const locked = source === "demo" ? loadScenario(scenario) : demo
-      const profile = mode === "live" && source !== "demo" ? liveProfile(body.profile, demo.profile) : locked.profile
+      // Every run except a demo scenario uses the questionnaire as typed (keyless too: the scripted agents work on any input).
+      const profile = source !== "demo" ? liveProfile(body.profile, demo.profile) : locked.profile
       const recording = mode === "demo" && source === "demo" && !options.demoCatalogue ? (options.loadRecording ?? loadRecording)(scenario) : null
       if (mode === "demo" && source === "demo" && !options.demoCatalogue && !recording && scenario !== DEFAULT_SCENARIO) {
         throw new HttpError(400, `The demo scenario "${DEMO_SCENARIOS[scenario].title}" has not been recorded yet.`)
@@ -223,20 +226,18 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
         // The keyless demo: "Find spaces" over the seeded synthetic listings with the demo questionnaire.
         ;({ catalogue, leases } = fromCatalogue(matchListings(demoSeed().listings, profile)))
       } else if (source === "search") {
-        if (mode !== "live") throw new HttpError(400, "Searching with your own questionnaire needs live mode. The demo searches with the demo questionnaire.")
         if (!options.listingStore) throw new HttpError(503, "The listing catalogue is not available on this server.")
         const matched = matchListings(await options.listingStore.listPublished(), profile, parsePreferredDistricts(body.preferredDistricts))
         if (matched.length === 0) throw new HttpError(400, NO_MATCH)
         ;({ catalogue, leases } = fromCatalogue(matched))
       } else if (source === "listing") {
         const listingId = typeof body.listingId === "string" ? body.listingId : ""
-        const space = /^listing-[a-z0-9]+$/.test(listingId) ? (mode === "live" ? await options.listingStore?.get(listingId) : demoSeed().listings.find((l) => l.id === listingId)) : null
+        const space = /^listing-[a-z0-9]+$/.test(listingId) ? ((await options.listingStore?.get(listingId)) ?? demoSeed().listings.find((l) => l.id === listingId)) : null
         if (!space || !space.props.published) {
-          throw new HttpError(mode === "live" ? 404 : 400, mode === "live" ? "Unknown listing" : "Without live mode only a demo listing can be evaluated (with the demo questionnaire).")
+          throw new HttpError(404, "Unknown listing")
         }
         ;({ catalogue, leases } = fromCatalogue([space]))
       } else if (source === "outside") {
-        if (mode !== "live") throw new HttpError(400, "Evaluating an outside listing needs an AI model key on the server. Without one, try a demo listing from Listings.")
         ;({ catalogue, leases } = outsideCandidate(body.outside))
         const pasted = typeof body.outside?.text === "string" ? body.outside.text.trim() : ""
         if (pasted) referenceText = { input: { text: pasted }, candidateId: OUTSIDE_LISTING_ID }
@@ -246,6 +247,13 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
         listings = raw.map((l) => ({ text: typeof l.text === "string" ? l.text : "", ...(typeof l.url === "string" && l.url.trim() ? { url: l.url } : {}) }))
         createListingBatch(listings) // validates 1 to 8, empty texts; throws DomainError
         leases = raw.flatMap((l, i) => (typeof l.lease === "string" && l.lease.trim() ? [createLeaseText(`pasted-${i + 1}`, l.lease, false)] : []))
+      }
+      if (mode === "demo" && source !== "demo") {
+        // Keyless: the scripted Lease reader knows only the seed lease drafts, and there is no scripted Scout for a pasted
+        // text. Any other draft is not read (no model); its lease terms still come from the listing form and the same rules.
+        const scripted = demoSeed().leaseAnswers
+        leases = leases.filter((lease) => lease.id in scripted)
+        referenceText = undefined
       }
       const requirements = profile === locked.profile ? locked.requirements : []
       const id = randomUUID()

@@ -92,9 +92,10 @@ export function registerListingRoutes(app: FastifyInstance, options: ListingRout
   })
 
   app.get("/api/listings/:id", async (req, reply) => {
-    const [listing, leased] = await Promise.all([store.get((req.params as { id: string }).id), leasedSet()])
+    const [listing, leased, actor] = await Promise.all([store.get((req.params as { id: string }).id), leasedSet(), resolveActor(req).catch(() => null)])
     if (!listing || !listing.props.published) return reply.code(404).send({ error: "No such listing" })
-    return withLeased(listing, leased)
+    // mine: the signed-in owner looks at their own listing (only the flag, never the owner id).
+    return { ...withLeased(listing, leased), mine: Boolean(actor && actor.id === listing.props.ownerId) }
   })
 
   /** "Show contact": a POST, never cached, and the contact is never written to the log. */
@@ -198,7 +199,10 @@ export function registerListingRoutes(app: FastifyInstance, options: ListingRout
     const actor = await landlord(req, reply)
     if (!actor) return reply
     try {
-      await store.delete(actor, (req.params as { id: string }).id)
+      const id = (req.params as { id: string }).id
+      // A leased space keeps its listing: the tenant's lease and rent history point to it.
+      if ((await leasedSet()).has(id)) return reply.code(409).send({ error: "This space is leased, so its listing cannot be deleted." })
+      await store.delete(actor, id)
       return reply.code(204).send()
     } catch (error) {
       return send(reply, error, req)

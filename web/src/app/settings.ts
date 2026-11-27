@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react"
+import { currentUser } from "./identity"
 import { BUSINESS_TYPE_LABELS, CURRENCIES, DEFAULT_SETTINGS, MUST_HAVES, type Settings } from "./profile-types"
 
 /**
@@ -10,13 +11,14 @@ export * from "./profile-types"
 const positiveOrNull = (value: unknown, allowZero = false): number | null =>
   typeof value === "number" && Number.isFinite(value) && (allowZero ? value >= 0 : value > 0) ? value : null
 
-const STORAGE_KEY = "suitespot.settings.v1"
+/** One profile per account: two accounts in the same browser never see each other's questionnaire. */
+const storageKey = () => `suitespot.settings.v1:${currentUser().id}`
 const listeners = new Set<() => void>()
-let cachedSettings: Settings | null = null
+let cachedSettings: { key: string; settings: Settings } | null = null
 
-function readSettings(): Settings {
+function readSettings(key: string): Settings {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
+    const raw = window.localStorage.getItem(key)
     if (!raw) return DEFAULT_SETTINGS
     const parsed = JSON.parse(raw) as Partial<Settings>
     return {
@@ -38,16 +40,18 @@ function readSettings(): Settings {
 }
 
 export function loadSettings(): Settings {
-  cachedSettings ??= readSettings()
-  return cachedSettings
+  const key = storageKey()
+  if (cachedSettings?.key !== key) cachedSettings = { key, settings: readSettings(key) }
+  return cachedSettings.settings
 }
 
 /** Returns false when the browser refused to store them (they still apply until the tab is closed). */
 export function saveSettings(next: Settings): boolean {
-  cachedSettings = next
+  const key = storageKey()
+  cachedSettings = { key, settings: next }
   listeners.forEach((listener) => listener())
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    window.localStorage.setItem(key, JSON.stringify(next))
     return true
   } catch {
     return false

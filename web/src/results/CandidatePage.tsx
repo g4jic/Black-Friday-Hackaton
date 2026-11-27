@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, ExternalLink, OctagonAlert, TriangleAlert } from "lucide-react"
+import { ArrowLeft, ArrowRight, Check, ExternalLink, OctagonAlert, TriangleAlert } from "lucide-react"
 import type { ReactNode } from "react"
 import { useResearch } from "../app/research-store"
 import { Link, paths } from "../app/router"
@@ -213,8 +213,18 @@ function Summary({
   )
 }
 
-/** A real link only when a URL was really given; nothing is ever built or guessed. */
+/** A SuiteSpot listing (where the space can be saved or offered on), or a real link when a URL was really given. */
 function ListingLink({ candidate }: { candidate: CandidateDTO }) {
+  if (/^listing-(?!outside$)/.test(candidate.id)) {
+    return (
+      <Link
+        to={paths.listing(candidate.id)}
+        className="inline-flex h-10 items-center gap-2 rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e]"
+      >
+        View listing <ArrowRight size={15} aria-hidden />
+      </Link>
+    )
+  }
   if (candidate.listingUrl) {
     return (
       <a

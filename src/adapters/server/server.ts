@@ -49,6 +49,8 @@ export type ServerOptions = {
   readonly paymentGateway?: PaymentGateway
   /** For tests: where profile photos go (default: Supabase Storage with Supabase, else data/avatars). */
   readonly avatarStore?: AvatarStore
+  /** For tests: the area data lookup (default: recorded data for the seed, OpenStreetMap for any other address). */
+  readonly areaLookup?: ResearchRoutesOptions["areaLookup"]
 }
 
 export async function buildServer(options: ServerOptions = {}): Promise<FastifyInstance> {
@@ -82,7 +84,7 @@ export async function buildServer(options: ServerOptions = {}): Promise<FastifyI
   const gateway = options.paymentGateway ?? (stripe.config ? new StripeTestGateway(stripe.config) : simulated)
   const deals = new DealService(dealStore, listingStore, gateway)
   registerDealRoutes(app, { deals, resolveActor, simulated: gateway === simulated ? simulated : gateway instanceof SimulatedGateway ? gateway : null })
-  registerResearchRoutes(app, { liveAvailable: () => runMode() === "live", demoPace: options.demoPace, liveRunner: options.liveRunner, demoCatalogue: options.demoCatalogue, listingStore, loadRecording: options.loadRecording, replaySpeed: options.replaySpeed })
+  registerResearchRoutes(app, { liveAvailable: () => runMode() === "live", demoPace: options.demoPace, liveRunner: options.liveRunner, demoCatalogue: options.demoCatalogue, listingStore, loadRecording: options.loadRecording, replaySpeed: options.replaySpeed, ...(options.areaLookup ? { areaLookup: options.areaLookup } : {}) })
 
   // In production the built web app is served by this same process (one Railway service).
   if (existsSync(webDist)) {

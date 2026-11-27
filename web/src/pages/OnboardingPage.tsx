@@ -361,7 +361,9 @@ const EXAMPLE_LISTING: ListingForm = {
 }
 
 function OwnerStep({ label, onBack, onDone }: { label: string; onBack: () => void; onDone: (published: boolean) => Promise<void> | void }) {
-  const [form, setForm] = useState<ListingForm>(EMPTY_LISTING_FORM)
+  // The contact starts as the account email (the owner can change it); publishing it still needs the consent tick.
+  const accountEmail = useAuth().landlord?.email ?? ""
+  const [form, setForm] = useState<ListingForm>(() => ({ ...EMPTY_LISTING_FORM, email: accountEmail }))
   const [storefront, setStorefront] = useState<Storefront>("")
   const [parking, setParking] = useState("")
   const [example, setExample] = useState(false)
