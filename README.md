@@ -40,6 +40,8 @@ SuiteSpot is a two-sided platform: landlords publish structured listings (rent, 
 indexation, permitted use, optionally the lease draft), and a business either asks **Find spaces** (SuiteSpot picks
 the listings that fit its questionnaire) or **Evaluate an outside listing** (it types in the terms of a space it found
 elsewhere). Every candidate gets a score range, a verdict decided by code, and a list of what to check before signing.
+When the business picks a space it can make an offer; once the landlord accepts, both sides see the same lease with
+its rent due dates, and the tenant pays each month's rent (simulated, or Stripe in test mode).
 
 Why a platform and not a scraper: we read the terms of use of the Serbian listing sites (4zida.rs, oglasi.rs,
 svenekretnine.com) and none allows automated reading of their listings, so SuiteSpot reads only listings published
@@ -71,28 +73,49 @@ does not delete an existing `node_modules` first. Use `npm ci` if you want a str
 Wait for the line `Local: http://localhost:5173/`, then open **http://localhost:5173**. No `.env` file is needed.
 
 Then:
-1. Click **Find spaces** in the top menu.
-2. Under "Demo scenario" pick one of the three: **Cafe in Novi Sad**, **Office in Beograd** or **Shop in Novi Sad**.
+1. **Sign up** with any email and password. Without Supabase the account is kept on this computer only
+   (`data/local-accounts.json`, password stored as a scrypt hash); the page says so.
+2. Click **Research** in the top menu; the **Find spaces** tab is open.
+3. Under "Demo scenario" pick one of the three: **Cafe in Novi Sad**, **Office in Beograd** or **Shop in Novi Sad**.
    The questionnaire on the left is locked to that scenario.
-3. Click **Search and evaluate**.
+4. Click **Search and evaluate**.
 
 What you see:
-- **The run** (about 7 to 9 seconds): the agents sit on an orbit around the candidate spaces. Counters show the
-  candidates evaluated, the ones rejected by a hard flag and **how many agent loops run in parallel right now** (peak
-  11 in the cafe scenario). When code finds a deal breaker, that candidate turns red and leaves the orbit
-  ("Left the orbit", with the reason), and any agent loop still working on it stops at its next breakpoint.
+- **The run** (about 7 to 13 seconds): the agents travel on a path around the candidate spaces. Counters show the
+  candidates evaluated, the ones ruled out by a deal breaker and **how many agent tasks run right now** (peak 30 in
+  the office scenario). When code finds a deal breaker, that candidate turns red and moves to "Ruled out" with the
+  reason, and any agent loop still working on it stops at its next breakpoint.
 - **Results, List tab**: one ranked list, a verdict per space (Good, Check before signing, Not recommended), the
   score as a range ("74-94") when data is missing, the confidence and the main reason. Rejected spaces are in their
   own block with the hard flag that rejected them. Click a space for its page: costs with their sources, strengths
   and risks, lease terms or questions for the landlord, and what is unknown.
 - **Report tab**: the audited report, one sentence per claim, each with the facts it cites and "Audited: N claims
   checked".
-- **Timeline tab**: one lane per agent loop over time, calculator calls as dots, the loop that a hard flag cut,
-  and "Under the hood" (duration, loops, peak in parallel, calculator calls, rejected, cancelled loops).
+- **Timeline tab** ("How your research ran"): one lane per agent loop over time, calculator calls as dots, the loop
+  that a hard flag cut, and the totals (duration, loops, peak at once, calculator calls, ruled out, loops stopped).
 - Every result screen says **"Recorded run"**: without a key the agents replay a recorded real run of
   claude-haiku-4-5 (see [What is real, recorded and scripted](#what-is-real-recorded-and-scripted)).
+- **How it works** (avatar menu): every weight, threshold and assumption, served from the code itself.
 
 ![The run: agents on an orbit around the candidates, one rejected by a hard flag](design/screenshots/run-mid.png)
+
+### Then rent a space, still with no key (offer, lease, rent payment)
+1. Open any space (for example from the results, or under **Listings**) and use **Make an offer**: rent, start date,
+   term, then **Send offer**.
+2. A demo listing has no real landlord, so you answer as the **demo landlord (simulated)**: under **My spaces**, click **Accept as demo landlord**. Code
+   creates the lease and its rent schedule (one due date per month).
+3. Under **My spaces** the lease shows every month as upcoming, due, overdue or paid. Click **Pay rent (simulated)**: the
+   checkout page is labelled **"Simulated payment, no real money"**; confirm it and the month turns **Paid
+   (simulated)**, with the payment reference.
+4. A landlord sees the same lease and the same paid month under **My listings** (sign in with a second account,
+   publish a listing, and make the offer from the first one to see both sides).
+
+With `STRIPE_SECRET_KEY=sk_test_...` and `STRIPE_PUBLISHABLE_KEY=pk_test_...` in `.env`, the same button opens a
+**Stripe Checkout in test mode** instead (test card `4242 4242 4242 4242`); live keys are refused. Both go through one
+payment port (`src/application/payments/payment-gateway.ts`) and are recorded the same way, only the reference
+differs (`simulated:<id>` or the Stripe `cs_test_` session id). **Stripe test mode demonstrates the flow; Stripe does
+not support businesses registered in Serbia, so a production version would use a local payment processor behind the
+same port.** No real money moves in any mode.
 
 Stop the servers with `Ctrl+C` in the terminal.
 
@@ -110,15 +133,22 @@ the server; the browser never receives it, and server events are scrubbed of it 
 - `SUITESPOT_ACCESS_CODE` (optional): when set, live runs need this code (users enter it under Settings), so a public
   deployment cannot spend your key. The recorded demo never needs it.
 - `MOZAIK_API_KEY` (optional): Mozaik Cloud tracing. Easier: run the pairing once, see below.
+- `STRIPE_SECRET_KEY` and `STRIPE_PUBLISHABLE_KEY` (optional, test keys only): rent payments through Stripe Checkout
+  in test mode instead of the simulated checkout.
 
 ## Optional: Supabase accounts and listings
 Without Supabase, listings come from a local store (the 100 seeded synthetic listings, plus anything you publish
-locally into `data/local-listings.json`) and there are no accounts. With a Supabase project:
+locally into `data/local-listings.json`), accounts are kept on this computer (`data/local-accounts.json`) and offers,
+leases and rent payments in `data/local-deals.json`. With a Supabase project:
 1. Apply the migrations in `supabase/migrations/` (tables `listings`, `listing_contacts`, `saved_listings`,
-   `listing_views`, all with row level security). `supabase/checks/` holds the RLS checks we ran.
+   `listing_views`, and for deals `offers`, `tenancies`, `rent_payments`, all with row level security: each party
+   reads only its own offers, leases and payments, and only the server writes them, after the domain rules pass).
+   `supabase/checks/rls-checks.sql` holds the RLS checks we ran ("all RLS checks passed").
 2. Set `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` in `.env`. The service role key is used by
    the server and the seed script only, never sent to the browser.
 3. `npm run seed:supabase` creates the 100 demo landlords and listings (idempotent).
+4. For a public deployment: in Supabase Auth set the Site URL and the redirect URL to the deployed address, and turn
+   off "Confirm email" (the default Supabase mail sender is rate limited).
 
 Then sign up, publish a listing, save spaces under My spaces and see view counts under My listings. Contacts live in
 their own table that anonymous users cannot read; the server reveals one only on "Show contact", and demo phone
@@ -136,6 +166,8 @@ same time.
 | Catalogue match and listing form check | code | the user starts Find spaces or an evaluation | Picks the listings that fit the questionnaire (city, area, business type, budget + 10%) and adds each as a candidate, every value sourced to a listing form field; checks permitted use on every candidate, and applies the lease rules to the form terms when there is no lease draft | `catalogue.matched`, `candidate.found` (one per candidate), `candidate.rejected` on a deal breaker |
 | **Finance analyst** | **AI** (one loop per candidate) | `candidate.found` | Calls the `calculate` tool (code) for monthly cost, initial costs, cost per m2; waits in state for the lease terms; then cost over the term, exit cost, share of revenue, break-even, payback; explains in at most 120 words using only returned numbers | `finance.explained`, `candidate.rejected` (budget hard flag, decided by code) |
 | **Lease reader** | **AI** (one loop per lease draft) | `candidate.found` with a draft | Reads the draft into clauses, each with an exact quote; code checks every quote against the draft and decides hard flags and concerns | `lease.read`, `candidate.rejected` |
+| **Location analyst** | **AI** (one loop per candidate) | `candidate.found` | Calls `area_data` (code counts places mapped in OpenStreetMap within 300 m: same business, transport, schools, offices, parking, and the land use around the address); explains them for this business using only returned numbers; code decides the location score and whether noisy work next to housing is a point to check | `location.explained` |
+| **Premises inspector** | **AI** (one loop per candidate) | `candidate.found` | Reads the listing and the lease draft for floor, storefront, parking, heating, kitchen ventilation, water and drain, renovation and step-free access, each with an exact quote; code checks the quotes and decides what suits the business | `premises.read` |
 | **Scout** | **AI** | pasted listing text (Evaluate an outside listing) | Reads the pasted text into fields with quotes, in its own loop next to the others; code compares them with the typed fields | `listing.compared` |
 | Candidate cancellation | code (interception) | before every step of every loop | When the candidate of that loop is rejected, stops the loop at its breakpoint: no further model call, a tool call in flight is answered "stopped" | `loop.cancelled` |
 | Ranker | code | the room is quiet (every candidate read, no loop running) | Scores each candidate as a worst-case range, ranks by the low end, sets confidence and the verdict | `candidate.scored`, `ranking.done` |
@@ -144,9 +176,11 @@ same time.
 | Wire tap | code (observer) | every event | Streams a whitelisted projection of the bus to the browser over Server-Sent Events and computes the metrics | nothing on the bus |
 
 Where the concurrency honestly comes from:
-- **Volume**: with 8 candidates, 8 Finance analyst loops and one Lease reader loop per draft run at the same time.
-- **Independent reviews of the same candidate**: the Finance analyst and the Lease reader start on the same
-  `candidate.found` and read different inputs (the numbers vs the lease draft).
+- **Volume**: with 8 candidates, 8 Finance analyst, 8 Location analyst and 8 Premises inspector loops plus one Lease
+  reader loop per draft run at the same time.
+- **Independent reviews of the same candidate**: the Finance analyst, the Lease reader, the Location analyst and the
+  Premises inspector start on the same `candidate.found` and read different inputs (the numbers, the lease draft,
+  the area data, the description of the space).
 - **Reactions mid-run**: the Lease reader's lease terms land in shared state while the Finance analyst's loop is
   already running; Finance waits for them in state, not by calling the Lease reader. A hard flag from any participant
   rejects the candidate in state, and the interception stops every other loop on it at its next step.
@@ -174,17 +208,23 @@ flowchart LR
 ```
 
 **Proof, not a claim.** The Timeline tab draws every loop as a lane from the runtime's own events, with the peak
-number of loops in parallel. The three recorded scenarios, replayed without a key (27 Nov 2026); every report passed the audit on the first draft (12, 10 and 11 claims checked, 0 corrected, 0 removed):
+number of loops in parallel. The three recorded scenarios, replayed without a key (27 Nov 2026, evening); every report passed the audit on the first draft (11, 10 and 10 claims checked, 0 corrected, 0 removed):
 
-| Scenario | Duration | Agent loops | Peak in parallel | Rejected by a hard flag | Loops cut mid-run |
+| Scenario | Duration | Agent loops | Peak in parallel | Rejected by a hard flag | Loops stopped |
 |---|---|---|---|---|---|
-| Cafe in Novi Sad | 9.0 s | 13 | 11 | 2 | 2 |
-| Office in Beograd | 8.8 s | 16 | 14 | 2 | 2 |
-| Shop in Novi Sad | 7.2 s | 13 | 12 | 4 | 4 |
+| Cafe in Novi Sad | 12.6 s | 31 | 27 | 2 | 6 |
+| Office in Beograd | 10.0 s | 32 | 30 | 2 | 5 |
+| Shop in Novi Sad | 7.3 s | 29 | 28 | 4 | 10 |
+
+The cut that shows the mechanism best: in **Office in Beograd** the Finance analyst works on "Voždovac, 51 m2" for
+about 4.6 s, then the Lease reader finds that the landlord may raise the rent without a limit, and the Finance loop
+stops before its next tool call. In **Shop in Novi Sad** two candidates are cut by the Lease reader at the same
+moment (about 3.7 s). `npx tsx scripts/cut-report.ts` prints every cut.
 
 ![Timeline: one lane per agent loop, calculator calls, loops cut by a hard flag](design/screenshots/timeline.png)
 
-Each run also appears in Mozaik Cloud, one session per agent loop. The core sends every loop event when it finds a
+Each run also appears in Mozaik Cloud, one session per agent loop (the screenshot below is from before the Location
+analyst and the Premises inspector joined, so it shows three AI roles). The core sends every loop event when it finds a
 key (`MOZAIK_API_KEY` in `.env`, or a machine paired once with `npx @mozaik-ai/cloud-sdk pair`); without one it
 prints "telemetry disabled" and runs normally. One live run of the cafe scenario (27 Nov 2026, claude-haiku-4-5,
 22.7 s, about $0.06) in our Cloud project:
@@ -233,7 +273,20 @@ Mechanisms, with the file that implements each:
   (`src/domain/ranking.ts`).
 - **The verdict is code.** Good needs 70 or more in the worst case, high confidence and nothing to check; a space
   outside the required area range is never Good (`src/domain/verdict.ts`). The weights and rules are on the
-  Assumptions page, served from the code itself so the page cannot drift.
+  How it works page, served from the code itself so the page cannot drift.
+- **More answers on each space page, all code figures with sources:**
+  - *Rent share of revenue*: the monthly cost as a share of the expected revenue from the questionnaire; above 15%
+    it is a point to check (a SuiteSpot assumption, labelled as one, never a rejection) (`rentShareOf` in
+    `src/domain/ranking.ts`).
+  - *Noise vs land use*: for noisy work (a cafe, a workshop) code reads the OpenStreetMap land use around the address;
+    dense housing nearby is a point to check about neighbours (`noiseCheck` in `src/domain/location.ts`, data
+    `fixtures/osm/seed-areas.json`, © OpenStreetMap contributors, ODbL).
+  - *A bad year, a good year*: what leaving after 12 months would cost (from the lease's own exit terms), and when
+    the money put in comes back in a normal year (from the Finance analyst's calculator figures only).
+  - *Lease or buy*: rent over the planned stay against buying a similar space with a bank loan. Prices per m2 from
+    RGZ (first half of 2026), the loan rate from NBS (August 2026), the transfer and property tax from the Law on
+    property taxes; down payment 30%, 10 years, fees 2%, maintenance 1% and a 3% return on cash are SuiteSpot
+    assumptions, labelled as such (`src/domain/lease-or-buy.ts`).
 - **The report is audited by code.** The Report writer gets numbered facts written by code and must cite them in
   every sentence. The Auditor checks each number, candidate id and recommendation against the cited facts and the
   ranking; one rewrite, then failing sentences are removed and marked (`src/domain/report.ts`,
@@ -272,8 +325,11 @@ quality check").
 | Model answers without a key, Find spaces | **Recorded**: three real claude-haiku-4-5 runs (`fixtures/recordings/*.json`, recorded 27 Nov 2026: 23, 27 and 21 model calls) replayed with their latencies; code still checks every value. A request that is not in the recording fails as a provider error, it is never invented. Labelled "Recorded run" |
 | Model answers without a key, "Evaluate for my business" on a demo listing | **Scripted**: answers built from the seed's own clause sentences, still checked by code. Labelled "Scripted demo answers, no AI model" |
 | Listings, landlords, contacts, businesses | **Synthetic**: 100 generated listings (50 Novi Sad, 50 Beograd) from a frozen seed, labelled "Demo listing". Prices per m2 are a synthetic assumption roughly aligned with public 2025-2026 ranges (Kurir Biznis, Biznis.rs): medians Novi Sad 10, Beograd 16.2 EUR/m2 |
-| Accounts, saved spaces, view counts | Real with Supabase; off without it |
-| Payments, signing, contacting landlords | Not built |
+| Accounts, saved spaces, view counts | Real: Supabase Auth with Supabase, local accounts on this computer without it |
+| Area data (OpenStreetMap) | Real public data: counted once for the seeded addresses and stored in `fixtures/osm/` (© OpenStreetMap contributors, ODbL); an outside listing is looked up live (at most 1 request per second) |
+| Offers, leases, rent schedule | Real code and storage (Supabase or local); on a demo listing the landlord's answer is given by the tenant as the "demo landlord (simulated)" |
+| Rent payments | **Simulated** without Stripe keys ("Simulated payment, no real money"); **Stripe test mode** with test keys. Never real money |
+| Signing a lease, contacting landlords | Not built |
 
 ## Architecture and code map
 Domain-driven layers; the domain never imports from adapters (checked by `tests/architecture.test.ts`).
@@ -296,21 +352,27 @@ npm test
 ```powershell
 npm run typecheck
 ```
-180 tests in 25 files, no key and no network needed (`tests/setup.ts` turns Mozaik Cloud off and blocks any request
+227 tests in 31 files, no key and no network needed (`tests/setup.ts` turns Mozaik Cloud off and blocks any request
 to another host): every domain rule and invariant (with the violation it rejects), the schema
 rules for every structured output, cancellation mid-run, a failing agent that does not stop the others, the server
-and its cost guards, the three recorded scenarios replayed end to end to an audited report, and the frozen seed.
+and its cost guards, the three recorded scenarios replayed end to end to an audited report, the frozen seed, and
+the full deal loop over HTTP (offer, accept, lease, simulated payment, status on both sides; the Stripe test gateway
+against a fake fetch).
 
 ## Known limitations
-- The score does not weigh rent against expected revenue (occupancy cost); the report states that share as a fact.
 - Without a key, Find spaces runs only the three recorded scenarios with their locked questionnaires; your own
   questionnaire and "Evaluate an outside listing" need a key.
 - A recording matches the agent instructions it was made with; after changing an instruction it must be re-recorded
   (`npm run record:demo`), and `tests/recorded-demo.test.ts` fails until it is.
 - Code removes phone numbers and emails from pasted listing text but cannot reliably detect a person's name; the
   Scout has no field for names. Do not paste text with private details.
-- Not built: location data (OpenStreetMap), an inspection of the premises, offers and lease records between users,
-  payments. Only EUR and the two seeded cities are covered by the demo data.
+- Not built: an inspection of the premises on site, signing a lease, messages between users, a real payment
+  processor (Stripe does not support businesses registered in Serbia; production would use a local processor
+  behind the same payment port). Only EUR and the two seeded cities are covered by the demo data.
+- OpenStreetMap counts what is mapped, not foot traffic or revenue; the Location analyst says so and never estimates
+  them.
+- Lease or buy is a rough comparison with labelled assumptions (no price change, no VAT on a new building), not a
+  valuation.
 - `RequireLandlord` and `auth.landlord` keep old names in code (the UI texts are neutral).
 
 ## Troubleshooting
@@ -322,6 +384,8 @@ and its cost guards, the three recorded scenarios replayed end to end to an audi
 | Find spaces shows only demo scenarios | Expected without a key. Add `ANTHROPIC_API_KEY` to `.env` and restart for live runs. |
 | A live run answers 401 | The server has `SUITESPOT_ACCESS_CODE` set; enter the code under Settings. |
 | A live run answers 429 | One live run at a time per server; wait for it to finish. |
+| `npm install` warns that install scripts were skipped (npm 11) | Usually nothing to do. If `npm run dev` then fails with an esbuild error, run `npm rebuild esbuild`. |
+| Signing up asks for an email confirmation (Supabase) | Turn off "Confirm email" in Supabase Auth, or use the local accounts (leave SUPABASE_* empty). |
 
 ## Credits
 - Team **Scope**: Aleksa Ćupina and Andrej Gajić.
