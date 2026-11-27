@@ -95,7 +95,7 @@ export function AuthScreen({ mode, next }: { mode: "signin" | "signup"; next: st
           <h1 className="text-center text-[34px] leading-tight font-semibold tracking-tight text-ink">{mode === "signin" ? "Welcome back" : "Create your account"}</h1>
           <p className="mt-2 text-center text-sm text-ink-2">{mode === "signin" ? "Sign in to research spaces, save them and publish your listings." : "One account to research spaces, save them and list your own."}</p>
           {auth.mode === "local" && auth.status === "ready" && (
-            <p className="mt-4 rounded-[16px] bg-white/70 px-4 py-2.5 text-center text-xs leading-5 text-ink-2">Local account: this server has no Supabase, so the account is kept in a file on this machine only.</p>
+            <p className="mt-4 rounded-[16px] bg-white/70 px-4 py-2.5 text-center text-xs leading-5 text-ink-2">This copy of SuiteSpot keeps accounts on this computer only.</p>
           )}
           {confirmSent ? (
             <p className="mt-8 text-center text-sm text-ink">Check your email to confirm the account, then sign in.</p>
