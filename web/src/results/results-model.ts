@@ -397,3 +397,44 @@ export function premisesSection(c: CandidateDTO): {
     heating: heating ? { text: heating.claim, source: quoted(heating.source) } : null,
   }
 }
+
+export type YearScenarios = {
+  /** If the business does not work out: what leaving after 12 months costs, with its parts. */
+  bad: { total: string | null; complete: boolean; parts: { label: string; value: string; source: SourceDTO }[]; source: SourceDTO | null; note: string }
+  /** If the business goes as planned: months until the initial costs are earned back, and the break-even revenue. */
+  good: { payback: string | null; paybackSource: SourceDTO | null; breakEven: string | null; breakEvenSource: SourceDTO | null; note: string }
+}
+
+/** "Bad year, good year" from the Finance analyst's code-computed figures only; nothing new is calculated here. */
+export function yearScenarios(c: CandidateDTO): YearScenarios | null {
+  const exit = findingOf(c, "exit_cost_after_12_months")
+  const payback = findingOf(c, "payback_months")
+  const breakEven = findingOf(c, "break_even_revenue")
+  if (!exit && !payback && !breakEven) return null
+  const parts = c.findings
+    .filter((f) => f.id.startsWith(`${c.id}:finance:exit_cost_part_`))
+    .flatMap((f) => (f.value?.kind === "money" ? [{ label: f.claim, value: formatMoney(f.value.amount, f.value.currency), source: f.source }] : []))
+  const exitTotal = moneyText(exit?.value)
+  const known = findingOf(c, "exit_cost_known_part")
+  const paybackText = payback?.value?.kind === "number" ? `${payback.value.value} months` : payback?.value?.kind === "none" ? "Never at your expected revenue" : null
+  return {
+    bad: {
+      total: exitTotal ?? moneyText(known?.value),
+      complete: exitTotal !== null,
+      parts,
+      source: exit?.value?.kind === "money" ? exit.source : (known?.source ?? null),
+      note: exitTotal
+        ? "Leaving after 12 months: rent during the notice period, any early exit penalty and the fit-out you have not used up. Whether the deposit comes back is not known."
+        : known
+          ? "Known part only: the lease terms (notice period) are needed for the full cost of leaving."
+          : "Needs the lease terms (notice period).",
+    },
+    good: {
+      payback: paybackText,
+      paybackSource: payback?.value && payback.value.kind !== "missing" ? payback.source : null,
+      breakEven: breakEven?.value?.kind === "money" ? `${formatMoney(breakEven.value.amount, breakEven.value.currency)} per month` : null,
+      breakEvenSource: breakEven?.value?.kind === "money" ? breakEven.source : null,
+      note: paybackText ? "At the revenue and gross margin from your questionnaire, the money you put in before opening (without the refundable deposit) is earned back after this many months." : "Needs your gross margin (questionnaire).",
+    },
+  }
+}

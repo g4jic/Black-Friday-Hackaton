@@ -6,8 +6,8 @@ import { EmptyState } from "../app/Shell"
 import { candidateLocation, candidateShortName } from "../candidate-label"
 import { ResearchMissing } from "../pages/ResearchPage"
 import type { CandidateDTO } from "../types"
-import { cx } from "../ui"
-import { allSources, costRows, leaseSection, locationSection, premisesSection, resultsList, strengthsAndRisks, unknowns, type PointItem } from "./results-model"
+import { SourceLabel, cx } from "../ui"
+import { allSources, costRows, leaseSection, locationSection, premisesSection, resultsList, strengthsAndRisks, unknowns, yearScenarios, type PointItem } from "./results-model"
 import { ScoreBlock, VerdictBadge } from "./ResultsList"
 
 /** One candidate (/research/:id/candidate/:candidateId): separate cards with clear headings, nothing overlapping. */
@@ -39,6 +39,7 @@ export function CandidatePage({ researchId, candidateId }: { researchId: string;
       <Header candidate={candidate} listingNumber={entry?.listingNumber ?? 1} position={position >= 0 ? position + 1 : null} entry={entry} />
       <div className="grid gap-4 lg:grid-cols-2">
         <CostsCard candidate={candidate} />
+        <YearScenariosCard candidate={candidate} />
         <StrengthsRisksCard candidate={candidate} />
         <LeaseCard candidate={candidate} />
         <LocationCard candidate={candidate} />
@@ -134,6 +135,69 @@ function CostsCard({ candidate }: { candidate: CandidateDTO }) {
           </div>
         ))}
       </dl>
+    </Section>
+  )
+}
+
+/** Bad year, good year: what leaving after 12 months costs, and when the money put in comes back. Code figures only. */
+function YearScenariosCard({ candidate }: { candidate: CandidateDTO }) {
+  const y = yearScenarios(candidate)
+  if (!y) return null
+  return (
+    <Section title="A bad year, a good year" className="lg:col-span-2">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-[20px] bg-white/60 p-4">
+          <p className="text-xs font-medium text-ink-2">If the business does not work out</p>
+          <p className="tnum mt-1 text-xl font-semibold text-ink">
+            {y.bad.total ? (
+              <>
+                {y.bad.complete ? "" : "At least "}
+                {y.bad.total}
+                {y.bad.source && <SourceLabel source={y.bad.source} />}
+              </>
+            ) : (
+              <span className="text-sm font-normal text-ink-3 italic">missing data</span>
+            )}
+          </p>
+          <p className="text-[13px] text-ink-2">to leave after 12 months</p>
+          {y.bad.parts.length > 0 && (
+            <ul className="mt-3 flex flex-col gap-1 text-[13px]">
+              {y.bad.parts.map((part) => (
+                <li key={part.label} className="flex justify-between gap-3">
+                  <span className="text-ink-2">{part.label}</span>
+                  <span className="tnum font-medium text-ink">{part.value}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-3 text-xs leading-5 text-ink-2">{y.bad.note}</p>
+        </div>
+        <div className="rounded-[20px] bg-white/60 p-4">
+          <p className="text-xs font-medium text-ink-2">If the business goes as planned</p>
+          <p className="tnum mt-1 text-xl font-semibold text-ink">
+            {y.good.payback ? (
+              <>
+                {y.good.payback}
+                {y.good.paybackSource && <SourceLabel source={y.good.paybackSource} />}
+              </>
+            ) : (
+              <span className="text-sm font-normal text-ink-3 italic">missing data</span>
+            )}
+          </p>
+          <p className="text-[13px] text-ink-2">to earn back what you put in before opening</p>
+          {y.good.breakEven && (
+            <p className="mt-3 flex justify-between gap-3 text-[13px]">
+              <span className="text-ink-2">Revenue needed just to cover the space</span>
+              <span className="tnum font-medium text-ink">
+                {y.good.breakEven}
+                {y.good.breakEvenSource && <SourceLabel source={y.good.breakEvenSource} />}
+              </span>
+            </p>
+          )}
+          <p className="mt-3 text-xs leading-5 text-ink-2">{y.good.note}</p>
+        </div>
+      </div>
+      <p className="mt-4 text-xs text-ink-3">Calculated by SuiteSpot from the listing and your questionnaire. Not financial advice.</p>
     </Section>
   )
 }

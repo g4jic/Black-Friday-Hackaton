@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { applyEvent, initialResearch, type ResearchState } from "../web/src/research-state.js"
-import { allSources, costRows, headline, leaseSection, plainSource, premisesSection, resultsList, scoreReason, strengthsAndRisks, unknowns } from "../web/src/results/results-model.js"
+import { allSources, costRows, headline, leaseSection, plainSource, premisesSection, resultsList, scoreReason, strengthsAndRisks, unknowns, yearScenarios } from "../web/src/results/results-model.js"
 import { formatMoney } from "../web/src/format.js"
 import type { CandidateDTO, RankingDTO, WireEvent } from "../web/src/types.js"
 
@@ -88,6 +88,28 @@ describe("candidate page", () => {
     expect(rows[3]).toMatchObject({ label: "Exit after 12 months", value: null, note: "Needs lease terms. Includes 10,000 EUR unrecovered fit-out." })
     expect(leaseSection(c).questions.length).toBeGreaterThan(0)
     expect(plainSource({ kind: "profile", ref: "questionnaire" })).toBe("your questionnaire")
+  })
+
+  it("a bad year and a good year come only from the code figures, with the parts of the exit cost", () => {
+    const money = (amount: number) => ({ kind: "money" as const, amount, currency: "EUR" })
+    const f = (name: string, claim: string, value: CandidateDTO["findings"][number]["value"]) => ({ id: `listing-04:finance:${name}`, aspect: "finance", severity: "info" as const, claim, author: "Finance analyst", value, source: calc })
+    const c = candidate("listing-04", "Liman 1", 70, {
+      findings: [
+        f("exit_cost_after_12_months", "Exit cost after 12 months", money(5300)),
+        f("exit_cost_part_1", "Cost during notice period", money(2600)),
+        f("exit_cost_part_2", "Unrecovered fit-out", money(2700)),
+        f("payback_months", "Pays back in 9 months", { kind: "number", value: 9 }),
+        f("break_even_revenue", "Break-even revenue", money(4333)),
+      ],
+    })
+    const y = yearScenarios(c)!
+    expect(y.bad).toMatchObject({ total: "5,300 EUR", complete: true })
+    expect(y.bad.parts.map((p) => [p.label, p.value])).toEqual([["Cost during notice period", "2,600 EUR"], ["Unrecovered fit-out", "2,700 EUR"]])
+    expect(y.good).toMatchObject({ payback: "9 months", breakEven: "4,333 EUR per month" })
+    const noMargin = yearScenarios(candidate("listing-04", "Liman 1", 70, { findings: [f("payback_months", "Payback: missing data", { kind: "missing", missing: ["grossMarginRate"] })] }))!
+    expect(noMargin.good.payback).toBeNull()
+    expect(noMargin.good.note).toContain("gross margin")
+    expect(yearScenarios(candidate("listing-06", "Liman 1", 70))).toBeNull()
   })
 
   it("hard flags come first among the risks", () => {
