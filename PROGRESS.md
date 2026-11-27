@@ -3,6 +3,88 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
+## HANDOFF (27 Nov 2026, branch wip/agents, Aleksa -> Andrej): READ THIS FIRST
+Aleksa ran out of limit mid-phase. **main is untouched** (last good: 2db1917, all tests pass there, keyless demo works).
+Everything below is on the branch `wip/agents`, committed even though tests do not all pass. Do not merge it into
+main until the steps below are done. Feature freeze 18:00, submissions close at midnight.
+
+### The plan (Aleksa's prompt, phase by phase; after each phase: tests + typecheck, commit and push to main if they
+pass, with a PROGRESS entry; if a phase fails, revert it)
+- **Phase 0 (done, no changes):** a table of all criteria (who checks them, whether they affect the score, or not
+  built). It was shown in chat; the short version: built = budget, permitted use, locked in, unlimited increase (hard
+  flags, code), area, lease terms, soft lease concerns, typed-vs-text mismatch, ranges/confidence/tier, verdict,
+  sources, audit. Not built = rent share of revenue threshold (phase 3), location (phase 1), premises (phase 2),
+  hard requirements, fair-price estimate, in-listing contradictions.
+- **Phase 1, Location analyst:** CODE gets OpenStreetMap data (Nominatim for coordinates, Overpass counts within
+  300 m): same business type (competition), public transport, schools/faculties, offices, parking. Follow the OSM
+  usage policies (User-Agent, at most 1 request per second to Nominatim, cache). Normalise the address before
+  geocoding ("grbavici" -> "Grbavica, Novi Sad"). For the 100 seed listings the data is fetched once and stored in
+  fixtures (public OSM data, attribution "© OpenStreetMap contributors, ODbL"), so keyless and tests run without the
+  network. Live lookups only for an outside listing. The AI agent (Location analyst) explains the numbers for the
+  business from the questionnaire, source "osm"; it never estimates revenue or foot traffic. The Ranker gets a
+  "location" part with a weight; missing data goes into the range like everything else.
+- **Phase 2, Premises inspector:** an AI agent reads the listing and the lease draft and reports what suits the
+  business: floor, storefront, parking, heating, ventilation/drain for a cafe or food, renovation needed,
+  accessibility. Every claim with a quote (the same buildX principle). What is not stated is MissingData. Only soft
+  flags and a "premises" part of the score; CODE decides what is a flag.
+- **Phase 3, rent to revenue:** a rule in the Ranker (code): monthly cost as a share of expected revenue. The
+  threshold is a clearly labelled ASSUMPTION on the Assumptions screen (for example above 15% gives a soft flag). No
+  revenue given: MissingData.
+- **For all phases:** on every candidate.found Finance, Lease, Location and Premises run in parallel; a hard flag
+  still stops every loop of that candidate. New weights in RANKING_ASSUMPTIONS and on the Assumptions screen; rank by
+  verdict, then by the low end, stays. Report writer and Auditor cover the new facts. The schema-rules test covers
+  the new schemas. Tests without a key and without the network. UI: new Timeline lanes, new reasons and sources
+  (osm) on the candidate page.
+- **Phase 4:** re-record the 3 scenarios (npm run record:demo) and check the audit has 0 removed. Check that Office in
+  Beograd (Voždovac) and Shop in Novi Sad still cut Finance MID-RUN (more than 1 s) and update the video section
+  below with the new times; if the mid-run cut disappears, tell Aleksa before committing. One live run for a new
+  Mozaik Cloud screenshot. Update the README (agent table, Mermaid, P4 note, limitations) and the screenshots.
+  Commit and push.
+
+### Where each phase stopped
+**Phase 1: code done, data incomplete, NOT committed to main.**
+- Done and tested (keyless, offline): `src/domain/location.ts` (AreaData with osm sources, LOCATION_ASSUMPTIONS per
+  business type, scoreLocation, normalizeDistrict: "grbavici", "na Grbavici", "Limanu 2" -> known district);
+  `src/adapters/osm/osm-client.ts` (Nominatim + Overpass, User-Agent, Nominatim 1.1 s gap, Overpass 2.5 s gap,
+  45 s timeout, cache per address, falls back from overpass-api.de to maps.mail.ru, remembers the one that works);
+  `src/adapters/osm/area-lookup.ts` (fixture for seed listings, live OSM only for other listings and only in live
+  mode); `src/application/agents/location-analyst.ts` (one loop per candidate, tool area_data, explanation checked
+  number by number, cancelled by hard flags like the others); Ranker weights now cost 40, area 15, lease 20,
+  location 10, checks 15 (`src/domain/ranking.ts`); Report writer gets an OSM fact per ranked candidate; Assumptions
+  screen shows the location rules and the ODbL attribution; Timeline and orbit have the Location analyst; candidate
+  page has a Location card; `tests/location.test.ts` and `tests/fixtures/sample-areas.ts` (synthetic counts).
+- **Not done: the fixture `fixtures/osm/seed-areas.json` does not exist yet.** `scripts/fetch-osm.ts` was stopped at
+  44 of 59 distinct seed addresses (it writes the JSON only at the end). Its log is in
+  `fixtures/osm/seed-areas.partial.txt` (counts per address, no coordinates). On 27 Nov overpass-api.de answered 502
+  and overpass.kumi.systems / overpass.private.coffee timed out; only maps.mail.ru worked, at 15 to 90 s per address.
+  Next step: run `npx tsx scripts/fetch-osm.ts` again (about 20 to 60 minutes; Nominatim is fast). Improvement worth
+  doing first: make the script write the JSON after every address and skip addresses already in the file, so a
+  stop loses nothing. Without the fixture every seed candidate has location "not checked" (range of 10 points,
+  confidence medium), which also changes the verdicts in the demo.
+- Tests on this branch: everything passes except `tests/recorded-demo.test.ts` (3 tests): the new agent makes model
+  requests that are not in the recordings. Fix: after the fixture exists, `npm run record:demo` (about $0.30,
+  needs ANTHROPIC_API_KEY), then run all tests. Typecheck is clean for phase 1 alone.
+
+**Phase 2: files written, NOT wired, does not compile yet.**
+- `src/domain/premises.ts` (PREMISES_FIELDS with quotes, buildPremises, evaluatePremises per business type, soft
+  concerns only, score range low/high, PREMISES_CONCERN_RULES), `src/application/agents/premises-inspector.ts`
+  (agent, like the Lease reader), `tests/premises.test.ts` (domain tests).
+- Missing to make it compile and run: export `./premises.js` from `src/domain/index.ts`; add `premises` map and
+  `recordPremises(facts)` to `SuiteSpotState`; add the agent to `research-session.ts` (agents list) and its events
+  (`premises.read`, `premises.extraction_rejected`, `premises.failed`) to PASS_THROUGH; a "premises" component in
+  `scoreCandidate` (use the low/high range of evaluatePremises; add PREMISES_CONCERN_RULES to checks.notCountedTwice
+  so a concern is not counted twice) and new weights (suggestion: cost 35, area 15, lease 15, location 10, premises
+  10, checks 15); scripted answers in `demo-script.ts` (route "You are the Premises inspector"); schema-rules test
+  list (premises-inspector.ts:PREMISES_EXTRACTION_SCHEMA); ui.tsx AGENTS and ORBIT_AGENTS; a Premises card on the
+  candidate page; Report writer facts (soft concerns already flow in as "check" facts).
+
+**Phase 3 and Phase 4: not started.**
+
+### Recommendation if time is short
+Main already works and is fully documented. If phases 1-2 cannot be finished, verified and re-recorded before 18:00,
+leave main as it is and spend the time on the video and the Railway deploy. Never merge wip/agents with failing
+recorded tests: the keyless demo would break for the jury.
+
 ## For the video (Andrej): which scenario shows a hard flag cutting a running agent
 Checked on 27 Nov by replaying the three recorded scenarios at the app's own replay speed (no key). Times are from the
 start of the run. "Form check" rejections happen in the first milliseconds (code reads the listing form terms), so
