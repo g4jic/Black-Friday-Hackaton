@@ -1,9 +1,17 @@
 # SuiteSpot
 
-**Is this lease a good financial decision for my business?** A small business picks a few commercial spaces and
-Mozaik agents evaluate every one at the same time. Code does every calculation, stops the agents the moment it finds a
-deal breaker, and checks every number against its source. The answer takes about ten seconds instead of an evening
-with a spreadsheet.
+**SuiteSpot finds a small business the best financial deal on a commercial space.** The business says what it
+needs. Mozaik agents then evaluate every matching space at the same time, from every financial angle:
+
+- the real monthly cost and the money needed up front;
+- the cost of leaving early;
+- the rent's share of revenue;
+- the lease risks;
+- leasing against buying.
+
+They rank the spaces so the business sees which one is its best financial case, and why. Code does every
+calculation, stops the agents the moment it finds a deal breaker, and checks every number against its source. The
+answer takes about ten seconds instead of an evening with a spreadsheet.
 
 ![Results: ranked spaces, the rank circle coloured by the verdict, with score, monthly cost and the main reason](design/screenshots/results-list.png)
 
@@ -39,7 +47,9 @@ SuiteSpot is a two-sided platform:
   - asks **Find spaces**: SuiteSpot picks the listings that fit, or
   - **evaluates one listing**: from SuiteSpot, or a space found elsewhere whose terms it types in.
 
-Every candidate gets a score range, a verdict decided by code and a list of what to check before signing. The
+**Every agent works toward one goal: the best financial case for this business.** Every candidate gets a score
+range, a verdict decided by code and a list of what to check before signing. The ranking puts the best financial
+case first. The
 business can then make an offer. Once it is accepted, both sides see the same lease and its rent schedule, and the
 tenant pays rent: simulated locally, Stripe test mode online.
 
@@ -103,7 +113,8 @@ own questionnaire, any listing, an outside listing) uses **scripted agents**; se
 ![A space's page: verdict, score range, monthly cost, then sourced Costs and Lease or buy cards](design/screenshots/candidate.png)
 
 ## How the agents run concurrently
-Built on **`@mozaik-ai/core` 6.0.0**.
+Built on **`@mozaik-ai/core` 6.0.0**. Each agent judges one side of the financial case: cost, lease, location or
+premises. The Ranker weighs them into one ranking, worst case first.
 
 - Every research run is one Mozaik runtime with one shared, typed `RuntimeState`.
 - **There is no orchestrator.** Every event reaches every participant, and each one decides through its own situation

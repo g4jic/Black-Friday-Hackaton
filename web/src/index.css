@@ -283,7 +283,8 @@ button:active {
     opacity 400ms ease-out,
     transform 400ms ease-out;
 }
-.orbit-glow[data-busy="true"] {
+.orbit-glow[data-busy="true"],
+.orbit-agent[data-busy="true"] .orbit-glow {
   animation: orbit-glow 2.4s ease-in-out infinite;
 }
 @keyframes orbit-glow {

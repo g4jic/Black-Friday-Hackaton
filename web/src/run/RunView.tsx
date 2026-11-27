@@ -102,6 +102,8 @@ const WORK_RADIUS = 0.56
 const CENTRE_RADIUS = 0.3
 /** How long each encounter plays, in ms. */
 const LIFE = { flag: 1800, handoff: 1300, auditReturn: 1700, ranked: 1400, bounce: 650, fadeIn: 220, fadeOut: 420 }
+/** The least time an agent spends in the field once it starts working, so a single quick step is still seen. */
+const MIN_WORK_MS = 2600
 /** The whole team turns slowly around the centre while the run lasts (degrees a second). */
 const DRIFT = 5
 /** The agents that run loops on single candidates: a thin link joins two of them while both work on the same space. */
@@ -233,10 +235,14 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
     let drift = 0
     /** where the busy agents' shared formation has turned to (degrees) */
     let formation = -90
+    /** until when each agent stays in the field at the least (performance.now) */
+    const heldUntil = new Map<string, number>()
+    const wasBusy = new Set<string>()
     let last = performance.now()
     let frame = 0
     let settled = false
     const tick = (now: number) => {
+      let animatingHold = false
       const dt = Math.min(1 / 30, (now - last) / 1000)
       last = now
       const sec = now / 1000
@@ -269,9 +275,25 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
         if (d.candidateId) onCandidate.set(d.candidateId, (onCandidate.get(d.candidateId) ?? new Set<string>()).add(d.agent))
       }
 
+      // 0. who is working: an agent with running loops, or one whose single step just arrived (the Ranker's ranking,
+      //    the Auditor sending a draft back). Every agent stays in the field at least MIN_WORK_MS from the moment it
+      //    starts, so short work is still seen.
+      const busy = new Set<string>()
+      for (const name of ORBIT_AGENTS) {
+        const step = m.cues.some(
+          (c) => fresh.has(c.key) && ((c.kind === "ranked" && name === "Ranker") || (c.kind === "auditReturn" && name === "Auditor")),
+        )
+        const active = (!s.done && byAgent.has(name)) || step
+        if (active && !wasBusy.has(name)) heldUntil.set(name, now + MIN_WORK_MS)
+        if (active || now < (heldUntil.get(name) ?? 0)) busy.add(name)
+        if (now < (heldUntil.get(name) ?? 0)) animatingHold = true
+      }
+      wasBusy.clear()
+      for (const name of busy) wasBusy.add(name)
+
       // 1. where each agent would like to be: on the big circle while idle, wandering in the field while busy
       const target = new Map<string, [number, number]>()
-      const busyNames = ORBIT_AGENTS.filter((name) => !s.done && byAgent.has(name))
+      const busyNames = ORBIT_AGENTS.filter((name) => busy.has(name))
       if (!s.done) formation += 18 * dt
       ORBIT_AGENTS.forEach((name, i) => {
         const slot = agentAngle(name) + drift
@@ -393,7 +415,11 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
         a.x *= k
         a.y *= k
         const el = els.current.agents.get(name)
-        if (el) place(el, [a.x, a.y])
+        if (el) {
+          place(el, [a.x, a.y])
+          const state = String(busy.has(name))
+          if (el.dataset.busy !== state) el.dataset.busy = state
+        }
       }
 
       // 4. glows, links and encounter lines, drawn between where the agents are now
@@ -485,7 +511,7 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
         }
       }
 
-      if (s.done && !animating && !settled) {
+      if (s.done && !animating && !animatingHold && !settled) {
         settled = true
         live.current.onSettled()
       }
@@ -504,7 +530,6 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
 
   const status = useHeldValue(statusLine(state), STATUS_HOLD_MS)
   const unit = clamp01(half / 340) * 0.4 + 0.6
-  const working = new Set(model.dots.filter((d) => d.endSeq === null).map((d) => d.agent))
   const lineCues = model.cues.filter((c) => c.kind === "handoff" || c.kind === "auditReturn")
   const flagCues = model.cues.filter((c): c is FlagCue => c.kind === "flag")
 
@@ -536,17 +561,16 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
 
       {ORBIT_AGENTS.map((name) => {
         const Icon = agentIcon(name)
-        const busy = working.has(name) && !state.done
         return (
           <div
             key={name}
             ref={(el) => void (el ? els.current.agents.set(name, el) : els.current.agents.delete(name))}
             className="orbit-agent"
             style={{ width: 44 * unit, height: 44 * unit }}
-            data-busy={busy}
             title={name}
           >
-            <span className="orbit-glow" data-busy={busy} />
+            {/* the frame loop sets data-busy on the agent (it holds short work on screen for MIN_WORK_MS) */}
+            <span className="orbit-glow" />
             {/* dark red when this agent raises a deal breaker (a flag cue names it) */}
             <span
               ref={(el) => void (el ? els.current.agentFlags.set(name, el) : els.current.agentFlags.delete(name))}
