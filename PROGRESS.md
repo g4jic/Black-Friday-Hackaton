@@ -3,6 +3,20 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
+## Update (27 Nov 2026, night, Aleksa + Claude): two-user deal check, Leased status, deployed (52d7c93)
+- **Two real users, locally (keyless, local accounts, simulated payment):** owner publishes, seeker offers from
+  Listings, owner accepts under Offers, seeker pays one month (simulated), owner sees it paid and leased. Negative
+  checks over the API: answering or withdrawing someone else's offer 403, paying someone else's rent 403, an offer on
+  a leased space 409, an offer on your own listing refused by the domain; a third user sees no one else's deals.
+  Local note: `.env` has Stripe test keys, so a local run uses Stripe Checkout; blank STRIPE_* for the simulated one.
+- **Fixes:** the offer-sent text points to Offers; Owner Home shows Leased for a space with a lease; the public
+  listing API adds `leased: true/false` (only the flag, no tenant data; never on demo listings, whose deal loop stays
+  open), so Listings and the listing page show a Leased pill and "This space is already leased." instead of the
+  offer form. New port method `DealStore.leasedListingIds()` (local and Supabase; Supabase query checked against the
+  real database). Test in `tests/deals-api.test.ts`; 263 tests pass.
+- **Deployed 52d7c93** from a clean main (an earlier upload with the same code but uncommitted was replaced by this
+  one); production: 100 listings carry the flag, none leased (the only tenancy is on demo listing-ns001).
+
 ## Update (27 Nov 2026, late evening, Aleksa + Claude): logo, lens buildings, Cloud screenshot, deployed (a9b357c)
 - **Logo hover:** the mark is an inline SVG component (`web/src/Logo.tsx`, same drawing as the favicon file); on hover
   the handle and ring turn 12 degrees counter-clockwise around the ring centre (300 ms, soft spring back), the building
