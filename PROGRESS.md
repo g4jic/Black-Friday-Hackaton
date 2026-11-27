@@ -3,9 +3,24 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
-## HANDOFF (27 Nov 2026, evening, Aleksa + Claude): onboarding with roles, branch wip/onboarding
-Phases A, B and C are done on `wip/onboarding` (pushed). main is not changed yet: merge only with typecheck and every
-test green (262 tests in 34 files at the end of phase C).
+## HANDOFF (27 Nov 2026, evening, Aleksa + Claude): onboarding with roles MERGED and DEPLOYED
+- **main = 941d17b** (merge of `origin/wip/stripe`, Andrej's Stripe sandbox key change, fast-forward, then
+  `wip/onboarding`, no conflicts). On main: typecheck clean, 262 tests in 34 files pass, including the recorded demo.
+- **Fresh clone (27 Nov, Node 24.15, npm 11.12, no .env, no keys in the environment):** `npm install` 16 s, no errors;
+  `npm run dev` keyless (local accounts, 3 recorded scenarios); followed the README Quick start word for word: sign
+  up, role choice, Find a space, Skip for now, Research, Office in Beograd, Search and evaluate: results with
+  "Recorded run". The temporary clone was deleted.
+- **Railway: DEPLOYED from Aleksa's folder** (the Railway login is the "Scope | Digital Studio" account; folder linked
+  to project SuiteSpot, environment production, service suitespot; `npx @railway/cli up --ci`, "Deploy complete").
+  Variables were not changed or read. Checked on https://suitespot-production.up.railway.app: `/api/config` answers
+  (live mode, 3 recorded scenarios), Supabase accounts; a new test account signed up, went to the role choice, saved
+  "seeker" and onboarded_at in Supabase user_metadata, skipped the profile and ran a recorded scenario (`?autorun=demo`,
+  Cafe in Novi Sad, done in 12.6 s, "Recorded run", no model call); no console errors. The test account was deleted
+  through the admin API.
+- Railway warns that railway.json (Config as Code) works until 2026-12-01; after that its defaults still run npm run
+  build and npm start (see the older HANDOFF).
+
+Phases A, B and C below are the details of the onboarding work.
 
 ### Supabase role backfill (done 27 Nov, `scripts/backfill-roles.ts`)
 Accounts made before the onboarding got a role in `user_metadata` so they skip the role choice: 102 accounts written,
@@ -29,9 +44,10 @@ owner 100 (the 100 synthetic demo landlords, each with a listing), both 2 (Aleks
   seeker or both, Add a space for an owner. The avatar menu keeps "Also ...", How it works, Settings, Sign out.
 - README Quick start has the onboarding step; the landlord side of the deal walkthrough now says Offers.
 
-### Redeploy after merge (Andrej)
-`git pull` on main in his folder, then `npx @railway/cli up --ci`. No new Railway variables and no Supabase migration
-(the role lives in user_metadata).
+### Redeploying later
+From any team folder on main (pulled): `npx @railway/cli up --ci` after `npx @railway/cli link` to SuiteSpot /
+production / suitespot. This change needed no new Railway variables and no Supabase migration (the role lives in
+user_metadata).
 
 ## Onboarding details (27 Nov 2026, Aleksa + Claude, branch wip/onboarding)
 - **Phase A done (role choice):** after sign up, or a sign in while the onboarding is not finished, the welcome veil
