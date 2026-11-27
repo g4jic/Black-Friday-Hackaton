@@ -3,6 +3,35 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
+## Update (27 Nov 2026, night, Aleksa + Claude): event-driven orbit, rank colours, report page, README shots
+- **Phase 1 (960540a):** quieter sign in (no map pill), role choice with whole-card buttons and "Set up both roles",
+  step pills with an aria-label, Back above the onboarding forms.
+- **Phase 2 (9d08972), the run orbit:** every running agent loop is a dot that travels from its agent's home to its
+  candidate; the centre number is exactly the dots (the real running loops). Encounters, each only from its own wire
+  event: `candidate.rejected` (raising agent glows dark red, cancelled loops bounce off, candidate marked),
+  `lease.read` while that candidate's Finance loop still runs ("Lease terms" line), `report.audit_failed` ("Sent back"
+  pulse, not in the three recordings), `ranking.done` (candidates glide along the ring into the Ranker's order).
+  `web/src/run/orbit-model.ts` is pure; `tests/orbit-model.test.ts` replays the three recordings and checks every
+  dot and cue against its real bus event and that the peak shows as many dots as loops (27/30/28). Measured on the
+  production build (Edge, 1440x900): median frame 6.1 ms, 0 long tasks, no frame over 33 ms during the run after the
+  first event burst. A radial-gradient glow stalled one frame (about 130 ms, GPU side) at each deal breaker; the
+  glows are solid fills now. No backdrop blur on the run cards. Reduced motion: static list with counters.
+- **Phase 3 (c3240cd):** no verdict pills; the rank circle's colour is the verdict (green, yellow, red, grey for
+  cannot judge), one legend above the list, verdict in tooltip and aria-label, rejected keep their icon; How it works
+  uses the same circles. Candidate page = summary (verdict colour, score or range, monthly cost, main reason with
+  sources) + collapsible cards in two stacks (no holes): Costs, Bad year / good year, Lease or buy, Lease terms,
+  Location, The space, Strengths and risks, What is unknown; each opens with one sentence on what it means, every
+  number with its source pill; two bar charts from calc values only (`costChart`, `leaseOrBuyChart`).
+- **README (8cd834b):** screenshots retaken on the production build with a demo account (run at its peak, results
+  list, candidate page, Timeline, onboarding role step), text matches the new UI. Old unused screenshots in
+  `design/screenshots/` (live-*, reports, assumptions, new-research, results-rejected-open) are not referenced.
+- **Fresh clone (27 Nov night, Node 24.15, npm 11.12, no .env, no key variables):** npm install 17 s; `npm run dev`
+  keyless; README Quick start word for word through the UI (sign up, Find a space, Skip for now, Research, Office in
+  Beograd, Search and evaluate): results in 12.6 s, "Recorded run", 6 coloured rank circles and the legend, no
+  console errors; in the clone `npm test` 270 passed (36 files) and `npm run build` passed. The clone was deleted.
+- Local test accounts phase1.check and readme.onboarding were removed from `data/local-accounts.json` (the three
+  local demo accounts stay; nothing was created on production or in Supabase).
+
 ## Update (27 Nov 2026, night, Aleksa + Claude): smooth welcome, owner Home, one page frame (af23b94, deployed)
 - **Welcome animation measured** (Edge, production build, 1440x900, rAF frame times and long tasks over 3.4 s):
   before about 65 dropped frames, worst frame about 600 ms (stalls during the 16x zoom, the veil and the app's first
