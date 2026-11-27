@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 import type { ProfileField, ProfileFields, ProfileProblems } from "../app/business-profile"
 import { BUSINESS_TYPE_LABELS, MUST_HAVES, type BusinessType, type Currency } from "../app/settings"
 import { cx } from "../ui"
+import { Select } from "../Select"
 import { INPUT, LABEL } from "./SettingsPage"
 
 /**
@@ -38,13 +39,7 @@ export function BusinessProfileFields({
     <div className="flex flex-col gap-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <FieldBox label="Business type" problem={problems.businessType}>
-          <select value={fields.businessType} onChange={(e) => set({ businessType: e.target.value as BusinessType })} className={INPUT}>
-            {Object.entries(BUSINESS_TYPE_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
+          <Select value={fields.businessType} onChange={(businessType) => set({ businessType })} options={Object.entries(BUSINESS_TYPE_LABELS).map(([value, label]) => ({ value: value as BusinessType, label }))} className={INPUT} />
         </FieldBox>
         {input("city", "City", { placeholder: "Novi Sad or Beograd" })}
         {input("districts", "Preferred districts", { placeholder: "e.g. Liman, Grbavica, Centar", wide: true })}

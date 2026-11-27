@@ -8,6 +8,7 @@ import { businessDescription } from "../app/business-profile"
 import { Card } from "../app/Shell"
 import type { Config, ProfileInput } from "../types"
 import { Pill, cx } from "../ui"
+import { Select } from "../Select"
 import { INPUT, LABEL } from "./SettingsPage"
 import { floorLabel, listingsApi, useLoad } from "../listings/listings-api"
 import { formatMoney } from "../format"
@@ -328,13 +329,7 @@ function ProfileFields({ form, locked, onChange }: { form: ProfileForm; locked: 
         {locked ? (
           <input value={BUSINESS_TYPE_LABELS[form.businessType as ProfileInput["businessType"]] ?? form.businessType} readOnly disabled className={INPUT} />
         ) : (
-          <select value={form.businessType} onChange={(e) => onChange({ businessType: e.target.value })} className={INPUT}>
-            {Object.entries(BUSINESS_TYPE_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
+          <Select value={form.businessType} onChange={(businessType) => onChange({ businessType })} options={Object.entries(BUSINESS_TYPE_LABELS).map(([value, label]) => ({ value, label }))} className={INPUT} />
         )}
       </label>
       <label className="sm:col-span-2">
@@ -352,11 +347,7 @@ function ProfileFields({ form, locked, onChange }: { form: ProfileForm; locked: 
         {locked ? (
           <input value={form.currency} readOnly disabled className={INPUT} />
         ) : (
-          <select value={form.currency} onChange={(e) => onChange({ currency: e.target.value })} className={INPUT}>
-            {CURRENCIES.map((currency) => (
-              <option key={currency}>{currency}</option>
-            ))}
-          </select>
+          <Select value={form.currency} onChange={(currency) => onChange({ currency })} options={CURRENCIES.map((c) => ({ value: c, label: c }))} className={INPUT} />
         )}
       </label>
       {field("monthlyBudget", "Monthly budget for the space", form.currency)}

@@ -10,6 +10,7 @@ import { spaceExtrasDescription, type Storefront } from "../app/space-extras"
 import { EMPTY_LISTING_FORM, Field, FIELD_NAMES, ListingTermsFields, SECTION_LABEL, toInput, type Form as ListingForm } from "../listings/ListingFormPage"
 import { ApiError, listingsApi, type ListingProblem } from "../listings/listings-api"
 import { cx } from "../ui"
+import { Select } from "../Select"
 import { Logo } from "../Logo"
 import { BusinessProfileFields } from "./BusinessProfileFields"
 import { INPUT } from "./SettingsPage"
@@ -211,7 +212,7 @@ function RoleCard(props: {
 function FormStepFrame({ wide, onSkip, skipping, children }: { wide?: boolean; onSkip: () => void; skipping: boolean; children: ReactNode }) {
   return (
     <div className="flex min-h-dvh items-center justify-center px-5 py-12 text-ink">
-      <div className={cx("onb-enter flex w-full flex-col gap-3", wide ? "max-w-[760px]" : "max-w-[720px]")}>
+      <div className={cx("onb-enter flex w-full flex-col gap-3", wide ? "max-w-[760px] lg:max-w-[1100px]" : "max-w-[720px]")}>
         <div className="flex justify-end">
           <button
             type="button"
@@ -434,73 +435,85 @@ function OwnerStep({ label, onBack, onDone }: { label: string; onBack: () => voi
           }}
         />
         {example && <ExampleNote text="Example values for a synthetic space. Replace them with your own space and add your contact before you publish." />}
-        <ListingTermsFields
-          variant="plain"
-          form={form}
-          set={set}
-          problemFor={problemFor}
-          spaceExtras={
-            <>
-              <Field label="Storefront window">
-                <select value={storefront} onChange={(e) => setStorefront(e.target.value as Storefront)} className={INPUT}>
-                  <option value="">Not stated</option>
-                  <option value="yes">Yes</option>
-                  <option value="no">No</option>
-                </select>
-              </Field>
-              <Field label="Parking">
-                <input value={parking} onChange={(e) => setParking(e.target.value)} placeholder="Public, in front" className={INPUT} />
-              </Field>
-            </>
-          }
-        />
-        <Field label="Lease draft, optional" problem={problemFor("leaseDraft")}>
-          <textarea
-            rows={4}
-            value={form.leaseDraft}
-            onChange={(e) => set({ leaseDraft: e.target.value })}
-            placeholder="Paste the lease draft text. The Lease reader checks it against the terms above."
-            className={cx(INPUT, "h-auto py-3")}
-          />
-        </Field>
-        <section className="flex flex-col gap-3">
-          <h2 className={SECTION_LABEL}>Contact</h2>
-          <div className="grid gap-3.5 sm:grid-cols-2">
-            <Field label="Phone" problem={problemFor("contact.phone", "contact")}>
-              <input value={form.phone} onChange={(e) => set({ phone: e.target.value })} placeholder="+381 64 123 45 67" className={INPUT} />
-            </Field>
-            <Field label="Email" problem={problemFor("contact.email")}>
-              <input type="email" value={form.email} onChange={(e) => set({ email: e.target.value })} className={INPUT} />
-            </Field>
-            <label className="col-span-full flex items-start gap-2.5 text-[13px] text-ink">
-              <input
-                type="checkbox"
-                checked={form.consent}
-                onChange={(e) => set({ consent: e.target.checked })}
-                className="mt-0.5 h-4 w-4 accent-[var(--color-brand)]"
+        {/* Wide screens: the fields on the left scroll with the page, Contact and Publish stay in view on the right. */}
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
+          <div className="flex min-w-0 flex-col gap-6">
+            <ListingTermsFields
+              variant="plain"
+              form={form}
+              set={set}
+              problemFor={problemFor}
+              spaceExtras={
+                <>
+                  <Field label="Storefront window">
+                    <Select
+                      value={storefront}
+                      onChange={setStorefront}
+                      options={[
+                        { value: "", label: "Not stated" },
+                        { value: "yes", label: "Yes" },
+                        { value: "no", label: "No" },
+                      ]}
+                      className={INPUT}
+                    />
+                  </Field>
+                  <Field label="Parking">
+                    <input value={parking} onChange={(e) => setParking(e.target.value)} placeholder="Public, in front" className={INPUT} />
+                  </Field>
+                </>
+              }
+            />
+            <Field label="Lease draft, optional" problem={problemFor("leaseDraft")}>
+              <textarea
+                rows={4}
+                value={form.leaseDraft}
+                onChange={(e) => set({ leaseDraft: e.target.value })}
+                placeholder="Paste the lease draft text. The Lease reader checks it against the terms above."
+                className={cx(INPUT, "h-auto py-3")}
               />
-              <span>I agree that this contact is shown publicly on the listing page.</span>
-            </label>
-            {problemFor("contact.consentToPublish") && <p className="col-span-full text-[13px] text-hard">{problemFor("contact.consentToPublish")}</p>}
+            </Field>
           </div>
-          <p className="text-[13px] text-ink-2">Contact details stay private until a signed-in user asks to see them.</p>
-        </section>
-        {error && (
-          <div role="alert" className="rounded-[18px] bg-hard-50 p-4 text-[13px] text-hard">
-            {problems.length > 0 ? (
-              <ul className="list-disc pl-4">
-                {problems.map((p) => (
-                  <li key={p.field}>
-                    {FIELD_NAMES[p.field] ?? p.field}: {p.message}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              error
+          <div className="flex flex-col gap-6 lg:sticky lg:top-6">
+            <section className="flex flex-col gap-3">
+              <h2 className={SECTION_LABEL}>Contact</h2>
+              <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-1">
+                <Field label="Phone" problem={problemFor("contact.phone", "contact")}>
+                  <input value={form.phone} onChange={(e) => set({ phone: e.target.value })} placeholder="+381 64 123 45 67" className={INPUT} />
+                </Field>
+                <Field label="Email" problem={problemFor("contact.email")}>
+                  <input type="email" value={form.email} onChange={(e) => set({ email: e.target.value })} className={INPUT} />
+                </Field>
+                <label className="col-span-full flex items-start gap-2.5 text-[13px] text-ink">
+                  <input
+                    type="checkbox"
+                    checked={form.consent}
+                    onChange={(e) => set({ consent: e.target.checked })}
+                    className="mt-0.5 h-4 w-4 accent-[var(--color-brand)]"
+                  />
+                  <span>I agree that this contact is shown publicly on the listing page.</span>
+                </label>
+                {problemFor("contact.consentToPublish") && <p className="col-span-full text-[13px] text-hard">{problemFor("contact.consentToPublish")}</p>}
+              </div>
+              <p className="text-[13px] text-ink-2">Contact details stay private until a signed-in user asks to see them.</p>
+            </section>
+            {error && (
+              <div role="alert" className="rounded-[18px] bg-hard-50 p-4 text-[13px] text-hard">
+                {problems.length > 0 ? (
+                  <ul className="list-disc pl-4">
+                    {problems.map((p) => (
+                      <li key={p.field}>
+                        {FIELD_NAMES[p.field] ?? p.field}: {p.message}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  error
+                )}
+              </div>
             )}
+            <FormFooter onBack={onBack} primary="Publish listing" busy={busy === "save"} />
           </div>
-        )}
-        <FormFooter onBack={onBack} primary="Publish listing" busy={busy === "save"} />
+        </div>
       </form>
     </FormStepFrame>
   )

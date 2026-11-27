@@ -9,6 +9,7 @@ import { Card, EmptyState } from "../app/Shell"
 import { formatMoney } from "../format"
 import { INPUT, LABEL } from "../pages/SettingsPage"
 import { cx } from "../ui"
+import { Select } from "../Select"
 import { CITIES, exitLabel, floorLabel, indexationLabel, listingsApi, useLoad, type PublicListing, type RevealedContact } from "./listings-api"
 
 const PRIMARY = "inline-flex h-10 items-center gap-2 rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e] disabled:opacity-40"
@@ -35,12 +36,7 @@ export function BrowseListingsPage() {
       <section className="glass flex flex-wrap items-end gap-3 rounded-[28px] p-5">
         <label className="min-w-[160px] flex-1">
           <span className={LABEL}>City</span>
-          <select value={city} onChange={(e) => setCity(e.target.value)} className={INPUT}>
-            <option value="">All cities</option>
-            {CITIES.map((c) => (
-              <option key={c}>{c}</option>
-            ))}
-          </select>
+          <Select value={city} onChange={setCity} options={[{ value: "", label: "All cities" }, ...CITIES.map((c) => ({ value: c, label: c }))]} className={INPUT} />
         </label>
         <label className="min-w-[160px] flex-1">
           <span className={LABEL}>Max monthly cost (EUR)</span>

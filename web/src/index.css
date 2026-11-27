@@ -496,7 +496,7 @@ a:focus-visible > .ss-logo .ss-logo-lens {
 /* Cursors (web/public/cursor.svg and pointer.svg, hot spot at the arrow tip): the arrow everywhere, the coral arrow
    on everything clickable, the text cursor in text fields. Fallbacks: the system auto and pointer. */
 html {
-  cursor: url("/cursor.svg") 4 4, auto;
+  cursor: url("/cursor.svg") 3 3, auto;
 }
 a[href],
 button:not(:disabled),
@@ -509,7 +509,7 @@ input[type="radio"]:not(:disabled),
 [role="menuitem"],
 [role="radio"],
 [role="tab"] {
-  cursor: url("/pointer.svg") 4 4, pointer;
+  cursor: url("/pointer.svg") 3 3, pointer;
 }
 input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not(:disabled),
 textarea:not(:disabled),
@@ -521,6 +521,30 @@ input:disabled,
 select:disabled,
 textarea:disabled {
   cursor: not-allowed;
+}
+
+/* The open dropdown list (Select.tsx) keeps the focus while the arrow keys move a highlight over its options, so the
+   highlight is the focus indicator; the list itself needs no outline around the glass panel. */
+[role="listbox"]:focus-visible {
+  outline: none;
+}
+
+/* Collapsible cards (Card in Shell.tsx): the body animates its row from its height to 0 and back. A little padding
+   inside the clip keeps focus rings and soft shadows of the content visible. */
+.collapse-body {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 260ms var(--ease-ios), opacity 200ms var(--ease-ios);
+}
+.collapse-body.is-collapsed {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+.collapse-inner {
+  min-height: 0;
+  overflow: hidden;
+  margin: -6px;
+  padding: 6px;
 }
 
 /* Onboarding: the welcome veil fades away on this screen; its parts rise in one after another (delay set inline). */

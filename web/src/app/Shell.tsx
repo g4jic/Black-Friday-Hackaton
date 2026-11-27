@@ -1,5 +1,20 @@
-import { Bookmark, Building2, CircleHelp, History, House, Info, LayoutList, LogOut, MessageSquare, Plus, Search, Settings as SettingsIcon, type LucideIcon } from "lucide-react"
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react"
+import {
+  Bookmark,
+  Building2,
+  ChevronDown,
+  CircleHelp,
+  History,
+  House,
+  Info,
+  LayoutList,
+  LogOut,
+  MessageSquare,
+  Plus,
+  Search,
+  Settings as SettingsIcon,
+  type LucideIcon,
+} from "lucide-react"
+import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react"
 import { cx } from "../ui"
 import { Logo } from "../Logo"
 import { logOut, updateOnboarding, useAuth } from "./auth"
@@ -13,11 +28,35 @@ type NavItem = { label: string; name: string; to: string; icon: LucideIcon; isAc
 /** Every sidebar item; navKeysFor (roles.ts) picks and orders them for the user's role. */
 const NAV_ITEMS: Record<NavKey, NavItem> = {
   home: { label: "Home", name: "Home", to: paths.dashboard(), icon: House, isActive: (r) => r.name === "dashboard" },
-  research: { label: "Research", name: "Research: find spaces or evaluate one", to: paths.findSpaces(), icon: Search, isActive: (r) => r.name === "newResearch" },
+  research: {
+    label: "Research",
+    name: "Research: find spaces or evaluate one",
+    to: paths.findSpaces(),
+    icon: Search,
+    isActive: (r) => r.name === "newResearch",
+  },
   listings: { label: "Listings", name: "Listings", to: paths.listings(), icon: Building2, isActive: (r) => r.name === "listings" || r.name === "listing" },
-  mySpaces: { label: "My spaces", name: "My spaces: saved spaces, your offers and leases", to: paths.mySpaces(), icon: Bookmark, isActive: (r) => r.name === "mySpaces" },
-  history: { label: "History", name: "History", to: paths.history(), icon: History, isActive: (r) => r.name === "history" || r.name === "run" || r.name === "results" || r.name === "candidate" },
-  myListings: { label: "My listings", name: "My listings", to: paths.myListings(), icon: LayoutList, isActive: (r) => r.name === "myListings" || r.name === "editListing" },
+  mySpaces: {
+    label: "My spaces",
+    name: "My spaces: saved spaces, your offers and leases",
+    to: paths.mySpaces(),
+    icon: Bookmark,
+    isActive: (r) => r.name === "mySpaces",
+  },
+  history: {
+    label: "History",
+    name: "History",
+    to: paths.history(),
+    icon: History,
+    isActive: (r) => r.name === "history" || r.name === "run" || r.name === "results" || r.name === "candidate",
+  },
+  myListings: {
+    label: "My listings",
+    name: "My listings",
+    to: paths.myListings(),
+    icon: LayoutList,
+    isActive: (r) => r.name === "myListings" || r.name === "editListing",
+  },
   addSpace: { label: "Add a space", name: "Add a space", to: paths.newListing(), icon: Plus, isActive: (r) => r.name === "newListing" },
   offers: { label: "Offers", name: "Offers received and leased spaces", to: paths.offers(), icon: MessageSquare, isActive: (r) => r.name === "offers" },
 }
@@ -98,7 +137,9 @@ function Sidebar({ route }: { route: Route }) {
               >
                 <Icon size={18} strokeWidth={active ? 2 : 1.75} aria-hidden />
               </span>
-              <span className={cx("text-[11px] leading-3", active ? "font-semibold text-ink" : "font-medium text-ink-2 group-hover:text-ink")}>{item.label}</span>
+              <span className={cx("text-[11px] leading-3", active ? "font-semibold text-ink" : "font-medium text-ink-2 group-hover:text-ink")}>
+                {item.label}
+              </span>
             </Link>
           )
         })}
@@ -166,7 +207,11 @@ function AvatarMenu({ settingsActive }: { settingsActive: boolean }) {
     const { clip, move } = geometry()
     bodyRef.current?.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 120, easing: "ease-out", fill: "forwards" })
     headAvatarRef.current?.animate([{ transform: "none" }, { transform: move }], { duration: 260, easing: EASE, fill: "forwards" })
-    const folding = panelRef.current.animate([{ clipPath: "inset(0px 0px 0px 0px round 24px)" }, { clipPath: clip }], { duration: 260, easing: EASE, fill: "forwards" })
+    const folding = panelRef.current.animate([{ clipPath: "inset(0px 0px 0px 0px round 24px)" }, { clipPath: clip }], {
+      duration: 260,
+      easing: EASE,
+      fill: "forwards",
+    })
     folding.onfinish = done
     // A background tab may hold animations back; the menu still closes on time.
     window.setTimeout(done, 320)
@@ -187,7 +232,13 @@ function AvatarMenu({ settingsActive }: { settingsActive: boolean }) {
     const { clip, move } = geometry()
     panelRef.current.animate([{ clipPath: clip }, { clipPath: "inset(0px 0px 0px 0px round 24px)" }], { duration: 320, easing: EASE })
     headAvatarRef.current?.animate([{ transform: move }, { transform: "none" }], { duration: 380, easing: SPRING })
-    bodyRef.current?.animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: 240, delay: 90, easing: EASE, fill: "backwards" })
+    bodyRef.current?.animate(
+      [
+        { opacity: 0, transform: "translateY(6px)" },
+        { opacity: 1, transform: "none" },
+      ],
+      { duration: 240, delay: 90, easing: EASE, fill: "backwards" },
+    )
     first?.focus({ preventScroll: true })
   }, [open])
 
@@ -223,7 +274,8 @@ function AvatarMenu({ settingsActive }: { settingsActive: boolean }) {
     await updateOnboarding({ role: "both" })
     navigate(onboardingPath(added, { next: pathname + (search.toString() ? `?${search}` : ""), add: true }))
   }
-  const avatar = (size: string) => cx("flex shrink-0 items-center justify-center rounded-full font-semibold text-ink", size, settingsActive ? "bg-brand-soft" : "bg-lilac")
+  const avatar = (size: string) =>
+    cx("flex shrink-0 items-center justify-center rounded-full font-semibold text-ink", size, settingsActive ? "bg-brand-soft" : "bg-lilac")
 
   return (
     <div ref={rootRef} className="relative">
@@ -248,7 +300,14 @@ function AvatarMenu({ settingsActive }: { settingsActive: boolean }) {
           className="absolute z-40 flex w-[300px] flex-col gap-2 rounded-[24px] glass-strong p-4 shadow-[var(--shadow-pop)] max-sm:right-[3px] max-sm:bottom-0 sm:-bottom-0.5 sm:left-[9px]"
         >
           <div className="flex items-center gap-3 px-1 pb-1">
-            <button ref={headAvatarRef} type="button" onClick={() => close(true)} aria-label="Close the menu" title="Close the menu" className={cx("text-base", avatar("h-11 w-11"))}>
+            <button
+              ref={headAvatarRef}
+              type="button"
+              onClick={() => close(true)}
+              aria-label="Close the menu"
+              title="Close the menu"
+              className={cx("text-base", avatar("h-11 w-11"))}
+            >
               {user.name[0]}
             </button>
             <span className="flex min-w-0 flex-col gap-1">
@@ -273,7 +332,7 @@ function AvatarMenu({ settingsActive }: { settingsActive: boolean }) {
               <CircleHelp size={16} aria-hidden /> How it works
             </button>
             <button type="button" role="menuitem" onClick={() => go(paths.settings())} className={ITEM}>
-              <SettingsIcon size={16} aria-hidden /> Settings · role and profile
+              <SettingsIcon size={16} aria-hidden /> Settings
             </button>
             {auth.landlord && (
               <button type="button" role="menuitem" onClick={() => void logOut().then(() => go(paths.dashboard()))} className={cx(ITEM, "text-ink-2")}>
@@ -287,11 +346,98 @@ function AvatarMenu({ settingsActive }: { settingsActive: boolean }) {
   )
 }
 
-export function Card({ title, children, className }: { title?: string; children: ReactNode; className?: string }) {
+/** Open or collapsed per card, for this browser tab (sessionStorage); a blocked storage just forgets. */
+function useCollapsed(key: string | null): [boolean, (collapsed: boolean) => void] {
+  const storageKey = key ? `suitespot.card.${key}` : null
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return storageKey ? window.sessionStorage.getItem(storageKey) === "1" : false
+    } catch {
+      return false
+    }
+  })
+  const set = (next: boolean) => {
+    setCollapsed(next)
+    try {
+      if (storageKey) window.sessionStorage.setItem(storageKey, next ? "1" : "0")
+    } catch {
+      // storage blocked: the state lasts for this page view
+    }
+  }
+  return [collapsed, set]
+}
+
+/**
+ * A section card (DESIGN.md 6.3). collapsible: a chevron left of the title pill (pointing right when collapsed), an
+ * optional count circle inside the pill, and the body opening and closing smoothly (none with reduced motion). The
+ * state is remembered per card id for the tab's session; a collapsed body is inert, so the keyboard skips it.
+ */
+export function Card({
+  title,
+  children,
+  className,
+  collapsible,
+  id,
+  count,
+  action,
+}: {
+  title?: string
+  children: ReactNode
+  className?: string
+  collapsible?: boolean
+  /** The key for remembering the state (defaults to the title). */
+  id?: string
+  count?: number
+  /** Something on the right of the header (for example a link). */
+  action?: ReactNode
+}) {
+  const [collapsed, setCollapsed] = useCollapsed(collapsible ? (id ?? title ?? null) : null)
+  const bodyId = useId()
+  const pill = (
+    <span className="inline-flex items-center gap-2 title-pill rounded-full glass-strong px-3.5 py-1.5 text-lg leading-6 font-semibold text-ink">
+      {title}
+      {count !== undefined && (
+        <span className="tnum inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1.5 text-xs font-semibold text-ink">{count}</span>
+      )}
+    </span>
+  )
+  if (!collapsible || !title) {
+    return (
+      <section className={cx("glass rounded-[28px] p-6 text-sm leading-5 text-ink-2", className)}>
+        {title && (
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="inline-flex">{pill}</h2>
+            {action}
+          </div>
+        )}
+        {children}
+      </section>
+    )
+  }
   return (
     <section className={cx("glass rounded-[28px] p-6 text-sm leading-5 text-ink-2", className)}>
-      {title && <h2 className="mb-4 inline-flex title-pill rounded-full glass-strong px-3.5 py-1.5 text-lg leading-6 font-semibold text-ink">{title}</h2>}
-      {children}
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="inline-flex">
+          <button
+            type="button"
+            onClick={() => setCollapsed(!collapsed)}
+            aria-expanded={!collapsed}
+            aria-controls={bodyId}
+            className="group inline-flex items-center gap-2 rounded-full text-left"
+          >
+            <span className="flex h-8 w-8 items-center justify-center rounded-full glass-strong text-ink group-hover:bg-white">
+              <ChevronDown size={16} className={cx("transition-transform duration-200", collapsed && "-rotate-90")} aria-hidden />
+            </span>
+            {pill}
+          </button>
+        </h2>
+        {action}
+      </div>
+      <div id={bodyId} className={cx("collapse-body", collapsed && "is-collapsed")} {...(collapsed ? { inert: "" } : {})}>
+        <div className="collapse-inner">
+          <div className="pt-4">{children}</div>
+        </div>
+      </div>
     </section>
   )
 }

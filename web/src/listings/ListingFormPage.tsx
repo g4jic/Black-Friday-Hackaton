@@ -5,6 +5,7 @@ import { BUSINESS_TYPE_LABELS, type BusinessType } from "../app/settings"
 import { Card, EmptyState } from "../app/Shell"
 import { INPUT, LABEL } from "../pages/SettingsPage"
 import { cx } from "../ui"
+import { Select } from "../Select"
 import { ApiError, CITIES, listingsApi, type ContactInput, type Indexation, type ListingInput, type ListingProblem } from "./listings-api"
 
 /** The form as typed (strings), so half-typed numbers survive while the landlord edits. */
@@ -73,8 +74,16 @@ export function toInput(f: Form): ListingInput {
     serviceChargeMonthly: num(f.serviceChargeMonthly),
     deposit: num(f.deposit),
     minimumTermMonths: num(f.minimumTermMonths),
-    earlyTermination: (f.exitAllowed === "yes" ? { allowed: true, noticeMonths: num(f.noticeMonths) } : f.exitAllowed === "no" ? { allowed: false } : undefined) as ListingInput["earlyTermination"],
-    indexation: (f.indexation === "fixed_rate" ? { kind: "fixed_rate", ratePercent: num(f.indexationRate) } : f.indexation ? { kind: f.indexation } : undefined) as Indexation,
+    earlyTermination: (f.exitAllowed === "yes"
+      ? { allowed: true, noticeMonths: num(f.noticeMonths) }
+      : f.exitAllowed === "no"
+        ? { allowed: false }
+        : undefined) as ListingInput["earlyTermination"],
+    indexation: (f.indexation === "fixed_rate"
+      ? { kind: "fixed_rate", ratePercent: num(f.indexationRate) }
+      : f.indexation
+        ? { kind: f.indexation }
+        : undefined) as Indexation,
     permittedUses: f.permittedUses,
     tenantPaysStructuralRepairs: (f.structural === "tenant" ? true : f.structural === "landlord" ? false : undefined) as boolean,
     leaseDraft: text(f.leaseDraft),
@@ -152,7 +161,17 @@ export function ListingFormPage({ id }: { id?: string }) {
     )
   }, [id])
 
-  if (loadError) return <EmptyState text={loadError} action={<Link to={paths.myListings()} className="text-sm font-medium text-ink underline">My listings</Link>} />
+  if (loadError)
+    return (
+      <EmptyState
+        text={loadError}
+        action={
+          <Link to={paths.myListings()} className="text-sm font-medium text-ink underline">
+            My listings
+          </Link>
+        }
+      />
+    )
   if (!form) return <p className="text-sm text-ink-2">Loading...</p>
 
   const set = (patch: Partial<Form>) => setForm({ ...form, ...patch })
@@ -195,32 +214,48 @@ export function ListingFormPage({ id }: { id?: string }) {
     >
       <div className="flex flex-col gap-4">
         <ListingTermsFields form={form} set={set} problemFor={problemFor} />
-        <Card title="Optional">
+        <Card title="Optional" collapsible id="listing-optional">
           <div className="grid gap-3">
             <Field label="Description" problem={problemFor("description")}>
               <textarea rows={3} value={form.description} onChange={(e) => set({ description: e.target.value })} className={cx(INPUT, "h-auto py-3")} />
             </Field>
             <Field label="Lease draft" unit="text" problem={problemFor("leaseDraft")}>
-              <textarea rows={6} value={form.leaseDraft} onChange={(e) => set({ leaseDraft: e.target.value })} placeholder="Paste the lease draft. SuiteSpot compares it with the terms above." className={cx(INPUT, "h-auto py-3")} />
+              <textarea
+                rows={6}
+                value={form.leaseDraft}
+                onChange={(e) => set({ leaseDraft: e.target.value })}
+                placeholder="Paste the lease draft. SuiteSpot compares it with the terms above."
+                className={cx(INPUT, "h-auto py-3")}
+              />
             </Field>
             {field("imageUrl", "Image link", { placeholder: "https://..." })}
           </div>
         </Card>
       </div>
-      <div className="flex flex-col gap-4">
+      {/* Contact and Publish stay in view while the sections on the left scroll with the page (wide screens only). */}
+      <div className="flex flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
         <Card title="Contact">
           <p className="mb-3 text-[13px]">Tenants see it only after they click "Show contact". Give a phone number, an email or both.</p>
           <div className="grid gap-3">
             {field("phone", "Phone", { placeholder: "+381 64 123 45 67", problem: ["contact.phone", "contact"] })}
             {field("email", "Email", { problem: ["contact.email"] })}
             <label className="flex items-start gap-2.5 text-[13px] text-ink">
-              <input type="checkbox" checked={form.consent} onChange={(e) => set({ consent: e.target.checked })} className="mt-0.5 h-4 w-4 accent-[var(--color-brand)]" />
+              <input
+                type="checkbox"
+                checked={form.consent}
+                onChange={(e) => set({ consent: e.target.checked })}
+                className="mt-0.5 h-4 w-4 accent-[var(--color-brand)]"
+              />
               <span>I agree that this contact is shown publicly on the listing page.</span>
             </label>
             {problemFor("contact.consentToPublish") && <p className="text-[13px] text-hard">{problemFor("contact.consentToPublish")}</p>}
           </div>
         </Card>
-        <button type="submit" disabled={saving} className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e] disabled:opacity-40">
+        <button
+          type="submit"
+          disabled={saving}
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e] disabled:opacity-40"
+        >
           <Save size={16} aria-hidden /> {saving ? "Saving..." : id ? "Save changes" : "Publish listing"}
         </button>
         {error && (
@@ -243,6 +278,12 @@ export function ListingFormPage({ id }: { id?: string }) {
   )
 }
 
+const FLOOR_OPTIONS = [
+  { value: "-1", label: "Basement" },
+  { value: "0", label: "Ground floor" },
+  ...Array.from({ length: 10 }, (_, i) => ({ value: String(i + 1), label: `Floor ${i + 1}` })),
+]
+
 /** Section heading inside one card (the onboarding's "Add your first space"), in place of a card per section. */
 export const SECTION_LABEL = "text-[13px] font-semibold text-ink-2"
 
@@ -264,7 +305,6 @@ export function ListingTermsFields({
   variant?: "cards" | "plain"
   spaceExtras?: ReactNode
 }) {
-
   const field = (key: keyof Form, label: string, opts: { unit?: string; numeric?: boolean; placeholder?: string; problem?: string[] } = {}) => (
     <Field label={label} unit={opts.unit} problem={problemFor(...(opts.problem ?? [key]))}>
       <input
@@ -279,94 +319,102 @@ export function ListingTermsFields({
 
   return (
     <>
-        <Section variant={variant} title="The space">
-            <div className="sm:col-span-2">{field("title", "Title", { placeholder: "Lokal 60 m2 na Limanu" })}</div>
-            <Field label="City" problem={problemFor("city")}>
-              <select value={form.city} onChange={(e) => set({ city: e.target.value })} className={INPUT}>
-                <option value="">Choose</option>
-                {CITIES.map((c) => (
-                  <option key={c}>{c}</option>
-                ))}
-              </select>
-            </Field>
-            {field("district", "Part of town", { placeholder: "Liman 3" })}
-            {field("street", "Street", { placeholder: "Street name, without the house number" })}
-            {field("areaM2", "Area", { unit: "m²", numeric: true })}
-            <Field label="Floor" problem={problemFor("floor")}>
-              <select value={form.floor} onChange={(e) => set({ floor: e.target.value })} className={INPUT}>
-                <option value="-1">Basement</option>
-                <option value="0">Ground floor</option>
-                {Array.from({ length: 10 }, (_, i) => (
-                  <option key={i + 1} value={String(i + 1)}>
-                    Floor {i + 1}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            {spaceExtras}
-            <Field label="Permitted use" problem={problemFor("permittedUses")} wide>
-              <div className="flex flex-wrap gap-2">
-                {(Object.keys(BUSINESS_TYPE_LABELS) as BusinessType[]).map((use) => {
-                  const on = form.permittedUses.includes(use)
-                  return (
-                    <button
-                      key={use}
-                      type="button"
-                      aria-pressed={on}
-                      onClick={() => set({ permittedUses: on ? form.permittedUses.filter((u) => u !== use) : [...form.permittedUses, use] })}
-                      className={cx("h-10 rounded-full px-4 text-sm font-medium", on ? "bg-brand-soft text-ink" : "glass-strong text-ink hover:bg-white")}
-                    >
-                      {BUSINESS_TYPE_LABELS[use]}
-                    </button>
-                  )
-                })}
-              </div>
-            </Field>
-        </Section>
-        <Section variant={variant} title="Money and lease terms">
-            {field("rentMonthly", "Monthly rent", { unit: "EUR", numeric: true })}
-            {field("serviceChargeMonthly", "Monthly costs", { unit: "EUR, 0 if none", numeric: true })}
-            {field("deposit", "Deposit", { unit: "EUR", numeric: true })}
-            {field("minimumTermMonths", "Minimum lease term", { unit: "months", numeric: true })}
-            <Field label="Can the tenant end the lease early?" problem={problemFor("earlyTermination")}>
-              <select value={form.exitAllowed} onChange={(e) => set({ exitAllowed: e.target.value as Form["exitAllowed"] })} className={INPUT}>
-                <option value="">Choose</option>
-                <option value="yes">Yes, with notice</option>
-                <option value="no">No, not before the term ends</option>
-              </select>
-            </Field>
-            {form.exitAllowed === "yes" ? field("noticeMonths", "Notice period", { unit: "months", numeric: true, problem: ["earlyTermination.noticeMonths"] }) : <div />}
-            <Field label="Rent increases" problem={problemFor("indexation")}>
-              <select value={form.indexation} onChange={(e) => set({ indexation: e.target.value as Form["indexation"] })} className={INPUT}>
-                <option value="">Choose</option>
-                <option value="none">No increase during the lease</option>
-                <option value="cpi">Once a year with the consumer price index</option>
-                <option value="fixed_rate">A fixed percent every year</option>
-                <option value="landlord_unilateral">The landlord may change the rent at any time</option>
-              </select>
-            </Field>
-            {form.indexation === "fixed_rate" ? field("indexationRate", "Yearly increase", { unit: "%", numeric: true, problem: ["indexation.ratePercent"] }) : <div />}
-            <Field label="Who pays structural repairs (roof, walls, installations)?" problem={problemFor("tenantPaysStructuralRepairs")} wide>
-              <select value={form.structural} onChange={(e) => set({ structural: e.target.value as Form["structural"] })} className={INPUT}>
-                <option value="">Choose</option>
-                <option value="landlord">The landlord</option>
-                <option value="tenant">The tenant</option>
-              </select>
-            </Field>
-        </Section>
+      <Section variant={variant} title="The space">
+        <div className="sm:col-span-2">{field("title", "Title", { placeholder: "Lokal 60 m2 na Limanu" })}</div>
+        <Field label="City" problem={problemFor("city")}>
+          <Select value={form.city} onChange={(city) => set({ city })} options={CITIES.map((c) => ({ value: c, label: c }))} className={INPUT} />
+        </Field>
+        {field("district", "Part of town", { placeholder: "Liman 3" })}
+        {field("street", "Street", { placeholder: "Street name, without the house number" })}
+        {field("areaM2", "Area", { unit: "m²", numeric: true })}
+        <Field label="Floor" problem={problemFor("floor")}>
+          <Select value={form.floor} onChange={(floor) => set({ floor })} options={FLOOR_OPTIONS} className={INPUT} />
+        </Field>
+        {spaceExtras}
+        <Field label="Permitted use" problem={problemFor("permittedUses")} wide>
+          <div className="flex flex-wrap gap-2">
+            {(Object.keys(BUSINESS_TYPE_LABELS) as BusinessType[]).map((use) => {
+              const on = form.permittedUses.includes(use)
+              return (
+                <button
+                  key={use}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => set({ permittedUses: on ? form.permittedUses.filter((u) => u !== use) : [...form.permittedUses, use] })}
+                  className={cx("h-10 rounded-full px-4 text-sm font-medium", on ? "bg-brand-soft text-ink" : "glass-strong text-ink hover:bg-white")}
+                >
+                  {BUSINESS_TYPE_LABELS[use]}
+                </button>
+              )
+            })}
+          </div>
+        </Field>
+      </Section>
+      <Section variant={variant} title="Money and lease terms">
+        {field("rentMonthly", "Monthly rent", { unit: "EUR", numeric: true })}
+        {field("serviceChargeMonthly", "Monthly costs", { unit: "EUR, 0 if none", numeric: true })}
+        {field("deposit", "Deposit", { unit: "EUR", numeric: true })}
+        {field("minimumTermMonths", "Minimum lease term", { unit: "months", numeric: true })}
+        <Field label="Can the tenant end the lease early?" problem={problemFor("earlyTermination")}>
+          <Select
+            value={form.exitAllowed}
+            onChange={(exitAllowed) => set({ exitAllowed })}
+            options={[
+              { value: "yes", label: "Yes, with notice" },
+              { value: "no", label: "No, not before the term ends" },
+            ]}
+            className={INPUT}
+          />
+        </Field>
+        {form.exitAllowed === "yes" ? (
+          field("noticeMonths", "Notice period", { unit: "months", numeric: true, problem: ["earlyTermination.noticeMonths"] })
+        ) : (
+          <div />
+        )}
+        <Field label="Rent increases" problem={problemFor("indexation")}>
+          <Select
+            value={form.indexation}
+            onChange={(indexation) => set({ indexation })}
+            options={[
+              { value: "none", label: "No increase during the lease" },
+              { value: "cpi", label: "Once a year with the consumer price index" },
+              { value: "fixed_rate", label: "A fixed percent every year" },
+              { value: "landlord_unilateral", label: "The landlord may change the rent at any time" },
+            ]}
+            className={INPUT}
+          />
+        </Field>
+        {form.indexation === "fixed_rate" ? (
+          field("indexationRate", "Yearly increase", { unit: "%", numeric: true, problem: ["indexation.ratePercent"] })
+        ) : (
+          <div />
+        )}
+        <Field label="Who pays structural repairs (roof, walls, installations)?" problem={problemFor("tenantPaysStructuralRepairs")} wide>
+          <Select
+            value={form.structural}
+            onChange={(structural) => set({ structural })}
+            options={[
+              { value: "landlord", label: "The landlord" },
+              { value: "tenant", label: "The tenant" },
+            ]}
+            className={INPUT}
+          />
+        </Field>
+      </Section>
     </>
   )
 }
 
 /** Defined outside ListingTermsFields so its inputs keep their focus while the user types. */
 function Section({ variant, title, children }: { variant: "cards" | "plain"; title: string; children: ReactNode }) {
+  const id = title === "The space" ? "listing-space" : "listing-money"
   return variant === "plain" ? (
     <section className="flex flex-col gap-3">
       <h2 className={SECTION_LABEL}>{title}</h2>
       <div className="grid gap-3.5 sm:grid-cols-3">{children}</div>
     </section>
   ) : (
-    <Card title={title}>
+    <Card title={title} collapsible id={id}>
       <div className="grid gap-3 sm:grid-cols-2">{children}</div>
     </Card>
   )

@@ -296,7 +296,7 @@ export function TenantDeals() {
           {banner.text}
         </p>
       )}
-      <Card title="Spaces I rent">
+      <Card title="Spaces I rent" collapsible id="my-spaces-rent" count={data ? rented.length : undefined}>
         {error && <p role="alert" className="text-hard">{error}</p>}
         {!data && !error && <p>Loading...</p>}
         {data && rented.length === 0 && <Empty icon={<KeyRound size={16} className="text-ink" aria-hidden />}>No rented spaces yet. An accepted offer becomes a lease here, with its rent dates.</Empty>}
@@ -309,7 +309,7 @@ export function TenantDeals() {
         )}
         {data && <PaymentNote method={data.paymentMethod} />}
       </Card>
-      <Card title="My offers">
+      <Card title="My offers" collapsible id="my-spaces-offers" count={data?.offersMade.length}>
         {data && data.offersMade.length === 0 && <Empty icon={<HandCoins size={16} className="text-ink" aria-hidden />}>No offers yet. Open a listing and press Make an offer.</Empty>}
         {data && data.offersMade.length > 0 && (
           <ul className="flex flex-col gap-2.5">
@@ -329,7 +329,7 @@ export function LandlordDeals() {
   const leased = data?.tenancies.filter((t) => t.role === "landlord") ?? []
   return (
     <>
-      <Card title="Offers received">
+      <Card title="Offers received" collapsible id="offers-received" count={data?.offersReceived.length}>
         {error && <p role="alert" className="text-hard">{error}</p>}
         {!data && !error && <p>Loading...</p>}
         {data && data.offersReceived.length === 0 && <Empty icon={<HandCoins size={16} className="text-ink" aria-hidden />}>No offers on your listings yet.</Empty>}
@@ -341,7 +341,7 @@ export function LandlordDeals() {
           </ul>
         )}
       </Card>
-      <Card title="Leased spaces">
+      <Card title="Leased spaces" collapsible id="offers-leased" count={data ? leased.length : undefined}>
         {data && leased.length === 0 && <Empty icon={<KeyRound size={16} className="text-ink" aria-hidden />}>None yet. When you accept an offer, the lease and its rent dates appear here.</Empty>}
         {leased.length > 0 && (
           <ul className="flex flex-col gap-2.5">

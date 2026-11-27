@@ -14,7 +14,7 @@ export function MySpacesPage() {
   return (
     <div className="flex flex-col gap-4">
       <TenantDeals />
-      <Card title="Saved spaces">
+      <Card title="Saved spaces" collapsible id="my-spaces-saved" count={data?.length}>
         {error && <p role="alert" className="text-hard">{error}</p>}
         {!data && !error && <p>Loading...</p>}
         {data && data.length === 0 && (

@@ -1,6 +1,6 @@
 import { Building2, Plus } from "lucide-react"
 import { Link, paths } from "../app/router"
-import { EmptyState } from "../app/Shell"
+import { Card, EmptyState } from "../app/Shell"
 import { dealsApi } from "../deals/deals-api"
 import { LandlordDeals } from "../deals/DealViews"
 import { formatMoney } from "../format"
@@ -28,70 +28,64 @@ export function OwnerOverview({ showIntro }: { showIntro: boolean }) {
         <Stat label="Views" value={views} note="Openings of your listing pages, all time" />
         <Stat label="Open offers" value={openOffers} note="Offers waiting for your answer" />
       </div>
-      <section className="glass flex flex-col gap-3.5 rounded-[28px] p-6">
-        <div className="flex items-center gap-2.5">
-          <h2 className="title-pill rounded-full glass-strong px-4 py-2 text-lg leading-6 font-semibold text-ink">My listings</h2>
-          {listings.data && (
-            <span className="tnum inline-flex h-[26px] min-w-[26px] items-center justify-center rounded-full bg-brand px-2 text-[13px] font-bold text-ink">
-              {listings.data.length}
-            </span>
+      <Card title="My listings" collapsible id="owner-home-listings" count={listings.data?.length}>
+        <div className="flex flex-col gap-3.5">
+          {listings.error && (
+            <p role="alert" className="text-[13px] text-hard">
+              {listings.error}
+            </p>
+          )}
+          {!listings.data && !listings.error && <p className="text-sm text-ink-2">Loading...</p>}
+          {listings.data && listings.data.length === 0 && (
+            <EmptyState
+              text="You have not listed a space yet. Add one and seekers can find it and evaluate it for their business."
+              action={
+                <Link to={paths.newListing()} className={PRIMARY}>
+                  <Plus size={16} aria-hidden /> Add a space
+                </Link>
+              }
+            />
+          )}
+          {listings.data && listings.data.length > 0 && (
+            <div role="table" aria-label="My listings" className="flex flex-col gap-2">
+              <div role="row" className="grid grid-cols-[minmax(0,3fr)_repeat(3,minmax(0,1fr))] gap-3 px-3 text-xs font-medium text-ink-3">
+                <span role="columnheader">Space</span>
+                <span role="columnheader">Monthly rent</span>
+                <span role="columnheader">Views</span>
+                <span role="columnheader">Status</span>
+              </div>
+              {listings.data.map((l) => (
+                <Link
+                  key={l.id}
+                  to={paths.listing(l.id)}
+                  role="row"
+                  className="grid grid-cols-[minmax(0,3fr)_repeat(3,minmax(0,1fr))] items-center gap-3 rounded-[16px] bg-white/70 px-3 py-3.5 text-[15px] text-ink hover:bg-white"
+                >
+                  <span role="cell" className="flex min-w-0 items-center gap-2.5 font-semibold">
+                    <Building2 size={18} className="shrink-0 text-ink-2" aria-hidden />
+                    <span className="truncate">
+                      {l.district} · {l.areaM2} m², {floorLabel(l.floor).toLowerCase()}
+                    </span>
+                  </span>
+                  <span role="cell" className="tnum">
+                    {formatMoney(l.rentMonthly, "EUR")}
+                  </span>
+                  <span role="cell" className="tnum">
+                    {l.views}
+                  </span>
+                  <span role="cell">
+                    {leased.has(l.id) ? (
+                      <span className="rounded-full bg-lilac-100 px-3 py-1 text-[13px] font-semibold text-ink">Leased</span>
+                    ) : (
+                      <span className="rounded-full bg-green-50 px-3 py-1 text-[13px] font-semibold text-green-700">Published</span>
+                    )}
+                  </span>
+                </Link>
+              ))}
+            </div>
           )}
         </div>
-        {listings.error && (
-          <p role="alert" className="text-[13px] text-hard">
-            {listings.error}
-          </p>
-        )}
-        {!listings.data && !listings.error && <p className="text-sm text-ink-2">Loading...</p>}
-        {listings.data && listings.data.length === 0 && (
-          <EmptyState
-            text="You have not listed a space yet. Add one and seekers can find it and evaluate it for their business."
-            action={
-              <Link to={paths.newListing()} className={PRIMARY}>
-                <Plus size={16} aria-hidden /> Add a space
-              </Link>
-            }
-          />
-        )}
-        {listings.data && listings.data.length > 0 && (
-          <div role="table" aria-label="My listings" className="flex flex-col gap-2">
-            <div role="row" className="grid grid-cols-[minmax(0,3fr)_repeat(3,minmax(0,1fr))] gap-3 px-3 text-xs font-medium text-ink-3">
-              <span role="columnheader">Space</span>
-              <span role="columnheader">Monthly rent</span>
-              <span role="columnheader">Views</span>
-              <span role="columnheader">Status</span>
-            </div>
-            {listings.data.map((l) => (
-              <Link
-                key={l.id}
-                to={paths.listing(l.id)}
-                role="row"
-                className="grid grid-cols-[minmax(0,3fr)_repeat(3,minmax(0,1fr))] items-center gap-3 rounded-[16px] bg-white/70 px-3 py-3.5 text-[15px] text-ink hover:bg-white"
-              >
-                <span role="cell" className="flex min-w-0 items-center gap-2.5 font-semibold">
-                  <Building2 size={18} className="shrink-0 text-ink-2" aria-hidden />
-                  <span className="truncate">
-                    {l.district} · {l.areaM2} m², {floorLabel(l.floor).toLowerCase()}
-                  </span>
-                </span>
-                <span role="cell" className="tnum">
-                  {formatMoney(l.rentMonthly, "EUR")}
-                </span>
-                <span role="cell" className="tnum">
-                  {l.views}
-                </span>
-                <span role="cell">
-                  {leased.has(l.id) ? (
-                    <span className="rounded-full bg-lilac-100 px-3 py-1 text-[13px] font-semibold text-ink">Leased</span>
-                  ) : (
-                    <span className="rounded-full bg-green-50 px-3 py-1 text-[13px] font-semibold text-green-700">Published</span>
-                  )}
-                </span>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
+      </Card>
     </div>
   )
 }
