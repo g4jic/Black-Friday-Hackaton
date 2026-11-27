@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type RefObject } from "react"
 import { logIn, signUp, useAuth } from "../app/auth"
 import { Link, navigate, paths, useLocation } from "../app/router"
+import { holdWelcome, useWelcomeHold } from "../app/welcome"
 import { INPUT, LABEL } from "./SettingsPage"
 
 /**
@@ -34,29 +35,33 @@ export function AuthScreen({ mode, next }: { mode: "signin" | "signup"; next: st
   const [error, setError] = useState<string | null>(null)
   const [confirmSent, setConfirmSent] = useState(false)
   const lensRef = useRef<HTMLDivElement>(null)
+  const [phase, setPhase] = useState<WelcomePhase>(null)
   const other = mode === "signin" ? paths.signup() : paths.login()
 
+  /** Into the app: the welcome transition, then the page the user wanted. The screen is held until it ends. */
+  const enterApp = () => {
+    holdWelcome(false)
+    navigate(next, { replace: true })
+  }
+
   const finish = () => {
-    // B7: the lens grows over the whole screen, then the app appears behind it.
+    // B7: the map widens over the whole window and covers the form, the lens settles on a space and the view zooms
+    // into it; a soft veil takes the zoom over and fades away on the app. Plain navigation with reduced motion or
+    // when the map is not shown (narrow screens).
     const lens = lensRef.current
-    if (!lens || prefersReducedMotion() || typeof lens.animate !== "function") return navigate(next, { replace: true })
-    const box = lens.getBoundingClientRect()
-    const overlay = document.createElement("div")
-    overlay.className = "auth-zoom"
-    overlay.style.left = `${box.left}px`
-    overlay.style.top = `${box.top}px`
-    overlay.style.width = `${box.width}px`
-    overlay.style.height = `${box.height}px`
-    overlay.innerHTML = lens.innerHTML
-    document.body.appendChild(overlay)
-    const scale = (Math.hypot(window.innerWidth, window.innerHeight) / Math.min(box.width, box.height)) * 2.4
-    const dx = window.innerWidth / 2 - (box.left + box.width / 2)
-    const dy = window.innerHeight / 2 - (box.top + box.height / 2)
-    const grow = overlay.animate([{ transform: "translate(0,0) scale(1)" }, { transform: `translate(${dx}px,${dy}px) scale(${scale})` }], { duration: 900, easing: "cubic-bezier(0.5, 0, 0.2, 1)", fill: "forwards" })
-    grow.onfinish = () => {
-      navigate(next, { replace: true })
-      overlay.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 380, easing: "ease-out", fill: "forwards" }).onfinish = () => overlay.remove()
-    }
+    if (!lens || lens.offsetParent === null || prefersReducedMotion()) return enterApp()
+    setPhase("expand")
+    window.setTimeout(() => setPhase("zoom"), WELCOME.zoomAtMs)
+    window.setTimeout(() => {
+      const veil = document.createElement("div")
+      veil.className = "auth-veil"
+      document.body.appendChild(veil)
+      const fadeIn = veil.animate([{ opacity: 0 }, { opacity: 1 }], { duration: WELCOME.veilMs, easing: "ease-in", fill: "forwards" })
+      fadeIn.onfinish = () => {
+        enterApp()
+        veil.animate([{ opacity: 1 }, { opacity: 0 }], { duration: WELCOME.revealMs, easing: "ease-out", fill: "forwards" }).onfinish = () => veil.remove()
+      }
+    }, WELCOME.veilAtMs)
   }
 
   const submit = async (event: FormEvent) => {
@@ -67,6 +72,8 @@ export function AuthScreen({ mode, next }: { mode: "signin" | "signup"; next: st
       if (password.length < MIN_PASSWORD_LENGTH) return setError(`The password needs at least ${MIN_PASSWORD_LENGTH} characters.`)
     }
     setBusy(true)
+    // Hold this screen before the account is signed in, or the app would replace it before the welcome plays.
+    holdWelcome(true)
     try {
       if (mode === "signin") {
         await logIn(email.trim(), password)
@@ -74,19 +81,21 @@ export function AuthScreen({ mode, next }: { mode: "signin" | "signup"; next: st
       } else {
         const { needsConfirmation } = await signUp(email.trim(), password, name)
         if (needsConfirmation) {
+          holdWelcome(false)
           setConfirmSent(true)
           setBusy(false)
         } else finish()
       }
     } catch (failure) {
+      holdWelcome(false)
       setError((failure as Error).message)
       setBusy(false)
     }
   }
 
   return (
-    <div className="flex min-h-dvh gap-4 p-4 lg:gap-6 lg:p-6">
-      <section className="glass flex w-full flex-col rounded-[32px] px-6 py-6 sm:px-10 lg:max-w-[640px] lg:flex-[0_0_44%]">
+    <div className={`auth-shell flex min-h-dvh gap-4 p-4 lg:gap-6 lg:p-6 ${phase ? "is-welcome" : ""} ${phase === "zoom" ? "is-zoom" : ""}`}>
+      <section className="auth-form glass flex w-full flex-col rounded-[32px] px-6 py-6 sm:px-10 lg:max-w-[640px] lg:flex-[0_0_44%]">
         <div className="flex items-center gap-3">
           <img src="/suitespot-logo.svg" alt="" width={36} height={36} />
           <span className="text-xl font-semibold text-ink">SuiteSpot</span>
@@ -136,18 +145,24 @@ export function AuthScreen({ mode, next }: { mode: "signin" | "signup"; next: st
         </div>
         <p className="text-xs text-ink-2">© 2026 SuiteSpot · Not financial or legal advice</p>
       </section>
-      <MapPanel lensRef={lensRef} />
+      <MapPanel lensRef={lensRef} welcome={phase !== null} />
     </div>
   )
 }
+
+type WelcomePhase = null | "expand" | "zoom"
+/** Welcome timing (ms). expand: the map widens (CSS .is-welcome, 750 ms); zoom: into the space (CSS .is-zoom, 1100 ms). */
+const WELCOME = { zoomAtMs: 850, veilAtMs: 1550, veilMs: 400, revealMs: 550 }
 
 /** The page behind /login and /signup, and in front of every other page for a user who is not signed in. */
 export function AuthRoute({ mode }: { mode: "signin" | "signup" }) {
   const next = safeNext(useLocation().search.get("next"))
   const auth = useAuth()
+  const welcoming = useWelcomeHold()
   useEffect(() => {
-    if (auth.landlord) navigate(next, { replace: true })
-  }, [auth.landlord, next])
+    // Already signed in (for example an old tab on /login): straight on. A fresh sign in waits for its welcome.
+    if (auth.landlord && !welcoming) navigate(next, { replace: true })
+  }, [auth.landlord, next, welcoming])
   return <AuthScreen mode={mode} next={next} />
 }
 
@@ -191,6 +206,9 @@ const STOPS = [
   { x: 72, y: 24 },
 ]
 
+/** Where the lens settles for the welcome zoom: the middle of the (then full width) map. */
+const WELCOME_STOP = { x: 50, y: 50 }
+
 /** Lens timing: the first stop is short so the map is moving right away; LENS_GLIDE_MS matches .auth-lens-move. */
 const LENS_FIRST_STOP_MS = 1400
 const LENS_GLIDE_MS = 1300
@@ -208,12 +226,14 @@ function useListingLabels(): string[] {
   return labels
 }
 
-function MapPanel({ lensRef }: { lensRef: RefObject<HTMLDivElement> }) {
+function MapPanel({ lensRef, welcome }: { lensRef: RefObject<HTMLDivElement>; welcome: boolean }) {
   const blocks = useMemo(cityBlocks, [])
   const labels = useListingLabels()
   const [stop, setStop] = useState(0)
   const [shown, setShown] = useState(true)
   useEffect(() => {
+    // The welcome: the lens stops touring and settles in the middle with its building shown.
+    if (welcome) return setShown(true)
     if (prefersReducedMotion()) return
     // One loop from the first frame: a short first stop (the lens floats meanwhile), then glide, pop in, dwell.
     let timer: ReturnType<typeof setTimeout>
@@ -229,11 +249,12 @@ function MapPanel({ lensRef }: { lensRef: RefObject<HTMLDivElement> }) {
     }
     timer = setTimeout(hop, LENS_FIRST_STOP_MS)
     return () => clearTimeout(timer)
-  }, [])
-  const here = STOPS[stop]!
+  }, [welcome])
+  const here = welcome ? WELCOME_STOP : STOPS[stop]!
   const label = labels[stop]
   return (
     <section aria-hidden className="auth-map relative hidden flex-1 overflow-hidden rounded-[32px] border border-white/70 bg-[#F6EEF6] lg:block">
+      <div className="auth-map-zoom absolute inset-0">
       <svg className="auth-map-pan absolute -inset-[10%] h-[120%] w-[120%]" viewBox={`0 0 ${MAP_W} ${MAP_H}`} preserveAspectRatio="xMidYMid slice">
         {blocks.map((b, i) => (
           <rect key={i} x={b.x} y={b.y} width={b.w} height={b.h} rx={8} fill={b.fill} opacity={0.92} />
@@ -277,6 +298,7 @@ function MapPanel({ lensRef }: { lensRef: RefObject<HTMLDivElement> }) {
           </svg>
         </div>
         </div>
+      </div>
       </div>
       <div className="absolute right-5 bottom-5 flex gap-2">
         <span className="rounded-full bg-lilac px-3 py-1.5 text-xs font-medium text-ink">Demo data</span>

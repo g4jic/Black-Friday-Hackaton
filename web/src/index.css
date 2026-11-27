@@ -415,15 +415,45 @@ button:active {
 .auth-lens {
   filter: drop-shadow(0 12px 24px rgba(11, 11, 15, 0.18));
 }
-/* B7: the lens copy that grows over the whole screen after signing in. */
-.auth-zoom {
+/* B7, the welcome after signing in: (1) the map widens over the whole window and the form folds away to the left,
+   while the lens settles in the middle; (2) the view zooms into the space under the lens; (3) a soft veil
+   (.auth-veil, added by AuthScreen) takes over and fades away on the app. */
+.auth-shell { transition: gap 750ms var(--ease-ios), padding 750ms var(--ease-ios); }
+.auth-map { transition: border-radius 750ms var(--ease-ios), border-color 750ms var(--ease-ios); }
+.auth-shell.is-welcome { padding: 0; }
+.auth-shell.is-welcome .auth-map { border-radius: 0; border-color: transparent; }
+.auth-form {
+  transition: flex-basis 750ms var(--ease-ios), max-width 750ms var(--ease-ios), padding 750ms var(--ease-ios),
+    opacity 420ms ease-out, transform 750ms var(--ease-ios);
+}
+.auth-shell.is-welcome { gap: 0; }
+.auth-shell.is-welcome .auth-form {
+  flex-basis: 0%;
+  max-width: 0;
+  min-width: 0;
+  padding-left: 0;
+  padding-right: 0;
+  border-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateX(-48px);
+}
+.auth-shell.is-welcome .auth-lens-move { transition-duration: 750ms; }
+.auth-shell.is-welcome .auth-lens-float { animation: none; }
+.auth-map-zoom {
+  /* The building's centre inside the lens sits about 12 px left of and 10 px above the lens centre. */
+  transform-origin: calc(50% - 12px) calc(50% - 10px);
+  transition: transform 1100ms cubic-bezier(0.6, 0, 0.3, 1);
+}
+.auth-shell.is-zoom .auth-map-zoom { transform: scale(16); }
+.auth-shell.is-zoom .auth-pill { opacity: 0; transition-duration: 200ms; }
+.auth-veil {
   position: fixed;
+  inset: 0;
   z-index: 60;
   pointer-events: none;
-  transform-origin: 50% 50%;
-  will-change: transform, opacity;
+  background: #fbf1f8;
 }
-.auth-zoom .auth-building { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) {
   .auth-map-pan, .auth-lens-float { animation: none; }
   .auth-lens-move, .auth-pill, .auth-building { transition: none; }
@@ -501,12 +531,12 @@ select option {
 }
 
 /*
- * B8: a magnifier cursor (the SuiteSpot lens) for mouse and trackpad only; touch devices never see it. The hot spot
- * is the centre of the lens. Text fields keep the text cursor; links and buttons get the filled lens.
+ * B8: a minimal cursor for mouse and trackpad only (touch devices never see it): a small ink dot, and over links and
+ * buttons a thin coral ring around it. The hot spot is the centre. Text fields keep the text cursor.
  */
 @media (pointer: fine) {
   html {
-    cursor: url("/cursor-lens.svg") 11 11, auto;
+    cursor: url("/cursor-lens.svg") 10 10, auto;
   }
   a[href],
   button:not(:disabled),
@@ -517,7 +547,7 @@ select option {
   [role="tab"],
   [role="menuitem"],
   [role="button"] {
-    cursor: url("/cursor-lens-active.svg") 11 11, pointer;
+    cursor: url("/cursor-lens-active.svg") 12 12, pointer;
   }
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
   textarea,

@@ -17,6 +17,7 @@ import { DashboardPage, NotFoundPage } from "./pages/SimplePages"
 import { RequireLandlord } from "./pages/AuthPages"
 import { AuthRoute, AuthScreen } from "./pages/AuthScreen"
 import { useAuth } from "./app/auth"
+import { useWelcomeHold } from "./app/welcome"
 import type { Config } from "./types"
 import { Pill } from "./ui"
 
@@ -66,11 +67,13 @@ export function App() {
   }, [route.name])
 
   const auth = useAuth()
+  const welcoming = useWelcomeHold()
   const { pathname } = useLocation()
   // No guest mode: /login and /signup stand alone; every other page needs a signed-in user, who comes back to it after.
   if (route.name === "login" || route.name === "signup") return <AuthRoute mode={route.name === "login" ? "signin" : "signup"} />
   if (auth.status === "loading") return <div className="min-h-dvh" aria-busy="true" />
-  if (!auth.landlord) return <AuthScreen mode="signin" next={pathname + (search.toString() ? `?${search}` : "")} />
+  // While the welcome animation plays the sign in screen stays, although the account is signed in already.
+  if (!auth.landlord || welcoming) return <AuthScreen mode="signin" next={pathname + (search.toString() ? `?${search}` : "")} />
 
   const titleExtra = route.name === "run" || route.name === "results" || route.name === "candidate" ? <DemoDataPill researchId={route.researchId} /> : null
 
