@@ -105,7 +105,7 @@ describe("role backfill plan (scripts/backfill-roles.ts)", () => {
 
   it("owner with at least one listing, seeker without; accounts with a role are left alone", () => {
     expect(plan.skipped).toBe(1)
-    expect(plan.byRole).toEqual({ owner: 1, seeker: 2 })
+    expect(plan.byRole).toEqual({ owner: 1, seeker: 2, both: 0 })
     expect(plan.changes.map((c) => [c.id, c.role, c.listings])).toEqual([
       ["u2", "owner", 3],
       ["u4", "seeker", 0],
@@ -117,5 +117,14 @@ describe("role backfill plan (scripts/backfill-roles.ts)", () => {
     expect(plan.changes.find((c) => c.id === "u1")!.metadata).toEqual({ display_name: "Aleksa", role: "seeker", onboarded_at: "2026-11-27T21:00:00.000Z" })
     expect(plan.changes.map((c) => c.maskedEmail)).toEqual(["d***@example.com", "(no email)", "a***@gmail.com"])
     expect(maskEmail("x@y.rs")).toBe("x***@y.rs")
+  })
+
+  it("--both gives the listed masked emails both; a masked email matching no account or several is refused", () => {
+    const withBoth = planRoleBackfill(accounts, new Map([["u2", 3]]), "2026-11-27T21:00:00.000Z", ["a***@gmail.com"])
+    expect(withBoth.byRole).toEqual({ owner: 1, seeker: 1, both: 1 })
+    expect(withBoth.changes.find((c) => c.id === "u1")!.metadata).toMatchObject({ role: "both", onboarded_at: "2026-11-27T21:00:00.000Z" })
+    expect(() => planRoleBackfill(accounts, new Map(), "now", ["z***@gmail.com"])).toThrow(/matches 0 accounts/)
+    const twins = [...accounts, { id: "u5", email: "anna@gmail.com", metadata: {} }]
+    expect(() => planRoleBackfill(twins, new Map(), "now", ["a***@gmail.com"])).toThrow(/matches 2 accounts/)
   })
 })

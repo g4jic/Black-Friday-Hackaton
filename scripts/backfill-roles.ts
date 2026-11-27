@@ -6,6 +6,7 @@ import { supabaseStoreConfig } from "../src/adapters/storage/supabase-listing-st
 /**
  * npx tsx scripts/backfill-roles.ts --dry-run   (prints the plan, changes nothing)
  * npx tsx scripts/backfill-roles.ts             (writes it)
+ * --both "4***@gmail.com,o***@gmail.com"       (these masked emails get "both"; each must match exactly one account)
  *
  * One-time: gives every Supabase account without an onboarding role a role (owner with at least one listing, else
  * seeker) and onboarded_at in user_metadata, so accounts made before the onboarding skip the role choice. Accounts
@@ -13,6 +14,8 @@ import { supabaseStoreConfig } from "../src/adapters/storage/supabase-listing-st
  * from .env (server side only); prints masked emails and counts, never keys.
  */
 const dryRun = process.argv.includes("--dry-run")
+const bothArg = process.argv.indexOf("--both")
+const bothFor = bothArg >= 0 ? (process.argv[bothArg + 1] ?? "").split(",").map((s) => s.trim()).filter(Boolean) : []
 const config = supabaseStoreConfig()
 if (!config) {
   console.error("Set SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY in .env first.")
@@ -41,14 +44,14 @@ async function listingCounts(): Promise<Map<string, number>> {
 }
 
 const accounts = await allAccounts()
-const plan = planRoleBackfill(accounts, await listingCounts(), new Date().toISOString())
+const plan = planRoleBackfill(accounts, await listingCounts(), new Date().toISOString(), bothFor)
 
 console.log(`${dryRun ? "DRY RUN (nothing is written)" : "WRITING"}: ${accounts.length} accounts, ${plan.skipped} already have a role (left alone)`)
-console.log(`To set: owner ${plan.byRole.owner}, seeker ${plan.byRole.seeker}`)
+console.log(`To set: owner ${plan.byRole.owner}, seeker ${plan.byRole.seeker}, both ${plan.byRole.both}`)
 console.table(plan.changes.map((c) => ({ email: c.maskedEmail, listings: c.listings, role: c.role })))
 
 if (!dryRun) {
-  let done = 0
+  const written = { owner: 0, seeker: 0, both: 0 }
   const failed: string[] = []
   for (const change of plan.changes) {
     let ok = false
@@ -57,9 +60,11 @@ if (!dryRun) {
       if (!error) ok = true
       else if (attempt < 3) await new Promise((r) => setTimeout(r, 400 * 2 ** attempt))
     }
-    if (ok) done++
+    if (ok) written[change.role]++
     else failed.push(change.maskedEmail)
   }
+  const done = written.owner + written.seeker + written.both
+  console.log(`Written: owner ${written.owner}, seeker ${written.seeker}, both ${written.both}`)
   console.log(`Updated ${done} of ${plan.changes.length} accounts.${failed.length ? ` Failed: ${failed.join(", ")} (run the script again; it skips accounts that have a role).` : ""}`)
   if (failed.length) process.exitCode = 1
 }
