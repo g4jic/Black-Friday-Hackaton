@@ -107,6 +107,10 @@ describe("Stripe test gateway (no network: a fake fetch)", () => {
     expect(stripeTestConfig({}).config).toBeNull()
     expect(stripeTestConfig({ STRIPE_SECRET_KEY: "sk_live_x", STRIPE_PUBLISHABLE_KEY: "pk_live_x" })).toMatchObject({ config: null, warning: expect.stringContaining("test keys") })
     expect(stripeTestConfig({ STRIPE_SECRET_KEY: "sk_test_x", STRIPE_PUBLISHABLE_KEY: "pk_test_y" }).config).not.toBeNull()
+    // Restricted test keys, including an anonymous sandbox key from `stripe sandbox create`, are test keys too.
+    expect(stripeTestConfig({ STRIPE_SECRET_KEY: "rk_test_x", STRIPE_PUBLISHABLE_KEY: "pk_test_y" }).config).not.toBeNull()
+    expect(stripeTestConfig({ STRIPE_SECRET_KEY: "rkcs_test_x", STRIPE_PUBLISHABLE_KEY: "pk_test_y" }).config).not.toBeNull()
+    expect(stripeTestConfig({ STRIPE_SECRET_KEY: "rk_live_x", STRIPE_PUBLISHABLE_KEY: "pk_test_y" }).config).toBeNull()
   })
 
   it("creates a Checkout session in euro cents and reads the paid status back from Stripe", async () => {

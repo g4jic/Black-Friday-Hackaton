@@ -9,13 +9,19 @@ import { DomainError } from "../../domain/index.js"
  */
 export type StripeTestConfig = { readonly secretKey: string; readonly publishableKey: string }
 
-/** Test keys only: both set, sk_test_ and pk_test_. A live key is refused (the server falls back to simulated). */
+/**
+ * Secret test keys we accept: a full test key (sk_test_), a restricted test key (rk_test_) and the restricted key of an
+ * anonymous sandbox made with `stripe sandbox create` (rkcs_test_). Every live key (sk_live_, rk_live_) is refused.
+ */
+const SECRET_TEST_KEY = /^(sk|rk|rkcs)_test_/
+
+/** Test keys only: both set, a secret test key and pk_test_. A live key is refused (the server falls back to simulated). */
 export function stripeTestConfig(env: NodeJS.ProcessEnv = process.env): { config: StripeTestConfig | null; warning: string | null } {
   const secretKey = env.STRIPE_SECRET_KEY?.trim() ?? ""
   const publishableKey = env.STRIPE_PUBLISHABLE_KEY?.trim() ?? ""
   if (!secretKey && !publishableKey) return { config: null, warning: null }
-  if (!secretKey.startsWith("sk_test_") || !publishableKey.startsWith("pk_test_"))
-    return { config: null, warning: "Stripe keys are set but are not both test keys (sk_test_, pk_test_): payments stay simulated." }
+  if (!SECRET_TEST_KEY.test(secretKey) || !publishableKey.startsWith("pk_test_"))
+    return { config: null, warning: "Stripe keys are set but are not both test keys (sk_test_, rk_test_ or rkcs_test_, and pk_test_): payments stay simulated." }
   return { config: { secretKey, publishableKey }, warning: null }
 }
 
