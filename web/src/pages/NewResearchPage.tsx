@@ -124,10 +124,12 @@ export function NewResearchPage({ config }: { config: Config | null }) {
       .then((body) => setDemoProfile(body.profile))
       .catch(() => setDemoProfile(null))
   }, [scenario])
-  // Without live mode every run uses the fixed demo profile (the scripted answers were made for it).
-  const profileLocked = !liveAvailable
-  const shownForm = profileLocked && demoProfile ? toForm(demoProfile) : form
   const accessCodeMissing = Boolean(config?.liveNeedsAccessCode) && !settings.liveAccessCode
+  // Recorded demo runs: on a server without a key, and on a public server for anyone without the access code (the
+  // jury), so the three demo scenarios always run. Every demo run uses the fixed demo profile.
+  const demoOnly = !liveAvailable || accessCodeMissing
+  const profileLocked = demoOnly
+  const shownForm = profileLocked && demoProfile ? toForm(demoProfile) : form
 
   const start = async (request: StartRequest, accessCode?: string) => {
     setError(null)
@@ -144,7 +146,7 @@ export function NewResearchPage({ config }: { config: Config | null }) {
 
   /** Live runs on SuiteSpot listings use the questionnaire as typed; demo runs use the demo profile. */
   const startOnCatalogue = (request: { source: "search" } | { source: "listing"; listingId: string }) => {
-    if (!liveAvailable) return void start(request.source === "search" ? { source: "demo", scenario } : request)
+    if (demoOnly) return void start(request.source === "search" ? { source: "demo", scenario } : request)
     const checked = profileFromForm(form)
     if ("error" in checked) return setError(checked.error)
     void start({ mode: "live", ...request, profile: checked.profile }, settings.liveAccessCode)
@@ -167,7 +169,9 @@ export function NewResearchPage({ config }: { config: Config | null }) {
                 </span>
               </Pill>
               <span className="text-[13px] text-ink-2">
-                Without an AI model key on the server, runs use the locked profile of the demo scenario.
+                {liveAvailable
+                  ? "Without the access code, runs use the locked profile of the demo scenario. Enter the code under Settings to use your own."
+                  : "Without an AI model key on the server, runs use the locked profile of the demo scenario."}
               </span>
             </div>
           ) : (
@@ -182,8 +186,8 @@ export function NewResearchPage({ config }: { config: Config | null }) {
               SuiteSpot searches every space published on SuiteSpot for the ones that fit your city, area, budget and type of business. The agents then evaluate the
               best matches at the same time, and every number shows its source.
             </p>
-            {!liveAvailable && <NoKeyNotice />}
-            {!liveAvailable && scenarios.length > 0 && (
+            {demoOnly && <NoKeyNotice />}
+            {demoOnly && scenarios.length > 0 && (
               <div className="mt-4" role="radiogroup" aria-label="Demo scenario">
                 <p className="mb-2 text-xs font-medium text-ink">Demo scenario (recorded run with the real model)</p>
                 <div className="flex flex-wrap gap-2">
@@ -205,7 +209,7 @@ export function NewResearchPage({ config }: { config: Config | null }) {
             <button
               type="button"
               onClick={() => startOnCatalogue({ source: "search" })}
-              disabled={starting || (liveAvailable && accessCodeMissing)}
+              disabled={starting}
               className="mt-6 inline-flex h-10 items-center gap-2 rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e] disabled:opacity-50"
             >
               <Play size={16} strokeWidth={2} aria-hidden /> {starting ? "Starting..." : "Search and evaluate"}
@@ -217,7 +221,7 @@ export function NewResearchPage({ config }: { config: Config | null }) {
             )}
           </Card>
         ) : listingId ? (
-          <ListingToEvaluate listingId={listingId} liveAvailable={liveAvailable} starting={starting} error={error} blocked={liveAvailable && accessCodeMissing} onStart={() => startOnCatalogue({ source: "listing", listingId })} />
+          <ListingToEvaluate listingId={listingId} liveAvailable={!demoOnly} starting={starting} error={error} blocked={false} onStart={() => startOnCatalogue({ source: "listing", listingId })} />
         ) : (
           <OutsideListingForm
             liveAvailable={liveAvailable}
