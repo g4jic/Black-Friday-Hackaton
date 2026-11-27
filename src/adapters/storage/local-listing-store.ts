@@ -18,7 +18,8 @@ export const LOCAL_LISTINGS_FILE = "data/local-listings.json"
 /** The one local account when Supabase is not configured: no password, clearly labelled in the UI. */
 export const LOCAL_LANDLORD: ListingActor = Object.freeze({ id: "local-demo-landlord", displayName: "Local demo account", kind: "local" })
 
-type LocalFile = { listings: SpaceListingProps[]; contacts: ListingContact[] }
+/** views and saved are kept too, so a restart keeps the counts and the saved spaces (optional in older files). */
+type LocalFile = { listings: SpaceListingProps[]; contacts: ListingContact[]; views?: Record<string, number>; saved?: Record<string, string[]> }
 
 export type LocalListingStoreOptions = {
   /** Read-only listings everyone sees (the seed), with their contacts. */
@@ -48,6 +49,8 @@ export class LocalListingStore implements ListingStore {
       const stored = JSON.parse(readFileSync(this.file, "utf8")) as LocalFile
       for (const p of stored.listings ?? []) this.own.set(p.id, SpaceListing.rehydrate(p))
       for (const c of stored.contacts ?? []) this.ownContacts.set(c.listingId, c)
+      for (const [id, n] of Object.entries(stored.views ?? {})) if (typeof n === "number") this.views.set(id, n)
+      for (const [actorId, ids] of Object.entries(stored.saved ?? {})) if (Array.isArray(ids)) this.saved.set(actorId, ids)
     }
   }
 
@@ -110,7 +113,10 @@ export class LocalListingStore implements ListingStore {
 
   async recordView(id: string): Promise<void> {
     const listing = await this.get(id)
-    if (listing?.props.published) this.views.set(id, (this.views.get(id) ?? 0) + 1)
+    if (listing?.props.published) {
+      this.views.set(id, (this.views.get(id) ?? 0) + 1)
+      this.persist()
+    }
   }
 
   async viewCounts(actor: ListingActor): Promise<Record<string, number>> {
@@ -126,10 +132,12 @@ export class LocalListingStore implements ListingStore {
     if (!listing || !listing.props.published) throw new DomainError("listing_not_found", `No listing "${id}"`)
     const ids = this.saved.get(actor.id) ?? []
     if (!ids.includes(id)) this.saved.set(actor.id, [id, ...ids]) // saving twice changes nothing
+    this.persist()
   }
 
   async unsave(actor: ListingActor, id: string): Promise<void> {
     this.saved.set(actor.id, (this.saved.get(actor.id) ?? []).filter((x) => x !== id))
+    this.persist()
   }
 
   private all(): SpaceListing[] {
@@ -145,7 +153,12 @@ export class LocalListingStore implements ListingStore {
   /** Write to a temporary file, then rename: a crash mid-write never leaves a half-written file. */
   private persist(): void {
     if (!this.file) return
-    const data: LocalFile = { listings: [...this.own.values()].map((l) => l.toJSON()), contacts: [...this.ownContacts.values()] }
+    const data: LocalFile = {
+      listings: [...this.own.values()].map((l) => l.toJSON()),
+      contacts: [...this.ownContacts.values()],
+      views: Object.fromEntries(this.views),
+      saved: Object.fromEntries(this.saved),
+    }
     mkdirSync(dirname(this.file), { recursive: true })
     const tmp = `${this.file}.tmp`
     writeFileSync(tmp, JSON.stringify(data, null, 2), "utf8")

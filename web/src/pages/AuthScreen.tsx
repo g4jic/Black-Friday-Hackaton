@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type RefObject } from "react"
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type FormEvent, type RefObject } from "react"
 import { logIn, signUp, useAuth } from "../app/auth"
 import { Link, navigate, paths, useLocation } from "../app/router"
 import { safeNext } from "../app/onboarding-gate"
@@ -14,6 +14,12 @@ import { AUTH_BUILDINGS } from "./auth-buildings"
  * prefers-reduced-motion the app simply appears.
  */
 export const MIN_PASSWORD_LENGTH = 8
+
+/**
+ * Local development only: the "Dev: sign in as" shortcut. In a production build import.meta.env.DEV is false, so this
+ * is null and the dynamic import is removed: the build has neither the buttons nor the demo password.
+ */
+const DevSignIn = import.meta.env.DEV ? lazy(() => import("../dev/DevSignIn")) : null
 const PRIMARY = "flex h-11 w-full items-center justify-center rounded-full bg-ink text-sm font-medium text-white hover:bg-[#26262e] disabled:opacity-40"
 
 const prefersReducedMotion = () => {
@@ -141,6 +147,11 @@ export function AuthScreen({ mode, next }: { mode: "signin" | "signup"; next: st
                 </Link>
               </p>
             </form>
+          )}
+          {DevSignIn && auth.mode === "local" && auth.status === "ready" && (
+            <Suspense fallback={null}>
+              <DevSignIn />
+            </Suspense>
           )}
         </div>
         <p className="text-xs text-ink-2">© 2026 SuiteSpot · Not financial or legal advice</p>

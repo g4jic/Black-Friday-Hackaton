@@ -110,7 +110,7 @@ describe("LocalListingStore", () => {
     await reopened.delete(LOCAL_LANDLORD, mine.id)
     expect(await reopened.get(mine.id)).toBeNull()
     expect(await reopened.revealContact(mine.id)).toBeNull()
-    expect(JSON.parse(readFileSync(file, "utf8"))).toEqual({ listings: [], contacts: [] })
+    expect(JSON.parse(readFileSync(file, "utf8"))).toEqual({ listings: [], contacts: [], views: {}, saved: {} })
   })
 
   it("nobody else can change or delete a listing, and listing reads never carry the contact", async () => {

@@ -479,6 +479,50 @@ a:focus-visible > .ss-logo .ss-logo-lens {
   a:focus-visible > .ss-logo .ss-logo-lens { transform: none; }
 }
 
+/* Sidebar items (and the avatar) lift a little under the pointer or keyboard focus, then spring back. */
+.nav-lift {
+  transition: transform 180ms cubic-bezier(0.34, 1.5, 0.64, 1), box-shadow 180ms ease-out, background-color 200ms var(--ease-ios);
+}
+.group:hover .nav-lift,
+.group:focus-visible .nav-lift {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(11, 11, 15, 0.1), 0 1px 3px rgba(11, 11, 15, 0.06);
+}
+@media (prefers-reduced-motion: reduce) {
+  .group:hover .nav-lift,
+  .group:focus-visible .nav-lift { transform: none; }
+}
+
+/* Cursors (web/public/cursor.svg and pointer.svg, hot spot at the arrow tip): the arrow everywhere, the coral arrow
+   on everything clickable, the text cursor in text fields. Fallbacks: the system auto and pointer. */
+html {
+  cursor: url("/cursor.svg") 4 4, auto;
+}
+a[href],
+button:not(:disabled),
+select:not(:disabled),
+summary,
+label:has(> input[type="checkbox"]),
+input[type="checkbox"]:not(:disabled),
+input[type="radio"]:not(:disabled),
+[role="button"],
+[role="menuitem"],
+[role="radio"],
+[role="tab"] {
+  cursor: url("/pointer.svg") 4 4, pointer;
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not(:disabled),
+textarea:not(:disabled),
+[contenteditable="true"] {
+  cursor: text;
+}
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+}
+
 /* Onboarding: the welcome veil fades away on this screen; its parts rise in one after another (delay set inline). */
 .onb-enter {
   /* backwards: hidden during the delay, then the element's own styles (so the role card hover lift still works). */

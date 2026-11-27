@@ -3,6 +3,27 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
+## Update (27 Nov 2026, night, Aleksa + Claude): sidebar motion, avatar menu, cursors, local demo accounts
+- **UI:** sidebar items lift 2 px on hover or focus (spring back, none with reduced motion); only the avatar under the
+  rail (no name); the avatar menu unfolds from the avatar (the avatar travels to the top of the panel), closes on the
+  avatar, a click outside or Escape (focus back on the avatar), arrow keys move between items; custom cursors
+  (`web/public/cursor.svg`, `web/public/pointer.svg` on everything clickable, hot spot 4 4, text cursor in fields).
+- **Local demo accounts (LOCAL DEVELOPMENT ONLY, never production, never Supabase):** `npx tsx scripts/seed-dev-accounts.ts`
+  writes Demo owner, Demo seeker and Demo both (synthetic data, password in `web/src/dev/dev-accounts.ts`) into data/
+  through the real domain rules; running it again replaces only those three. On the sign in screen, only in `npm run dev`
+  with local accounts, "Dev: sign in as owner / seeker / both" (`web/src/dev/DevSignIn.tsx`, loaded lazily behind
+  `import.meta.env.DEV`); the first sign in of seeker and both fills the browser half (business profile, two recorded
+  runs in History). Checked: the production build contains no "Dev: sign in", no demo password and no demo emails.
+  The local listing store now also keeps views and saved spaces in its file (`tests/local-listing-store.test.ts`).
+- **Pre walkthrough snimanja obrisati dev prečice i probne naloge.** Exactly how:
+  1. Delete `web/src/dev/` (DevSignIn.tsx, dev-accounts.ts) and `scripts/seed-dev-accounts.ts`.
+  2. In `web/src/pages/AuthScreen.tsx` remove the `DevSignIn` constant (the `import.meta.env.DEV ? lazy(...)` line and
+     its comment), the `{DevSignIn && ...}` block under the form, and `lazy, Suspense` from the react import.
+  3. Remove the demo accounts from your machine: stop the server, then delete `data/` (or only the three
+     `demo.*@example.com` accounts and their listings and deals), then start again.
+  4. `npm run typecheck`, `npm test`, `npm run build`, then check the build:
+     `Select-String -Path web/dist/assets/*.js -Pattern "Dev: sign in","dev-demo-pass"` must find nothing.
+
 ## Update (27 Nov 2026, night, Aleksa + Claude): two-user deal check, Leased status, deployed (52d7c93)
 - **Two real users, locally (keyless, local accounts, simulated payment):** owner publishes, seeker offers from
   Listings, owner accepts under Offers, seeker pays one month (simulated), owner sees it paid and leased. Negative
