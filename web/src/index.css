@@ -461,6 +461,33 @@ button:active {
   .auth-lens-move, .auth-pill, .auth-building { transition: none; }
 }
 
+/* Onboarding: the welcome veil fades away on this screen; its parts rise in one after another (delay set inline). */
+.onb-enter {
+  /* backwards: hidden during the delay, then the element's own styles (so the role card hover lift still works). */
+  animation: onb-enter 520ms var(--ease-ios) backwards;
+}
+/* Role cards: lift and a coral edge on hover or keyboard focus. */
+.role-card {
+  transition: transform 200ms var(--ease-ios), box-shadow 200ms var(--ease-ios), border-color 200ms var(--ease-ios), background-color 200ms var(--ease-ios);
+}
+.role-card:not(:disabled):hover,
+.role-card:focus-visible,
+.role-card.is-busy {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 48px rgba(120, 60, 90, 0.16);
+  border-color: var(--color-brand);
+}
+@keyframes onb-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .onb-enter { animation: none; }
+  .role-card:not(:disabled):hover, .role-card:focus-visible, .role-card.is-busy { transform: none; }
+}
+
 /*
  * Research run (B5): agent balls on an elastic path. JS sets transform and opacity on .orbit-ball and .orbit-path
  * every frame; nothing else moves. Reduced motion shows a static list instead.

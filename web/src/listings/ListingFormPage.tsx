@@ -243,8 +243,28 @@ export function ListingFormPage({ id }: { id?: string }) {
   )
 }
 
-/** The required fields of a listing: the same on "List a space" and on "Evaluate an outside listing". */
-export function ListingTermsFields({ form, set, problemFor }: { form: Form; set: (patch: Partial<Form>) => void; problemFor: (...fields: string[]) => string | undefined }) {
+/** Section heading inside one card (the onboarding's "Add your first space"), in place of a card per section. */
+export const SECTION_LABEL = "text-[13px] font-semibold text-ink-2"
+
+/**
+ * The required fields of a listing: the same on "List a space", on "Evaluate an outside listing" and in the
+ * onboarding. variant "plain" puts both sections inside the caller's card (three columns); spaceExtras adds fields
+ * at the end of "The space" (the onboarding's storefront window and parking).
+ */
+export function ListingTermsFields({
+  form,
+  set,
+  problemFor,
+  variant = "cards",
+  spaceExtras,
+}: {
+  form: Form
+  set: (patch: Partial<Form>) => void
+  problemFor: (...fields: string[]) => string | undefined
+  variant?: "cards" | "plain"
+  spaceExtras?: ReactNode
+}) {
+
   const field = (key: keyof Form, label: string, opts: { unit?: string; numeric?: boolean; placeholder?: string; problem?: string[] } = {}) => (
     <Field label={label} unit={opts.unit} problem={problemFor(...(opts.problem ?? [key]))}>
       <input
@@ -259,8 +279,7 @@ export function ListingTermsFields({ form, set, problemFor }: { form: Form; set:
 
   return (
     <>
-        <Card title="The space">
-          <div className="grid gap-3 sm:grid-cols-2">
+        <Section variant={variant} title="The space">
             <div className="sm:col-span-2">{field("title", "Title", { placeholder: "Lokal 60 m2 na Limanu" })}</div>
             <Field label="City" problem={problemFor("city")}>
               <select value={form.city} onChange={(e) => set({ city: e.target.value })} className={INPUT}>
@@ -284,6 +303,7 @@ export function ListingTermsFields({ form, set, problemFor }: { form: Form; set:
                 ))}
               </select>
             </Field>
+            {spaceExtras}
             <Field label="Permitted use" problem={problemFor("permittedUses")} wide>
               <div className="flex flex-wrap gap-2">
                 {(Object.keys(BUSINESS_TYPE_LABELS) as BusinessType[]).map((use) => {
@@ -302,10 +322,8 @@ export function ListingTermsFields({ form, set, problemFor }: { form: Form; set:
                 })}
               </div>
             </Field>
-          </div>
-        </Card>
-        <Card title="Money and lease terms">
-          <div className="grid gap-3 sm:grid-cols-2">
+        </Section>
+        <Section variant={variant} title="Money and lease terms">
             {field("rentMonthly", "Monthly rent", { unit: "EUR", numeric: true })}
             {field("serviceChargeMonthly", "Monthly costs", { unit: "EUR, 0 if none", numeric: true })}
             {field("deposit", "Deposit", { unit: "EUR", numeric: true })}
@@ -335,15 +353,28 @@ export function ListingTermsFields({ form, set, problemFor }: { form: Form; set:
                 <option value="tenant">The tenant</option>
               </select>
             </Field>
-          </div>
-        </Card>
+        </Section>
     </>
   )
 }
 
-function Field({ label, unit, problem, wide, children }: { label: string; unit?: string; problem?: string; wide?: boolean; children: ReactNode }) {
+/** Defined outside ListingTermsFields so its inputs keep their focus while the user types. */
+function Section({ variant, title, children }: { variant: "cards" | "plain"; title: string; children: ReactNode }) {
+  return variant === "plain" ? (
+    <section className="flex flex-col gap-3">
+      <h2 className={SECTION_LABEL}>{title}</h2>
+      <div className="grid gap-3.5 sm:grid-cols-3">{children}</div>
+    </section>
+  ) : (
+    <Card title={title}>
+      <div className="grid gap-3 sm:grid-cols-2">{children}</div>
+    </Card>
+  )
+}
+
+export function Field({ label, unit, problem, wide, children }: { label: string; unit?: string; problem?: string; wide?: boolean; children: ReactNode }) {
   return (
-    <label className={cx("block", wide && "sm:col-span-2")}>
+    <label className={cx("block", wide && "col-span-full")}>
       <span className={LABEL}>
         {label}
         {unit && <span className="font-normal text-ink-3"> ({unit})</span>}

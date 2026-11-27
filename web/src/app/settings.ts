@@ -1,31 +1,14 @@
 import { useSyncExternalStore } from "react"
+import { BUSINESS_TYPE_LABELS, CURRENCIES, DEFAULT_SETTINGS, MUST_HAVES, type Settings } from "./profile-types"
 
 /**
- * The default business profile, kept in this browser (localStorage).
- * They prefill the questionnaire for live runs. Every storage call is guarded: private windows and blocked
- * storage fall back to the defaults.
+ * The business profile, kept in this browser (localStorage). It prefills the questionnaire for live runs. Every
+ * storage call is guarded: private windows and blocked storage fall back to the defaults.
  */
-export type BusinessType = "cafe_food" | "retail" | "office_studio" | "workshop"
-export type Currency = "EUR" | "RSD" | "USD"
+export * from "./profile-types"
 
-export type Settings = {
-  businessType: BusinessType
-  city: string
-  /** null: not set yet (the questionnaire asks for it) */
-  monthlyBudget: number | null
-  currency: Currency
-}
-
-export const BUSINESS_TYPE_LABELS: Record<BusinessType, string> = {
-  cafe_food: "Cafe or food",
-  retail: "Retail shop",
-  office_studio: "Office or studio",
-  workshop: "Small workshop",
-}
-
-export const CURRENCIES: Currency[] = ["EUR", "RSD", "USD"]
-
-export const DEFAULT_SETTINGS: Settings = { businessType: "cafe_food", city: "Novi Sad", monthlyBudget: null, currency: "EUR" }
+const positiveOrNull = (value: unknown, allowZero = false): number | null =>
+  typeof value === "number" && Number.isFinite(value) && (allowZero ? value >= 0 : value > 0) ? value : null
 
 const STORAGE_KEY = "suitespot.settings.v1"
 const listeners = new Set<() => void>()
@@ -39,8 +22,15 @@ function readSettings(): Settings {
     return {
       businessType: parsed.businessType && parsed.businessType in BUSINESS_TYPE_LABELS ? parsed.businessType : DEFAULT_SETTINGS.businessType,
       city: typeof parsed.city === "string" ? parsed.city : DEFAULT_SETTINGS.city,
-      monthlyBudget: typeof parsed.monthlyBudget === "number" && parsed.monthlyBudget > 0 ? parsed.monthlyBudget : null,
+      monthlyBudget: positiveOrNull(parsed.monthlyBudget),
       currency: parsed.currency && CURRENCIES.includes(parsed.currency) ? parsed.currency : DEFAULT_SETTINGS.currency,
+      expectedMonthlyRevenue: positiveOrNull(parsed.expectedMonthlyRevenue, true),
+      areaMinM2: positiveOrNull(parsed.areaMinM2),
+      areaMaxM2: positiveOrNull(parsed.areaMaxM2),
+      leaseMonths: positiveOrNull(parsed.leaseMonths),
+      grossMarginPercent: positiveOrNull(parsed.grossMarginPercent),
+      districts: typeof parsed.districts === "string" ? parsed.districts : "",
+      mustHaves: Array.isArray(parsed.mustHaves) ? MUST_HAVES.filter((m) => parsed.mustHaves!.includes(m)) : [],
     }
   } catch {
     return DEFAULT_SETTINGS
@@ -65,11 +55,8 @@ export function saveSettings(next: Settings): boolean {
 }
 
 export function useSettings(): Settings {
-  return useSyncExternalStore(
-    (listener) => {
-      listeners.add(listener)
-      return () => listeners.delete(listener)
-    },
-    loadSettings,
-  )
+  return useSyncExternalStore((listener) => {
+    listeners.add(listener)
+    return () => listeners.delete(listener)
+  }, loadSettings)
 }

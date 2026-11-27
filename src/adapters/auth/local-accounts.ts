@@ -14,7 +14,17 @@ import { bearerToken } from "./supabase-auth.js"
 export const LOCAL_ACCOUNTS_FILE = "data/local-accounts.json"
 export const MIN_PASSWORD_LENGTH = 8
 
-type StoredAccount = { id: string; email: string; displayName: string; salt: string; hash: string; createdAt: string }
+/**
+ * What the user chose in the onboarding: list a space, find a space, or both. It only shapes the UI (the same field
+ * lives in Supabase user_metadata, which the user can edit), so nothing about money or security reads it.
+ */
+export type AccountRole = "owner" | "seeker" | "both"
+export const ACCOUNT_ROLES: readonly AccountRole[] = ["owner", "seeker", "both"]
+
+/** The part of an account the browser sees. role and onboardedAt are null until the onboarding sets them. */
+export type PublicAccount = { id: string; email: string; displayName: string; role: AccountRole | null; onboardedAt: string | null }
+
+type StoredAccount = { id: string; email: string; displayName: string; salt: string; hash: string; createdAt: string; role?: AccountRole; onboardedAt?: string }
 type StoredFile = { accounts: StoredAccount[]; sessions: { tokenHash: string; accountId: string; createdAt: string }[] }
 
 export class LocalAccountError extends Error {
@@ -92,13 +102,43 @@ export class LocalAccounts {
     this.save()
   }
 
-  /** The account behind a session token, or null. */
-  resolve(token: string | null): (ListingActor & { email: string }) | null {
-    if (!token) return null
+  private accountOf(token: string | null): StoredAccount | undefined {
+    if (!token) return undefined
     const tokenHash = sha256(token)
     const session = this.data.sessions.find((s) => s.tokenHash === tokenHash)
-    const account = session ? this.data.accounts.find((a) => a.id === session.accountId) : undefined
+    return session ? this.data.accounts.find((a) => a.id === session.accountId) : undefined
+  }
+
+  /** The account behind a session token, or null. */
+  resolve(token: string | null): (ListingActor & { email: string }) | null {
+    const account = this.accountOf(token)
     return account ? { ...this.actorOf(account), email: account.email } : null
+  }
+
+  /** What the browser may see of the account behind a token (never the password hash), or null. */
+  publicAccount(token: string | null): PublicAccount | null {
+    const account = this.accountOf(token)
+    return account ? toPublic(account) : null
+  }
+
+  /**
+   * The onboarding answers: the role (owner, seeker or both) and, once the user saves or skips the last step,
+   * onboarded: true. Setting onboarded twice keeps the first time (idempotent). onboarded: false is refused: a
+   * finished onboarding is not undone, the role can still change.
+   */
+  updateProfile(token: string | null, input: { role?: unknown; onboarded?: unknown }): PublicAccount {
+    const account = this.accountOf(token)
+    if (!account) throw new LocalAccountError(401, "Sign in first.")
+    if (input.role !== undefined) {
+      if (!ACCOUNT_ROLES.includes(input.role as AccountRole)) throw new LocalAccountError(400, `The role must be one of: ${ACCOUNT_ROLES.join(", ")}.`)
+      account.role = input.role as AccountRole
+    }
+    if (input.onboarded !== undefined) {
+      if (input.onboarded !== true) throw new LocalAccountError(400, "onboarded can only be set to true.")
+      account.onboardedAt ??= new Date().toISOString()
+    }
+    this.save()
+    return toPublic(account)
   }
 
   actorResolver(): (req: FastifyRequest) => Promise<ListingActor | null> {
@@ -109,9 +149,13 @@ export class LocalAccounts {
   }
 }
 
-/** POST /api/local-auth/sign-up, /sign-in, /sign-out and GET /api/local-auth/me (only when Supabase is off). */
+function toPublic(account: StoredAccount): PublicAccount {
+  return { id: account.id, email: account.email, displayName: account.displayName, role: account.role ?? null, onboardedAt: account.onboardedAt ?? null }
+}
+
+/** POST /api/local-auth/sign-up, /sign-in, /sign-out, /profile and GET /api/local-auth/me (only when Supabase is off). */
 export function registerLocalAuthRoutes(app: FastifyInstance, accounts: LocalAccounts): void {
-  const reply = (r: { token: string; actor: ListingActor; email: string }) => ({ token: r.token, account: { id: r.actor.id, email: r.email, displayName: r.actor.displayName } })
+  const reply = (r: { token: string; actor: ListingActor; email: string }) => ({ token: r.token, account: accounts.publicAccount(r.token)! })
   const handle = (fn: (body: Record<string, unknown>) => ReturnType<typeof reply>) => async (req: FastifyRequest, res: import("fastify").FastifyReply) => {
     try {
       return fn((req.body ?? {}) as Record<string, unknown>)
@@ -127,8 +171,16 @@ export function registerLocalAuthRoutes(app: FastifyInstance, accounts: LocalAcc
     return { ok: true }
   })
   app.get("/api/local-auth/me", async (req, res) => {
-    const found = accounts.resolve(bearerToken(req))
-    if (!found) return res.code(401).send({ error: "Not signed in" })
-    return { account: { id: found.id, email: found.email, displayName: found.displayName } }
+    const account = accounts.publicAccount(bearerToken(req))
+    if (!account) return res.code(401).send({ error: "Not signed in" })
+    return { account }
+  })
+  app.post("/api/local-auth/profile", async (req, res) => {
+    try {
+      return { account: accounts.updateProfile(bearerToken(req), (req.body ?? {}) as Record<string, unknown>) }
+    } catch (error) {
+      if (error instanceof LocalAccountError) return res.code(error.status).send({ error: error.message })
+      throw error
+    }
   })
 }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type RefObject } from "react"
 import { logIn, signUp, useAuth } from "../app/auth"
 import { Link, navigate, paths, useLocation } from "../app/router"
+import { safeNext } from "../app/onboarding-gate"
 import { holdWelcome, useWelcomeHold } from "../app/welcome"
 import { INPUT, LABEL } from "./SettingsPage"
 
@@ -21,10 +22,7 @@ const prefersReducedMotion = () => {
   }
 }
 
-/** Where to go after signing in: the page the user wanted (a path inside the app), else Home. */
-export function safeNext(next: string | null | undefined): string {
-  return next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/login") && !next.startsWith("/signup") ? next : paths.dashboard()
-}
+export { safeNext } from "../app/onboarding-gate"
 
 export function AuthScreen({ mode, next }: { mode: "signin" | "signup"; next: string }) {
   const auth = useAuth()
