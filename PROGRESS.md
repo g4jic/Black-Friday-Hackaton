@@ -3,6 +3,23 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
+## Update (27 Nov 2026, night, Aleksa + Claude): smooth welcome, owner Home, one page frame (af23b94, deployed)
+- **Welcome animation measured** (Edge, production build, 1440x900, rAF frame times and long tasks over 3.4 s):
+  before about 65 dropped frames, worst frame about 600 ms (stalls during the 16x zoom, the veil and the app's first
+  render); after about 3 dropped frames, worst about 29 ms, 3 of 5 runs perfectly smooth, 0 long tasks. Causes fixed:
+  the zoom layer is promoted before the zoom (will-change), the lens drops its drop-shadow, the map stops panning and
+  the form stops blurring during the welcome; the app renders under the opaque veil, the fade starts two frames later
+  and glass skips its blur while the veil fades (html.is-revealing).
+- **Owner Home** is an overview: Published spaces, Views, Open offers, the offers waiting (Accept or Decline there)
+  and the next rent due per lease. **My listings** is the management table: space, rent, views, Published or Leased,
+  Edit, Delete, Add a space when there is none (and in the header of the card for "both").
+- **One page frame** (Shell.tsx, .page-frame in index.css): 24 px after the sidebar and 24 px before the window edge
+  (the right padding subtracts the scrollbar gutter), centred above 1360 px, title 24 px from the top; 16 px on a
+  phone. Checked for owner, seeker and both at 1440, 1920 and 375 px.
+- No header buttons (New research and Add a space live in the sidebar and on Home), no explanatory subtitles, and
+  "Not financial or legal advice" only as one small grey line under results, the Report tab and a candidate (the
+  sign in footer, README and SUBMISSION.md keep it). Empty states sit under the card title, icon and text aligned.
+
 ## Update (27 Nov 2026, night, Aleksa + Claude): dropdowns, collapsible cards, sticky contact, Settings (e96923e, deployed)
 - `web/src/Select.tsx` replaces every native select: glass panel portalled to the body (never clipped by a card,
   opens upwards without room below), brand-soft hover, check on the chosen option, "Choose" placeholder, arrows,
