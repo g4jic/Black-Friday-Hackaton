@@ -46,11 +46,11 @@ export function Timeline({ s, now }: { s: ResearchState; now: number }) {
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <span className="inline-flex items-center title-pill rounded-full glass-strong px-3.5 py-1.5 text-lg leading-6 font-semibold">How your research ran</span>
         <Pill variant="brand" icon={false}>
-          up to {s.peak} agents working at once
+          up to {s.peak} agent tasks at once
         </Pill>
         {!s.done && (
           <Pill icon={false}>
-            {busyNow} working now
+            {busyNow} tasks running now
           </Pill>
         )}
         {s.done && s.metrics && <Pill icon={false}>done in {sec(s.metrics.durationMs)}</Pill>}
