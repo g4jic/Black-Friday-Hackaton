@@ -1,5 +1,5 @@
 import { Agent, SemanticEvent, SituationSpecification, createAgent, type SituationContext, type StructuredOutputFormat } from "@mozaik-ai/core"
-import { createFact, parseReportDraft, isMissingData, verdictFor, type Fact, type FactKind, type Money, type SourceRef, type Sourced } from "../../domain/index.js"
+import { AREA_RADIUS_M, OSM_METRICS, OSM_METRIC_TEXT, createFact, parseReportDraft, isMissingData, verdictFor, type Fact, type FactKind, type Money, type SourceRef, type Sourced } from "../../domain/index.js"
 import { INFERENCE_FAILED_PREFIX } from "../resilience/resilient-runner.js"
 import { safeHandler } from "../resilience/safe-handler.js"
 import type { AppRuntime } from "../runtime.js"
@@ -64,9 +64,17 @@ export function buildFacts(state: SuiteSpotState): Fact[] {
     if (monthly?.value && !isMissingData(monthly.value)) add("figure", id, `${id}: monthly cost ${fmtMoney((monthly.value as Sourced<Money>).value)}.`, monthly.source)
     const share = finding("cost_share_of_revenue")
     if (share?.value && !isMissingData(share.value)) add("figure", id, `${id}: the space costs ${Math.round((share.value as Sourced<number>).value * 1000) / 10}% of the expected monthly revenue.`, share.source)
+    if (!isMissingData(r.rentShare) && r.rentShare.aboveThreshold) {
+      add("check", id, `${id}: check before signing: the rent takes ${Math.round(r.rentShare.share.value * 1000) / 10}% of the expected monthly revenue, above the ${Math.round(r.rentShare.threshold.value * 100)}% SuiteSpot threshold.`, r.rentShare.share.source)
+    }
     const exit = finding("exit_cost_after_12_months")
     if (exit?.value && !isMissingData(exit.value)) add("figure", id, `${id}: leaving after 12 months costs ${fmtMoney((exit.value as Sourced<Money>).value)}${exit.claim.includes("(") ? ` ${exit.claim.slice(exit.claim.indexOf("("))}` : ""}.`, exit.source)
     else if (exit) add("unknown", id, `${id}: the cost of leaving after 12 months needs the lease terms (the notice period is unknown).`, exit.source)
+    const area = state.areas.get(id)
+    if (area) {
+      const counts = OSM_METRICS.map((m) => `${area.counts[m].value} ${OSM_METRIC_TEXT[m]}`).join(", ")
+      add("figure", id, `${id}: within ${AREA_RADIUS_M} m, OpenStreetMap maps ${counts}.`, { kind: "calc", ref: "OpenStreetMap counts around the address (© OpenStreetMap contributors, ODbL)", inputs: OSM_METRICS.map((m) => area.counts[m].source) })
+    }
     for (const f of state.findings.filter((x) => x.candidateId === id && x.severity === "soft")) {
       add("check", id, `${id}: ${f.claim}${f.checkBeforeSigning ? `; check ${f.checkBeforeSigning}` : ""}.`, f.source)
     }

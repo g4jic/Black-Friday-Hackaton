@@ -3,6 +3,9 @@ import type { BusinessProfile, CatalogueCandidate, LeaseText, ListingTextInput, 
 import { submitCatalogueListings } from "../agents/catalogue.js"
 import { createFinanceAnalyst } from "../agents/finance-analyst.js"
 import { createLeaseReader } from "../agents/lease-reader.js"
+import { createLocationAnalyst } from "../agents/location-analyst.js"
+import { createPremisesInspector } from "../agents/premises-inspector.js"
+import type { AreaLookup } from "../location/area-lookup.js"
 import { createRanker } from "../agents/ranker.js"
 import { createAuditor } from "../agents/auditor.js"
 import { createReportWriter } from "../agents/report-writer.js"
@@ -36,6 +39,8 @@ export type ResearchInput = {
   readonly timeoutMs?: number
   /** Values that must never reach the browser (for example the API key); replaced in every outgoing event. */
   readonly secrets?: readonly string[]
+  /** OpenStreetMap area data per candidate (fixture for SuiteSpot listings, live OSM for an outside one). */
+  readonly areaLookup: AreaLookup
 }
 
 export type ResearchMetrics = {
@@ -87,6 +92,14 @@ const PASS_THROUGH: Record<string, readonly string[]> = {
   "finance.explained": ["candidateId", "explanation"],
   "finance.explanation_rejected": ["candidateId", "attempt", "reason"],
   "finance.failed": ["candidateId", "reason"],
+  "location.area_found": ["candidateId", "place", "precision", "counts"],
+  "location.not_found": ["candidateId"],
+  "location.explained": ["candidateId", "explanation"],
+  "location.explanation_rejected": ["candidateId", "attempt", "reason"],
+  "location.failed": ["candidateId", "reason"],
+  "premises.read": ["candidateId", "attempt", "concerns", "unknown", "unverified", "score", "scoreHigh"],
+  "premises.extraction_rejected": ["candidateId", "attempt", "reason"],
+  "premises.failed": ["candidateId", "reason"],
   "agent.halted": ["loopKey", "candidateId", "reason"],
   "candidate.scored": ["candidateId", "rank", "score", "scoreHigh", "confidence", "verdict"],
   "ranking.done": ["order", "excluded"],
@@ -131,7 +144,7 @@ export class ResearchSession {
       handlers: [safeHandler({ specification: new Everything(), processor: { apply: ({ event }) => this.onBus(event, names) } })],
     })
     const user = createHuman({ name: "User", capabilities: [], handlers: [] })
-    const agents = [createScout(this.rt, { model: input.model }), createFinanceAnalyst(this.rt, { model: input.model }), createLeaseReader(this.rt, { model: input.model }), createRanker(this.rt), createReportWriter(this.rt, { model: input.model }), createAuditor(this.rt)]
+    const agents = [createScout(this.rt, { model: input.model }), createFinanceAnalyst(this.rt, { model: input.model }), createLeaseReader(this.rt, { model: input.model }), createLocationAnalyst(this.rt, { model: input.model, lookup: input.areaLookup }), createPremisesInspector(this.rt, { model: input.model }), createRanker(this.rt), createReportWriter(this.rt, { model: input.model }), createAuditor(this.rt)]
     for (const p of [tap, user, ...agents]) {
       names.set(p.getId(), p.getManifest().name)
       this.rt.join(p)

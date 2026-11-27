@@ -11,7 +11,9 @@ import { createScout, submitListings } from "../src/application/agents/scout.js"
 import { createRecorder } from "../src/application/observers/recorder.js"
 import { createAppRuntime } from "../src/application/runtime.js"
 import {
+  BusinessProfile,
   DomainError,
+  isMissingData,
   Money,
   RANKING_ASSUMPTIONS,
   buildLease,
@@ -28,6 +30,10 @@ import {
   type Sourced,
 } from "../src/domain/index.js"
 import { waitFor } from "./helpers.js"
+import { sampleArea, sampleAreaLookup } from "./fixtures/sample-areas.js"
+import { createLocationAnalyst } from "../src/application/agents/location-analyst.js"
+import { samplePremises } from "./fixtures/sample-premises.js"
+import { createPremisesInspector } from "../src/application/agents/premises-inspector.js"
 
 const FAST = { scout: () => 10, leaseReader: 60, financeStep: 20 }
 
@@ -35,7 +41,7 @@ async function runDemo() {
   const rt = createAppRuntime({ runner: new MockRunner({ script: demoRoomScript({ scout: sampleScoutAnswers(), lease: sampleLeaseAnswers() }, FAST) }), maxParallelInference: 8, resilience: { retries: 0 } })
   const recorder = createRecorder()
   const user = createHuman({ name: "User", capabilities: [], handlers: [] })
-  for (const p of [recorder.participant, user, createScout(rt, { model: "mock" }), createFinanceAnalyst(rt, { model: "mock" }), createLeaseReader(rt, { model: "mock" }), createRanker(rt)]) rt.join(p)
+  for (const p of [recorder.participant, user, createScout(rt, { model: "mock" }), createFinanceAnalyst(rt, { model: "mock" }), createLeaseReader(rt, { model: "mock" }), createLocationAnalyst(rt, { model: "mock", lookup: sampleAreaLookup }), createPremisesInspector(rt, { model: "mock" }), createRanker(rt)]) rt.join(p)
   const q = loadDemoQuestionnaire()
   rt.state.setQuestionnaire(q.profile, q.requirements)
   rt.state.submitLeases(sampleLeases())
@@ -84,9 +90,21 @@ describe("Ranker (keyless, plain code)", () => {
   it("demo: listing-01 (all data) ranks first, ahead of the candidates without a lease draft; ranges are shown as such", async () => {
     const { scored } = await runDemo()
     const view = scored.map((s) => [s.candidateId, s.rank, s.score, (s as { scoreHigh?: number }).scoreHigh])
-    expect(view[0]).toEqual(["listing-01", 1, 80, 80])
-    expect(view.find((v) => v[0] === "listing-03")).toEqual(["listing-03", expect.any(Number), 60, 100])
-    expect(view.find((v) => v[0] === "listing-06")).toEqual(["listing-06", 2, 74, 94])
+    // listing-01 has every key input (lease draft read, area, OSM): ranked first. Its only range is the premises
+    // checks its text does not mention (unknown, so the low end counts them as 0 and the high end as full).
+    expect(view[0]![0]).toBe("listing-01")
+    const premisesGap = (id: string) => {
+      const p = (scored.find((x) => x.candidateId === id) as unknown as { components: { name: string; value: number | null; valueHigh?: number }[] }).components.find((c) => c.name === "premises")!
+      expect(p.value).not.toBeNull() // the Premises inspector read every ranked candidate
+      return RANKING_ASSUMPTIONS.weights.premises * (p.valueHigh! - p.value!)
+    }
+    // The low and the high end are rounded separately, so the gap can differ from the exact one by 1 point.
+    expect(Math.abs((view[0]![3] as number) - (view[0]![2] as number) - premisesGap("listing-01"))).toBeLessThanOrEqual(1)
+    // No lease draft: the lease part is unknown, so the range is exactly its weight plus the unknown premises checks.
+    const l06 = view.find((v) => v[0] === "listing-06")!
+    expect(Math.abs((l06[3] as number) - (l06[2] as number) - RANKING_ASSUMPTIONS.weights.lease - premisesGap("listing-06"))).toBeLessThanOrEqual(1)
+    const l03 = view.find((v) => v[0] === "listing-03")!
+    expect((l03[3] as number) - (l03[2] as number)).toBeGreaterThan(RANKING_ASSUMPTIONS.weights.lease)
   })
 
   it("the same input gives the same order and scores", async () => {
@@ -103,11 +121,11 @@ describe("score rules (domain)", () => {
   const listing = buildListing(listingText, sampleScoutAnswers()["listing-01"])
   const lease = buildLease(sampleLeases().find((l) => l.listingId === "listing-01")!, sampleLeaseAnswers()["lease-listing-01"])
   const monthly = sourced(Money.of(1310, "EUR"), { kind: "calc", ref: "sum of monthly cost lines", inputs: [{ kind: "listing", ref: "listing-01", field: "rentMonthly", quote: "Cena: 1.250 € mesečno" }] })
-  const base: RankingInput = { candidateId: "listing-01", listing, profile, monthlyCost: monthly, lease, hasLeaseDraft: true, softFindings: [] }
+  const base: RankingInput = { candidateId: "listing-01", listing, profile, monthlyCost: monthly, lease, hasLeaseDraft: true, softFindings: [], area: sampleArea("listing-01"), premises: samplePremises("listing-01") }
   /** The range by hand: unknown parts as 0 (low end) and as full (high end). */
   const byHand = (s: CandidateScore) => ({
     low: Math.round(s.components.reduce((a, c) => a + c.weight * (c.value ?? 0), 0)),
-    high: Math.round(s.components.reduce((a, c) => a + c.weight * (c.value ?? 1), 0)),
+    high: Math.round(s.components.reduce((a, c) => a + c.weight * (c.valueHigh ?? c.value ?? 1), 0)),
   })
 
   it("lease terms only from the listing form score, but give at most medium confidence (not a verified lease)", () => {
@@ -127,17 +145,17 @@ describe("score rules (domain)", () => {
     const noArea = scoreCandidate({ ...base, listing: { ...listing, area: missingData("area") } })
     expect(noArea.components.find((c) => c.name === "area")!.value).toBeNull()
     expect({ low: noArea.score, high: noArea.scoreHigh }).toEqual(byHand(noArea))
-    expect(noArea.scoreHigh - noArea.score).toBeGreaterThanOrEqual(RANKING_ASSUMPTIONS.weights.area - 1) // the area's 20 points are the gap
+    expect(noArea.scoreHigh - noArea.score).toBeGreaterThanOrEqual(RANKING_ASSUMPTIONS.weights.area - 1) // the area's points are the gap
     expect(noArea.confidence).toBe("medium")
-    expect(noArea.reasons.some((r) => r.effect === "confidence" && r.text.includes("area not stated: up to 20 points unknown"))).toBe(true)
+    expect(noArea.reasons.some((r) => r.effect === "confidence" && r.text.includes(`area not stated: up to ${RANKING_ASSUMPTIONS.weights.area} points unknown`))).toBe(true)
 
     const noLease = scoreCandidate({ ...base, lease: null, hasLeaseDraft: false })
     expect({ low: noLease.score, high: noLease.scoreHigh }).toEqual(byHand(noLease))
-    expect(noLease.reasons.some((r) => r.effect === "confidence" && r.text.includes("no lease draft: up to 20 points unknown"))).toBe(true)
+    expect(noLease.reasons.some((r) => r.effect === "confidence" && r.text.includes(`no lease draft: up to ${RANKING_ASSUMPTIONS.weights.lease} points unknown`))).toBe(true)
 
     const both = scoreCandidate({ ...base, lease: null, hasLeaseDraft: false, listing: { ...listing, area: missingData("area") } })
     expect(both.confidence).toBe("low")
-    expect(both.scoreHigh - both.score).toBeGreaterThanOrEqual(39)
+    expect(both.scoreHigh - both.score).toBeGreaterThanOrEqual(RANKING_ASSUMPTIONS.weights.area + RANKING_ASSUMPTIONS.weights.lease - 1)
   })
 
   it("a candidate with all data ranks ahead of one whose low end is lower, even if its high end is higher", () => {
@@ -154,7 +172,7 @@ describe("score rules (domain)", () => {
     expect(noRent.tier).toBe(2)
     expect(noRent.scoreHigh).toBeGreaterThan(weak.score)
     expect(rankCandidates([noRent, weak]).map((r) => r.candidateId)).toEqual(["x-weak", "x-no-rent"])
-    expect(noRent.reasons.some((r) => r.text.includes("rent not stated: up to 45 points unknown"))).toBe(true)
+    expect(noRent.reasons.some((r) => r.text.includes(`rent not stated: up to ${RANKING_ASSUMPTIONS.weights.cost} points unknown`))).toBe(true)
   })
 
   it("ranks by verdict first: the first place never has a weaker verdict than another candidate", () => {
@@ -173,6 +191,30 @@ describe("score rules (domain)", () => {
     const a = rankCandidates(inputs.map(scoreCandidate)).map((r) => [r.candidateId, r.rank, r.score, r.scoreHigh])
     const b = rankCandidates([...inputs].reverse().map(scoreCandidate)).map((r) => [r.candidateId, r.rank, r.score, r.scoreHigh])
     expect(b).toEqual(a)
+  })
+
+  it("rent share of revenue: above the threshold it is a soft point to check (never a hard flag), with a calc source", () => {
+    const revenue = (n: number) => BusinessProfile.create({ ...profile.input, expectedMonthlyRevenue: n })
+    const threshold = RANKING_ASSUMPTIONS.rentShare.checkAbove
+    // 1310 EUR a month against a revenue that puts the share just below and just above the threshold.
+    const within = scoreCandidate({ ...base, profile: revenue(Math.ceil(1310 / threshold) + 100) })
+    const above = scoreCandidate({ ...base, profile: revenue(Math.floor(1310 / threshold) - 100) })
+    if (isMissingData(within.rentShare) || isMissingData(above.rentShare)) throw new Error("rent share should be known")
+    expect(within.rentShare.aboveThreshold).toBe(false)
+    expect(above.rentShare.aboveThreshold).toBe(true)
+    expect(above.rentShare.share.source).toMatchObject({ kind: "calc", ref: "monthly cost / expected monthly revenue" })
+    expect(above.rentShare.share.source.inputs?.[1]).toMatchObject({ kind: "profile", field: "expectedMonthlyRevenue" })
+    expect(above.rentShare.threshold.source).toMatchObject({ kind: "assumption", field: "rentShare.checkAbove" })
+    expect(above.pointsToCheck).toBe(within.pointsToCheck + 1)
+    expect(above.components.find((c) => c.name === "checks")!.value).toBeLessThan(within.components.find((c) => c.name === "checks")!.value!)
+    expect(verdictFor(above, false).verdict).not.toBe("good")
+  })
+
+  it("rent share without an expected revenue is missing data, never a guess, and adds no point to check", () => {
+    const none = scoreCandidate({ ...base, profile: BusinessProfile.create({ ...profile.input, expectedMonthlyRevenue: 0 }) })
+    expect(isMissingData(none.rentShare)).toBe(true)
+    expect(none.pointsToCheck).toBe(scoreCandidate({ ...base, profile: BusinessProfile.create({ ...profile.input, expectedMonthlyRevenue: 1_000_000 }) }).pointsToCheck)
+    expect(isMissingData(scoreCandidate({ ...base, monthlyCost: null }).rentShare)).toBe(true)
   })
 
   it("the weights and rules are the published assumptions", () => {

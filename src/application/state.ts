@@ -4,6 +4,7 @@ import {
   DomainError,
   createFinding,
   createListingBatch,
+  type AreaData,
   type BusinessProfile,
   type Finding,
   type HardFlag,
@@ -12,6 +13,7 @@ import {
   type Listing,
   type ListingText,
   type ListingTextInput,
+  type PremisesFacts,
   type RankedCandidate,
   type Fact,
   type ReportDraft,
@@ -52,6 +54,27 @@ export class SuiteSpotState extends RuntimeState {
   readonly leaseTexts = new Map<string, LeaseText>()
   readonly leaseClauses = new Map<string, LeaseClauses>()
   private readonly leaseWaiters = new Map<string, { promise: Promise<LeaseClauses | null>; resolve: (c: LeaseClauses | null) => void }>()
+  /** OpenStreetMap counts around each candidate (code), read by the Location analyst's tool and by the Ranker. */
+  readonly areas = new Map<string, AreaData>()
+
+  recordArea(area: AreaData): AreaData {
+    this.candidate(area.candidateId) // unknown candidate: DomainError
+    const existing = this.areas.get(area.candidateId)
+    if (existing) return existing // idempotent: a retry never changes the data
+    this.areas.set(area.candidateId, area)
+    return area
+  }
+
+  /** What the Premises inspector read about the space (each value quoted and checked by code), read by the Ranker. */
+  readonly premises = new Map<string, PremisesFacts>()
+
+  recordPremises(facts: PremisesFacts): PremisesFacts {
+    this.candidate(facts.candidateId) // unknown candidate: DomainError
+    const existing = this.premises.get(facts.candidateId)
+    if (existing) return existing // idempotent: a retry never changes the facts
+    this.premises.set(facts.candidateId, facts)
+    return facts
+  }
 
   /** The report: facts written by code, the Report writer's drafts, and the audited final report. */
   reportFacts: Fact[] = []

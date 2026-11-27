@@ -6,8 +6,8 @@ import { EmptyState } from "../app/Shell"
 import { candidateLocation, candidateShortName } from "../candidate-label"
 import { ResearchMissing } from "../pages/ResearchPage"
 import type { CandidateDTO } from "../types"
-import { cx } from "../ui"
-import { allSources, costRows, leaseSection, resultsList, strengthsAndRisks, unknowns, type PointItem } from "./results-model"
+import { SourceLabel, cx, formatMoney } from "../ui"
+import { allSources, costRows, leaseSection, locationSection, premisesSection, resultsList, strengthsAndRisks, unknowns, yearScenarios, type PointItem } from "./results-model"
 import { ScoreBlock, VerdictBadge } from "./ResultsList"
 
 /** One candidate (/research/:id/candidate/:candidateId): separate cards with clear headings, nothing overlapping. */
@@ -39,8 +39,12 @@ export function CandidatePage({ researchId, candidateId }: { researchId: string;
       <Header candidate={candidate} listingNumber={entry?.listingNumber ?? 1} position={position >= 0 ? position + 1 : null} entry={entry} />
       <div className="grid gap-4 lg:grid-cols-2">
         <CostsCard candidate={candidate} />
+        <YearScenariosCard candidate={candidate} />
+        <LeaseOrBuyCard candidate={candidate} />
         <StrengthsRisksCard candidate={candidate} />
         <LeaseCard candidate={candidate} />
+        <LocationCard candidate={candidate} />
+        <PremisesCard candidate={candidate} />
         <UnknownsCard candidate={candidate} />
       </div>
       <SourcesCard candidate={candidate} />
@@ -136,6 +140,117 @@ function CostsCard({ candidate }: { candidate: CandidateDTO }) {
   )
 }
 
+const money = (m: { amount: number; currency: string }) => formatMoney(m.amount, m.currency)
+
+/** Lease or buy a similar space: code with labelled public-source assumptions (How it works lists them). */
+function LeaseOrBuyCard({ candidate }: { candidate: CandidateDTO }) {
+  const r = candidate.leaseOrBuy
+  if (!r) return null
+  if (!r.known) {
+    return (
+      <Section title="Lease or buy">
+        <p className="text-[13px] text-ink-3">Not compared: {r.missing.join(", ")} not known.</p>
+      </Section>
+    )
+  }
+  const rows = [
+    { label: `Rent over ${r.years} years`, value: r.leaseCost },
+    { label: `Buying, net over ${r.years} years`, value: r.buyCost },
+    { label: "Price of a similar space", value: r.price },
+    { label: "Cash needed to buy (down payment, tax and fees)", value: r.upFront },
+    { label: "Loan payment per month", value: r.monthlyLoanPayment },
+  ]
+  return (
+    <Section title="Lease or buy" className="lg:col-span-2">
+      <p className="max-w-[70ch] text-sm leading-6 font-semibold text-ink">
+        {r.cheaper === "lease" ? "Leasing" : "Buying a similar space"} costs about {money(r.difference)} less over {r.years} years
+        <SourceLabel source={r.difference.source} />
+        {r.cheaper === "buy" && <span className="font-normal text-ink-2">, but needs {money(r.upFront)} in cash before you start.</span>}
+      </p>
+      <dl className="mt-4 grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
+        {rows.map((row) => (
+          <div key={row.label} className="flex justify-between gap-3 border-b border-line py-1.5">
+            <dt className="text-ink-2">{row.label}</dt>
+            <dd className="tnum font-semibold text-ink">
+              {money(row.value)}
+              <SourceLabel source={row.value.source} />
+            </dd>
+          </div>
+        ))}
+      </dl>
+      {r.notes.map((n) => (
+        <p key={n} className="mt-3 text-xs leading-5 text-ink-2">{n}</p>
+      ))}
+      <p className="mt-3 text-xs leading-5 text-ink-3">
+        Buying uses published average sale prices for this part of town, the average business loan rate and labelled SuiteSpot assumptions (see How it works). The net cost assumes the space keeps its price. A rough comparison, not a valuation. Not financial advice.
+      </p>
+    </Section>
+  )
+}
+
+/** Bad year, good year: what leaving after 12 months costs, and when the money put in comes back. Code figures only. */
+function YearScenariosCard({ candidate }: { candidate: CandidateDTO }) {
+  const y = yearScenarios(candidate)
+  if (!y) return null
+  return (
+    <Section title="A bad year, a good year" className="lg:col-span-2">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-[20px] bg-white/60 p-4">
+          <p className="text-xs font-medium text-ink-2">If the business does not work out</p>
+          <p className="tnum mt-1 text-xl font-semibold text-ink">
+            {y.bad.total ? (
+              <>
+                {y.bad.complete ? "" : "At least "}
+                {y.bad.total}
+                {y.bad.source && <SourceLabel source={y.bad.source} />}
+              </>
+            ) : (
+              <span className="text-sm font-normal text-ink-3 italic">missing data</span>
+            )}
+          </p>
+          <p className="text-[13px] text-ink-2">to leave after 12 months</p>
+          {y.bad.parts.length > 0 && (
+            <ul className="mt-3 flex flex-col gap-1 text-[13px]">
+              {y.bad.parts.map((part) => (
+                <li key={part.label} className="flex justify-between gap-3">
+                  <span className="text-ink-2">{part.label}</span>
+                  <span className="tnum font-medium text-ink">{part.value}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-3 text-xs leading-5 text-ink-2">{y.bad.note}</p>
+        </div>
+        <div className="rounded-[20px] bg-white/60 p-4">
+          <p className="text-xs font-medium text-ink-2">If the business goes as planned</p>
+          <p className="tnum mt-1 text-xl font-semibold text-ink">
+            {y.good.payback ? (
+              <>
+                {y.good.payback}
+                {y.good.paybackSource && <SourceLabel source={y.good.paybackSource} />}
+              </>
+            ) : (
+              <span className="text-sm font-normal text-ink-3 italic">missing data</span>
+            )}
+          </p>
+          <p className="text-[13px] text-ink-2">to earn back what you put in before opening</p>
+          {y.good.breakEven && (
+            <p className="mt-3 flex justify-between gap-3 text-[13px]">
+              <span className="text-ink-2">Revenue needed just to cover the space</span>
+              <span className="tnum font-medium text-ink">
+                {y.good.breakEven}
+                {y.good.breakEvenSource && <SourceLabel source={y.good.breakEvenSource} />}
+              </span>
+            </p>
+          )}
+          <p className="mt-3 text-xs leading-5 text-ink-2">{y.good.note}</p>
+        </div>
+      </div>
+      <p className="mt-4 text-xs text-ink-3">Calculated by SuiteSpot from the listing and your questionnaire. Not financial advice.</p>
+    </Section>
+  )
+}
+
 function PointList({ items, empty, tone }: { items: PointItem[]; empty: string; tone: "plus" | "minus" }) {
   if (items.length === 0) return <p className="text-[13px] text-ink-3">{empty}</p>
   return (
@@ -209,6 +324,74 @@ function LeaseCard({ candidate }: { candidate: CandidateDTO }) {
         </>
       )}
       <p className="mt-4 text-xs text-ink-3">Not a legal opinion. Check permitted use and every clause before signing.</p>
+    </Section>
+  )
+}
+
+function LocationCard({ candidate }: { candidate: CandidateDTO }) {
+  const loc = locationSection(candidate)
+  return (
+    <Section title="Location">
+      {loc.checked ? (
+        <>
+          <p className="mb-3 text-xs leading-5 text-ink-2">Mapped in OpenStreetMap within 300 m of the address, counted by code. It does not measure foot traffic or revenue.</p>
+          <dl className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1.5 text-sm">
+            {loc.rows.map((r) => (
+              <div key={r.label} className="contents">
+                <dt className="text-ink">{r.label}</dt>
+                <dd className="tnum text-right font-semibold text-ink">{r.count}</dd>
+              </div>
+            ))}
+          </dl>
+          {loc.zone && <p className="mt-3 text-[13px] leading-5 text-ink-2">{loc.zone}</p>}
+          {loc.explanation && <p className="mt-4 max-w-[70ch] text-sm leading-6 text-ink">{loc.explanation}</p>}
+          <p className="mt-3 text-xs text-ink-2">Source: OpenStreetMap. Data © OpenStreetMap contributors, ODbL.</p>
+        </>
+      ) : (
+        <p className="text-[13px] text-ink-3">The location was not checked: there is no OpenStreetMap area data for this address in this run.</p>
+      )}
+    </Section>
+  )
+}
+
+function PremisesCard({ candidate }: { candidate: CandidateDTO }) {
+  const premises = premisesSection(candidate)
+  if (!premises.read) {
+    return (
+      <Section title="The space">
+        <p className="text-[13px] text-ink-3">{candidate.status === "rejected" ? "Not read: a hard flag stopped the Premises inspector." : "The Premises inspector has not read this listing."}</p>
+      </Section>
+    )
+  }
+  return (
+    <Section title="The space">
+      <p className="mb-3 text-xs leading-5 text-ink-2">What the listing and the lease draft state, each with its quote. Code decides what suits your type of business.</p>
+      {premises.checks.length === 0 ? (
+        <p className="text-[13px] text-ink-3">The listing states nothing that matters for your type of business.</p>
+      ) : (
+        <ul className="flex flex-col gap-2.5">
+          {premises.checks.map((check) => {
+            const Icon = check.ok ? Check : TriangleAlert
+            return (
+              <li key={check.text} className="flex gap-2.5 text-sm leading-5">
+                <Icon size={16} className={cx("mt-0.5 shrink-0", check.ok ? "text-green-700" : "text-amber-800")} aria-hidden />
+                <span className="max-w-[70ch]">
+                  <span className="text-ink">{check.text}</span>
+                  {check.checkBeforeSigning && <span className="block text-[13px] text-ink">Check before signing: {check.checkBeforeSigning}</span>}
+                  <span className="block text-xs text-ink-2">Source: {check.source}</span>
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+      {premises.heating && (
+        <p className="mt-3 text-sm leading-5 text-ink">
+          {premises.heating.text}
+          <span className="block text-xs text-ink-2">Source: {premises.heating.source}</span>
+        </p>
+      )}
+      {premises.notStated.length > 0 && <p className="mt-4 max-w-[70ch] text-[13px] leading-5 text-ink-2">Not stated, so unknown in the score: {premises.notStated.join(", ").toLowerCase()}. Ask the landlord.</p>}
     </Section>
   )
 }

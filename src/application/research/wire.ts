@@ -1,8 +1,11 @@
 import {
   AreaM2,
   Money,
+  evaluatePremises,
   isMissingData,
   isRentMultiple,
+  leaseOrBuy,
+  leaseTermsFor,
   verdictFor,
   type Candidate,
   type Finding,
@@ -65,8 +68,17 @@ export type CandidateDTO = {
   rejection: FlagDTO | null
   laterFlags: FlagDTO[]
   findings: FindingDTO[]
+  /** The Premises inspector's result: null while not read (or when it failed); notStated = checks the texts do not mention. */
+  premises: { notStated: string[] } | null
   ranking: RankingDTO | null
+  /** Lease or buy a similar space (code, labelled assumptions); null before ranking or for a rejected candidate. */
+  leaseOrBuy: LeaseOrBuyDTO | null
 }
+
+export type MoneyDTO = { amount: number; currency: string; source: SourceDTO }
+export type LeaseOrBuyDTO =
+  | { known: true; years: number; leaseCost: MoneyDTO; buyCost: MoneyDTO; upFront: MoneyDTO; price: MoneyDTO; monthlyLoanPayment: MoneyDTO; cheaper: "lease" | "buy"; difference: MoneyDTO; notes: string[] }
+  | { known: false; missing: string[] }
 
 export type RankingDTO = {
   rank: number
@@ -76,7 +88,9 @@ export type RankingDTO = {
   confidence: string
   tier: number
   reasons: { text: string; effect: string; source: SourceDTO }[]
-  components: { name: string; weight: number; value: number | null }[]
+  components: { name: string; weight: number; value: number | null; valueHigh?: number }[]
+  /** Monthly cost / expected revenue (code); null when the rent or the revenue is unknown. */
+  rentShare: { share: number; threshold: number; aboveThreshold: boolean; source: SourceDTO; thresholdSource: SourceDTO } | null
   /** Decided by code (domain/verdict.ts). */
   verdict: { verdict: Verdict; why: string }
 }
@@ -182,8 +196,29 @@ export function candidateDTO(c: Candidate, state: SuiteSpotState): CandidateDTO 
     rejection: c.rejection ? flagDTO(c.rejection) : null,
     laterFlags: c.laterFlags.map(flagDTO),
     findings: state.findings.filter((f) => f.candidateId === c.id).map(findingDTO),
+    premises: premisesDTO(state, c.id),
     ranking: rankingDTO(state, c.id),
+    leaseOrBuy: leaseOrBuyDTO(state, c),
   }
+}
+
+function leaseOrBuyDTO(state: SuiteSpotState, c: Candidate): LeaseOrBuyDTO | null {
+  if (!state.profile || !state.rankings.has(c.id)) return null
+  const terms = leaseTermsFor(c.listing, state.profile, state.leaseClauses.get(c.id) ?? null)
+  if (isMissingData(terms)) return { known: false, missing: [...terms.missing] }
+  const address = isMissingData(c.listing.address) ? "" : String(c.listing.address.value)
+  const city = isMissingData(c.listing.city) ? "" : String(c.listing.city.value)
+  const area = isMissingData(c.listing.area) ? null : c.listing.area
+  const r = leaseOrBuy({ terms, area, city, district: address.split(",")[0]?.trim() ?? "", profile: state.profile })
+  if (isMissingData(r)) return { known: false, missing: [...r.missing] }
+  const m = (x: { value: Money; source: SourceRef }): MoneyDTO => ({ amount: x.value.amount, currency: x.value.currency, source: sourceDTO(x.source) })
+  return { known: true, years: r.years.value, leaseCost: m(r.leaseCost), buyCost: m(r.buyCost), upFront: m(r.upFront), price: m(r.price), monthlyLoanPayment: m(r.monthlyLoanPayment), cheaper: r.cheaper, difference: m(r.difference), notes: [...r.notes] }
+}
+
+function premisesDTO(state: SuiteSpotState, id: string): CandidateDTO["premises"] {
+  const facts = state.premises.get(id)
+  if (!facts || !state.profile) return null
+  return { notStated: [...evaluatePremises(facts, state.profile.businessType().value).unknown] }
 }
 
 function rankingDTO(state: SuiteSpotState, id: string): RankingDTO | null {
@@ -196,7 +231,10 @@ function rankingDTO(state: SuiteSpotState, id: string): RankingDTO | null {
     confidence: r.confidence,
     tier: r.tier,
     reasons: r.reasons.map((x) => ({ text: x.text, effect: x.effect, source: sourceDTO(x.source) })),
-    components: r.components.map((c) => ({ name: c.name, weight: c.weight, value: c.value })),
+    components: r.components.map((c) => ({ name: c.name, weight: c.weight, value: c.value, ...(c.valueHigh !== undefined ? { valueHigh: c.valueHigh } : {}) })),
+    rentShare: isMissingData(r.rentShare)
+      ? null
+      : { share: r.rentShare.share.value, threshold: r.rentShare.threshold.value, aboveThreshold: r.rentShare.aboveThreshold, source: sourceDTO(r.rentShare.share.source), thresholdSource: sourceDTO(r.rentShare.threshold.source) },
     verdict: verdictFor(r, false),
   }
 }

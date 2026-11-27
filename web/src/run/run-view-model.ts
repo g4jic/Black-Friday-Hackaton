@@ -10,7 +10,7 @@ import type { ResearchState } from "../research-state"
  * Participants that can appear on the orbit. Each has a fixed slot (its index), decided before the run: a node
  * appears on its own slot when it really starts working and never moves when another one appears.
  */
-export const ORBIT_AGENTS = ["Scout", "Finance analyst", "Lease reader", "Ranker", "Auditor", "Report writer"] as const
+export const ORBIT_AGENTS = ["Scout", "Finance analyst", "Lease reader", "Location analyst", "Premises inspector", "Ranker", "Auditor", "Report writer"] as const
 export type OrbitAgentName = (typeof ORBIT_AGENTS)[number]
 
 /** Plain-code participants (no model): labelled "code" on the orbit. */
@@ -109,6 +109,8 @@ const ACTIVITY: Record<string, (candidateLabel: string) => string> = {
   Scout: (label) => `Scout is reading ${label}`,
   "Finance analyst": (label) => `Finance analyst is checking the costs of ${label}`,
   "Lease reader": (label) => `Lease reader is reading the lease of ${label}`,
+  "Location analyst": (label) => `Location analyst is reading the OpenStreetMap counts around ${label}`,
+  "Premises inspector": (label) => `Premises inspector is reading what the listing says about the space of ${label}`,
   "Report writer": () => "Report writer is writing the report from the facts",
 }
 

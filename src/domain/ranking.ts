@@ -2,18 +2,20 @@ import type { AreaM2 } from "./area.js"
 import type { Finding } from "./finding.js"
 import type { LeaseClauses } from "./lease.js"
 import type { Listing } from "./listing-extraction.js"
-import { isMissingData, type MissingData } from "./missing.js"
+import { isMissingData, missingData, type MissingData } from "./missing.js"
 import type { Money } from "./money.js"
 import type { BusinessProfile } from "./profile.js"
-import { calc, validateSource, type SourceRef, type Sourced } from "./source.js"
+import { calc, sourced, validateSource, type SourceRef, type Sourced } from "./source.js"
 import { verdictFor, type Verdict } from "./verdict.js"
+import { scoreLocation, type AreaData } from "./location.js"
+import { PREMISES_CONCERN_RULES, evaluatePremises, type PremisesFacts } from "./premises.js"
 
 /**
  * The Ranker's rules: plain code, no model. Shown to the user on the Assumptions screen (served from this object, so
  * the screen and the code can never disagree). Labelled "SuiteSpot assumptions": they are our choices, not facts.
  */
 export const RANKING_ASSUMPTIONS = {
-  weights: { cost: 45, area: 20, lease: 20, checks: 15 },
+  weights: { cost: 35, area: 15, lease: 15, location: 10, premises: 10, checks: 15 },
   cost: {
     description: "Monthly cost (rent + stated service charge) as a share of the monthly budget",
     fullScoreAtOrBelow: 0.7,
@@ -33,15 +35,26 @@ export const RANKING_ASSUMPTIONS = {
     ],
     indexation: { none: 1, cpi: 1, fixedUpTo3: 0.9, fixedUpTo5: 0.7, fixedAbove5: 0.4 },
   },
+  location: {
+    description: "OpenStreetMap counts within 300 m of the address, scored per type of business (see Location rules); unknown when the address is not found",
+  },
+  premises: {
+    description: "Share of the premises checks for this type of business that the listing or the lease draft states as suitable (see Premises rules); a check the texts do not mention is unknown and widens the range",
+  },
+  rentShare: {
+    description: "Monthly cost (rent + stated service charge) as a share of your expected monthly revenue. Above the threshold it is a point to check before signing (a soft flag): it never rejects a space and never stops an agent",
+    checkAbove: 0.15,
+    basis: "SuiteSpot assumption: one threshold for every type of business, our choice and not a rule from a law or a bank",
+  },
   checks: {
     description: "Each point to check before signing (soft flag or unverified field) lowers this part by 0.15",
     penaltyEach: 0.15,
-    /** Already scored under lease terms, so not counted twice. */
-    notCountedTwice: ["long_notice", "high_indexation"],
+    /** Already scored under lease terms or premises, so not counted twice (they still block a Good verdict). */
+    notCountedTwice: ["long_notice", "high_indexation", ...PREMISES_CONCERN_RULES],
   },
   missingData: "Unknown parts count as worst case for ranking.",
   missingDataDetail: "A part without data gives a score range: the low end counts it as 0, the high end as full. The rank uses the low end; the confidence says how much is unknown.",
-  confidence: { high: "no key input missing", medium: "one key input missing (area or verified lease terms; terms only from the listing form count as not verified) or an unverified field", low: "the rent is missing, or two or more key inputs are missing" },
+  confidence: { high: "no key input missing", medium: "one key input missing (area, location, premises or verified lease terms; terms only from the listing form count as not verified) or an unverified field", low: "the rent is missing, or two or more key inputs are missing" },
   order: [
     "First by verdict: Good, then Check before signing, then Not recommended, so the best option never has a weaker verdict than another candidate",
     "Inside a verdict: candidates with a stated rent, by the low end of their score (worst case)",
@@ -51,8 +64,12 @@ export const RANKING_ASSUMPTIONS = {
 } as const
 
 export type Confidence = "high" | "medium" | "low"
-export type ScoreComponent = { readonly name: keyof typeof RANKING_ASSUMPTIONS.weights; readonly weight: number; readonly value: number | null }
+/** value: the low end of the part (null = unknown). valueHigh: the high end when the part itself is a range (premises). */
+export type ScoreComponent = { readonly name: keyof typeof RANKING_ASSUMPTIONS.weights; readonly weight: number; readonly value: number | null; readonly valueHigh?: number }
 export type ScoreReason = { readonly text: string; readonly effect: "plus" | "minus" | "confidence" | "order"; readonly source: SourceRef }
+
+/** Monthly cost as a share of expected revenue (code). MissingData when the rent or the expected revenue is not known. */
+export type RentShare = { readonly share: Sourced<number>; readonly threshold: Sourced<number>; readonly aboveThreshold: boolean } | MissingData
 
 export type CandidateScore = {
   readonly candidateId: string
@@ -63,6 +80,9 @@ export type CandidateScore = {
   readonly confidence: Confidence
   /** 1 = rent stated, 2 = no rent (never first). */
   readonly tier: 1 | 2
+  /** Soft flags and unverified fields to check before signing, including the premises concerns scored under premises. */
+  readonly pointsToCheck: number
+  readonly rentShare: RentShare
   readonly components: readonly ScoreComponent[]
   readonly reasons: readonly ScoreReason[]
 }
@@ -79,12 +99,31 @@ export type RankingInput = {
   readonly hasLeaseDraft: boolean
   /** Soft findings of this candidate (lease concerns and others). */
   readonly softFindings: readonly Finding[]
+  /** OpenStreetMap counts around the address (code), or null when the location could not be checked. */
+  readonly area: AreaData | null
+  /** What the Premises inspector read (quotes checked by code), or null when it was not read. */
+  readonly premises: PremisesFacts | null
 }
 
 const pct = (x: number) => `${Math.round(x * 100)}%`
 const fmt = (m: Money) => `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Math.round(m.amount))} ${m.currency}`
 const has = <T>(f: Sourced<T> | MissingData | undefined): f is Sourced<T> => f !== undefined && !isMissingData(f)
 const round2 = (n: number) => Math.round(n * 100) / 100
+/** 0.1834 reads as "18.3%" (the same rounding as the Finance analyst's rent share fact). */
+const pct1 = (x: number) => `${Math.round(x * 1000) / 10}%`
+
+/**
+ * Monthly cost / expected monthly revenue, with the threshold as a labelled assumption. No monthly cost or no expected
+ * revenue (0 means the questionnaire did not give one): MissingData, never a guess.
+ */
+export function rentShareOf(monthlyCost: Sourced<Money> | null, profile: BusinessProfile): RentShare {
+  const revenue = profile.money("expectedMonthlyRevenue")
+  if (!monthlyCost) return missingData("rent")
+  if (revenue.value.amount <= 0) return missingData("expectedMonthlyRevenue")
+  const share = calc(Math.round((monthlyCost.value.amount / revenue.value.amount) * 10000) / 10000, "monthly cost / expected monthly revenue", [monthlyCost, revenue])
+  const threshold = sourced(RANKING_ASSUMPTIONS.rentShare.checkAbove, { kind: "assumption", ref: "RANKING_ASSUMPTIONS", field: "rentShare.checkAbove" })
+  return { share, threshold, aboveThreshold: share.value > threshold.value }
+}
 
 /** Scores one candidate. Deterministic: the same input always gives the same score, confidence and reasons. */
 export function scoreCandidate(input: RankingInput): CandidateScore {
@@ -165,14 +204,56 @@ export function scoreCandidate(input: RankingInput): CandidateScore {
     } else missing.push("lease terms")
   } else missing.push("lease terms")
 
+  // Location: OpenStreetMap counts scored per business type (plain code); unknown when the address was not found.
+  let location: number | null = null
+  if (input.area) {
+    const scored = scoreLocation(input.area, profile.businessType().value, profile.input.description)
+    location = scored.score
+    for (const p of scored.parts) {
+      reasons.push({ text: `Location: ${p.text}`, effect: p.effect, source: p.source, impact: ((p.score - 0.5) * A.weights.location) / scored.parts.length })
+    }
+  } else missing.push("location")
+
+  // Premises: code judges the quoted facts per business type; a check the texts do not mention widens the range.
+  let premises: number | null = null
+  let premisesHigh: number | undefined
+  if (input.premises) {
+    const judged = evaluatePremises(input.premises, profile.businessType().value)
+    premises = judged.score
+    premisesHigh = judged.scoreHigh
+    for (const p of judged.parts) {
+      reasons.push({ text: `Premises: ${p.text.charAt(0).toLowerCase()}${p.text.slice(1)}`, effect: p.ok ? "plus" : "minus", source: p.source, impact: ((p.ok ? 0.5 : -0.5) * A.weights.premises) / judged.total })
+    }
+  } else missing.push("premises")
+
+  // Rent share of revenue: a soft point to check above the threshold (assumption); unknown without revenue.
+  const rentShare = rentShareOf(input.monthlyCost, profile)
+  const rentShareCheck = !isMissingData(rentShare) && rentShare.aboveThreshold ? 1 : 0
+  if (!isMissingData(rentShare)) {
+    reasons.push({
+      text: rentShare.aboveThreshold
+        ? `Rent takes ${pct1(rentShare.share.value)} of expected revenue, above the ${pct(rentShare.threshold.value)} SuiteSpot threshold`
+        : `Rent takes ${pct1(rentShare.share.value)} of expected revenue, within the ${pct(rentShare.threshold.value)} SuiteSpot threshold`,
+      effect: rentShare.aboveThreshold ? "minus" : "plus",
+      source: rentShare.share.source,
+      impact: rentShare.aboveThreshold ? -A.weights.checks * A.checks.penaltyEach : 0.5,
+    })
+  }
+
   // Points to check before signing (soft flags and unverified fields), lease terms not counted twice.
   const notTwice = new Set<string>(A.checks.notCountedTwice)
   const counted = input.softFindings.filter((f) => !notTwice.has(f.id.split(":").pop() ?? ""))
   const unverified = listing.unverified
-  const nChecks = counted.length + unverified.length
+  const nChecks = counted.length + unverified.length + rentShareCheck
   const checks = round2(Math.max(0, 1 - A.checks.penaltyEach * nChecks))
+  const premisesRules = new Set(PREMISES_CONCERN_RULES)
+  const premisesConcerns = input.softFindings.filter((f) => premisesRules.has(f.id.split(":").pop() ?? "")).length
   if (nChecks > 0) {
-    const sources = [...counted.map((f) => f.source), ...unverified.map((u) => ({ kind: "listing" as const, ref: listing.ref, field: u.field, missing: true }))]
+    const sources = [
+      ...counted.map((f) => f.source),
+      ...unverified.map((u) => ({ kind: "listing" as const, ref: listing.ref, field: u.field, missing: true })),
+      ...(rentShareCheck && !isMissingData(rentShare) ? [rentShare.share.source] : []),
+    ]
     reasons.push({
       text: `${nChecks} point${nChecks > 1 ? "s" : ""} to check before signing${counted[0] ? ` (${counted[0].claim.charAt(0).toLowerCase()}${counted[0].claim.slice(1)})` : ""}`,
       effect: "minus",
@@ -186,11 +267,13 @@ export function scoreCandidate(input: RankingInput): CandidateScore {
     { name: "cost", weight: A.weights.cost, value: cost },
     { name: "area", weight: A.weights.area, value: area },
     { name: "lease", weight: A.weights.lease, value: lease },
+    { name: "location", weight: A.weights.location, value: location },
+    { name: "premises", weight: A.weights.premises, value: premises, ...(premisesHigh !== undefined ? { valueHigh: premisesHigh } : {}) },
     { name: "checks", weight: A.weights.checks, value: checks },
   ]
   const total = components.reduce((a, c) => a + c.weight, 0)
   const score = Math.round((100 * components.reduce((a, c) => a + c.weight * (c.value ?? 0), 0)) / total)
-  const scoreHigh = Math.round((100 * components.reduce((a, c) => a + c.weight * (c.value ?? 1), 0)) / total)
+  const scoreHigh = Math.round((100 * components.reduce((a, c) => a + c.weight * (c.valueHigh ?? c.value ?? 1), 0)) / total)
 
   const keyMissing = missing.length + (unverified.length > 0 ? 1 : 0)
   const confidence: Confidence = missing.includes("rent") || keyMissing >= 2 ? "low" : keyMissing === 1 ? "medium" : "high"
@@ -216,6 +299,10 @@ export function scoreCandidate(input: RankingInput): CandidateScore {
       ...what.map((m) =>
         m === "area"
           ? `area not stated: up to ${points("area")} points unknown`
+          : m === "premises"
+          ? `premises not read: up to ${points("premises")} points unknown`
+          : m === "location"
+          ? `location not checked (no OpenStreetMap area data for this address): up to ${points("location")} points unknown`
           : m === "verified lease"
             ? "lease terms come from the listing form, not from a lease draft"
             : input.hasLeaseDraft
@@ -233,7 +320,11 @@ export function scoreCandidate(input: RankingInput): CandidateScore {
         : { kind: "profile", ref: "questionnaire", field: "leaseMonths" }
       : what.includes("area")
         ? { kind: "listing", ref: listing.ref, field: "area", missing: true }
-        : { kind: "listing", ref: listing.ref, field: unverified[0]?.field ?? "rentMonthly", missing: true }
+        : what.includes("location")
+          ? { kind: "osm", ref: "OpenStreetMap area data: not available for this address", field: "address" }
+          : what.includes("premises")
+            ? { kind: "listing", ref: listing.ref, field: "premises", missing: true }
+            : { kind: "listing", ref: listing.ref, field: unverified[0]?.field ?? "rentMonthly", missing: true }
     if (label.length) {
       out.push({
         text: `Confidence ${confidence}: ${label.join("; ")}`,
@@ -243,7 +334,7 @@ export function scoreCandidate(input: RankingInput): CandidateScore {
     }
   }
   for (const r of out) validateSource(r.source) // no reason without a valid source
-  return Object.freeze({ candidateId: input.candidateId, score, scoreHigh, confidence, tier, components: Object.freeze(components), reasons: Object.freeze(out) })
+  return Object.freeze({ candidateId: input.candidateId, score, scoreHigh, confidence, tier, pointsToCheck: nChecks + premisesConcerns, rentShare, components: Object.freeze(components), reasons: Object.freeze(out) })
 }
 
 const CONFIDENCE_ORDER: Record<Confidence, number> = { high: 0, medium: 1, low: 2 }

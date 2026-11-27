@@ -197,12 +197,15 @@ export function createFinanceAnalyst(rt: AppRuntime, options: FinanceOptions): A
             const known = b.knownPart
             allowBreakdown(candidateId, known)
             rec(name, "Exit cost after 12 months: needs lease terms (notice period unknown)", b, known.total.source)
+            known.lines.forEach((l, i) => record(candidateId, `exit_cost_part_${i + 1}`, l.label, l.amount, l.amount.source, null))
             record(candidateId, "exit_cost_known_part", `Known part of the exit cost after 12 months ${known.total.value} (${known.lines.map((l) => l.label.toLowerCase()).join(" + ")})`, known.total, known.total.source, null)
             lines.push(`exit_cost_after_12_months = needs lease terms (notice period unknown); known part ${money(known.total.value)} = ${known.lines.map((l) => `${l.label} ${money(l.amount.value)}`).join(" + ")}`)
             break
           }
           allowBreakdown(candidateId, b)
           rec(name, `Exit cost after 12 months ${b.total.value}`, b.total, b.total.source)
+          // The parts of the exit cost, for the "bad year" scenario on the candidate page (state only, not sent to the model).
+          b.lines.forEach((l, i) => record(candidateId, `exit_cost_part_${i + 1}`, l.label, l.amount, l.amount.source, null))
           lines.push(`exit_cost_after_12_months = ${money(b.total.value)} ${formula(b.total.source)} = ${b.lines.map((l) => `${l.label} ${money(l.amount.value)}`).join(" + ")}; unknown: ${b.unknowns.join(", ") || "none"}`)
           break
         }

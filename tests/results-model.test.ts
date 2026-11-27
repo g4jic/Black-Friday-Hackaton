@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { applyEvent, initialResearch, type ResearchState } from "../web/src/research-state.js"
-import { allSources, costRows, headline, leaseSection, plainSource, resultsList, scoreReason, strengthsAndRisks, unknowns } from "../web/src/results/results-model.js"
+import { allSources, costRows, headline, leaseSection, plainSource, premisesSection, resultsList, scoreReason, strengthsAndRisks, unknowns, yearScenarios } from "../web/src/results/results-model.js"
 import { formatMoney } from "../web/src/format.js"
 import type { CandidateDTO, RankingDTO, WireEvent } from "../web/src/types.js"
 
@@ -33,6 +33,7 @@ const candidate = (id: string, address: string, m2: number, patch: Partial<Candi
   rejection: null,
   laterFlags: [],
   findings: [],
+  premises: null,
   ranking: null,
   ...patch,
 })
@@ -87,6 +88,28 @@ describe("candidate page", () => {
     expect(rows[3]).toMatchObject({ label: "Exit after 12 months", value: null, note: "Needs lease terms. Includes 10,000 EUR unrecovered fit-out." })
     expect(leaseSection(c).questions.length).toBeGreaterThan(0)
     expect(plainSource({ kind: "profile", ref: "questionnaire" })).toBe("your questionnaire")
+  })
+
+  it("a bad year and a good year come only from the code figures, with the parts of the exit cost", () => {
+    const money = (amount: number) => ({ kind: "money" as const, amount, currency: "EUR" })
+    const f = (name: string, claim: string, value: CandidateDTO["findings"][number]["value"]) => ({ id: `listing-04:finance:${name}`, aspect: "finance", severity: "info" as const, claim, author: "Finance analyst", value, source: calc })
+    const c = candidate("listing-04", "Liman 1", 70, {
+      findings: [
+        f("exit_cost_after_12_months", "Exit cost after 12 months", money(5300)),
+        f("exit_cost_part_1", "Cost during notice period", money(2600)),
+        f("exit_cost_part_2", "Unrecovered fit-out", money(2700)),
+        f("payback_months", "Pays back in 9 months", { kind: "number", value: 9 }),
+        f("break_even_revenue", "Break-even revenue", money(4333)),
+      ],
+    })
+    const y = yearScenarios(c)!
+    expect(y.bad).toMatchObject({ total: "5,300 EUR", complete: true })
+    expect(y.bad.parts.map((p) => [p.label, p.value])).toEqual([["Cost during notice period", "2,600 EUR"], ["Unrecovered fit-out", "2,700 EUR"]])
+    expect(y.good).toMatchObject({ payback: "9 months", breakEven: "4,333 EUR per month" })
+    const noMargin = yearScenarios(candidate("listing-04", "Liman 1", 70, { findings: [f("payback_months", "Payback: missing data", { kind: "missing", missing: ["grossMarginRate"] })] }))!
+    expect(noMargin.good.payback).toBeNull()
+    expect(noMargin.good.note).toContain("gross margin")
+    expect(yearScenarios(candidate("listing-06", "Liman 1", 70))).toBeNull()
   })
 
   it("hard flags come first among the risks", () => {
@@ -147,5 +170,27 @@ describe("result wording (honest and readable)", () => {
     const lease = leaseSection(c)
     expect(lease.fromForm).toBe(true)
     expect(lease.terms[0]!.text).toBe("Rent increases: follows the consumer price index")
+  })
+
+  it("the space card: each stated check with its quote, a concern says what to check, unknown checks widen the range", () => {
+    const src = (quote: string) => ({ kind: "listing", ref: "pasted-1", field: "storefront", quote })
+    const c = candidate("pasted-1", "Liman", 60, {
+      findings: [
+        { id: "pasted-1:premises:ground_floor", aspect: "premises", severity: "info", claim: "The space is on the ground floor", author: "Premises inspector", source: { kind: "listing", ref: "pasted-1", field: "floor", quote: "u prizemlju" } },
+        { id: "pasted-1:premises:storefront", aspect: "premises", severity: "info", claim: "The space has no storefront", author: "Premises inspector", source: src("Bez izloga") },
+        { id: "pasted-1:premises:concern:premises_storefront", aspect: "premises", severity: "soft", claim: "The space has no storefront", checkBeforeSigning: "how customers will find the space without a shop window", author: "Premises inspector", source: src("Bez izloga") },
+      ],
+      premises: { notStated: ["kitchenVentilation", "waterAndDrain"] },
+      ranking: ranking({ score: 76, scoreHigh: 80, components: [{ name: "cost", weight: 35, value: 1 }, { name: "premises", weight: 10, value: 0.33, valueHigh: 0.67 }] }),
+    })
+    const p = premisesSection(c)
+    expect(p.read).toBe(true)
+    expect(p.checks).toEqual([
+      { text: "The space is on the ground floor", ok: true, checkBeforeSigning: null, source: 'from the listing: "u prizemlju"' },
+      { text: "The space has no storefront", ok: false, checkBeforeSigning: "how customers will find the space without a shop window", source: 'from the listing: "Bez izloga"' },
+    ])
+    expect(p.notStated).toEqual(["Kitchen ventilation", "Water and drain"])
+    expect(unknowns(c).items).toContainEqual({ text: "The space itself: not stated in the listing or the lease (kitchen ventilation, water and drain)", points: 3 })
+    expect(premisesSection(candidate("x", "Liman", 60)).read).toBe(false)
   })
 })

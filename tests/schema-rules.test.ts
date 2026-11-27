@@ -26,6 +26,9 @@ describe("structured output schemas follow Anthropic's rules", () => {
       "finance-analyst.ts:CALCULATE_TOOL_SCHEMA",
       "finance-analyst.ts:FINANCE_EXPLANATION_SCHEMA",
       "lease-reader.ts:LEASE_EXTRACTION_SCHEMA",
+      "location-analyst.ts:AREA_DATA_TOOL_SCHEMA",
+      "location-analyst.ts:LOCATION_EXPLANATION_SCHEMA",
+      "premises-inspector.ts:PREMISES_EXTRACTION_SCHEMA",
       "report-writer.ts:REPORT_SCHEMA",
       "scout.ts:LISTING_EXTRACTION_SCHEMA",
     ])
@@ -45,8 +48,8 @@ describe("structured output schemas follow Anthropic's rules", () => {
       for (const q of quotes) expect({ name, q }).toEqual({ name, q: expect.objectContaining({ type: "string" }) })
       checked += quotes.length
     }
-    // Scout: 11 fields + 1 extra deposit branch; Lease reader: 10 fields + 2 extra branches.
-    expect(checked).toBe(12 + 12)
+    // Scout: 11 fields + 1 extra deposit branch; Lease reader: 10 fields + 2 extra branches; Premises inspector: 8 fields.
+    expect(checked).toBe(12 + 12 + 8)
   })
 
   it("catches enum next to a type array (the 400 we got from the live API)", () => {

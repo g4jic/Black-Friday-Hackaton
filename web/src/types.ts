@@ -52,8 +52,17 @@ export type CandidateDTO = {
   rejection: FlagDTO | null
   laterFlags: FlagDTO[]
   findings: FindingDTO[]
+  /** the Premises inspector's result: null while not read (or when it failed); notStated = checks the texts do not mention */
+  premises: { notStated: string[] } | null
   ranking: RankingDTO | null
+  /** Lease or buy a similar space (code, labelled assumptions). Older runs have none. */
+  leaseOrBuy?: LeaseOrBuyDTO | null
 }
+
+export type MoneyDTO = { amount: number; currency: string; source: SourceDTO }
+export type LeaseOrBuyDTO =
+  | { known: true; years: number; leaseCost: MoneyDTO; buyCost: MoneyDTO; upFront: MoneyDTO; price: MoneyDTO; monthlyLoanPayment: MoneyDTO; cheaper: "lease" | "buy"; difference: MoneyDTO; notes: string[] }
+  | { known: false; missing: string[] }
 
 export type ReasonDTO = { text: string; effect: "plus" | "minus" | "confidence" | "order"; source: SourceDTO }
 
@@ -65,7 +74,9 @@ export type RankingDTO = {
   confidence: "high" | "medium" | "low"
   tier: number
   reasons: ReasonDTO[]
-  components: { name: string; weight: number; value: number | null }[]
+  components: { name: string; weight: number; value: number | null; valueHigh?: number }[]
+  /** Monthly cost / expected revenue (code); null when the rent or the revenue is unknown. Older runs have none. */
+  rentShare?: { share: number; threshold: number; aboveThreshold: boolean; source: SourceDTO; thresholdSource: SourceDTO } | null
   /** Decided by code on the server (domain/verdict.ts). */
   verdict: { verdict: Verdict; why: string }
 }
@@ -113,6 +124,7 @@ export type ProfileInput = {
   grossMarginRate?: number
   walkInCustomers: boolean
   leaseMonths: number
+  yearsPlanned?: number
   city: string
   fitOutBudget: number
   equipmentBudget: number

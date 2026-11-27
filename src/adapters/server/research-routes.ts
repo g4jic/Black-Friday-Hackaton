@@ -4,6 +4,12 @@ import type { InferenceRunner } from "@mozaik-ai/core"
 import { ResearchSession, type ResearchMode } from "../../application/research/research-session.js"
 import {
   BUDGET_TOLERANCE,
+  BUSINESS_TYPE_TEXT,
+  LOCATION_ASSUMPTIONS,
+  NOISE_ASSUMPTIONS,
+  BUY_ASSUMPTIONS,
+  PREMISES_ASSUMPTIONS,
+  OSM_METRIC_TEXT,
   DomainError,
   MAX_FIXED_INDEXATION_PERCENT,
   MAX_LISTINGS,
@@ -35,6 +41,9 @@ import { seedLeaseAnswers } from "../seed/seed-lease-answers.js"
 import { createLiveRunner } from "../inference/live-runner.js"
 import { MockRunner } from "../inference/mock-runner.js"
 import { demoRoomScript, type DemoLatency } from "../inference/scripts/demo-script.js"
+import type { AreaLookup } from "../../application/location/area-lookup.js"
+import { areaLookup, fixtureAreaLookup, liveAreaLookup } from "../osm/area-lookup.js"
+import { OSM_ATTRIBUTION, OsmClient } from "../osm/osm-client.js"
 
 export const LIVE_MODEL = "claude-haiku-4-5"
 /** USD per million tokens for claude-haiku-4-5 (Anthropic price list, cached 3 Nov 2026 in the claude-api reference). */
@@ -79,6 +88,8 @@ export type ResearchRoutesOptions = {
   readonly demoPace?: DemoLatency
   /** For tests: replaces the real Anthropic runner in live mode (no network, no cost). */
   readonly liveRunner?: () => InferenceRunner
+  /** For tests: replaces the OpenStreetMap lookup (default: the seed fixture, plus live OSM in live mode). */
+  readonly areaLookup?: (mode: ResearchMode) => AreaLookup
 }
 
 type OutsideBody = { listing?: unknown; leaseDraft?: unknown; url?: unknown; text?: unknown }
@@ -100,7 +111,7 @@ function accessCodeMatches(given: unknown): boolean {
 /** The questionnaire of a live run, validated by the domain. Fields the form does not ask keep the demo values. */
 function liveProfile(input: Partial<BusinessProfileInput> | undefined, demo: BusinessProfile): BusinessProfile {
   if (!input) return demo
-  const allowed: (keyof BusinessProfileInput)[] = ["businessType", "description", "headcount", "areaMinM2", "areaMaxM2", "currency", "monthlyBudget", "expectedMonthlyRevenue", "grossMarginRate", "walkInCustomers", "leaseMonths", "city", "fitOutBudget", "equipmentBudget"]
+  const allowed: (keyof BusinessProfileInput)[] = ["businessType", "description", "headcount", "areaMinM2", "areaMaxM2", "currency", "monthlyBudget", "expectedMonthlyRevenue", "grossMarginRate", "walkInCustomers", "leaseMonths", "yearsPlanned", "city", "fitOutBudget", "equipmentBudget"]
   const picked = Object.fromEntries(allowed.filter((k) => input[k] !== undefined && input[k] !== null).map((k) => [k, input[k]]))
   return BusinessProfile.create({ ...demo.input, specialNeeds: undefined, ...picked } as BusinessProfileInput)
 }
@@ -144,6 +155,10 @@ const NO_MATCH = "No SuiteSpot listing matches this questionnaire (city, area ra
 
 export function registerResearchRoutes(app: FastifyInstance, options: ResearchRoutesOptions): void {
   const sessions = new Map<string, ResearchSession>()
+  // One OSM client per server: its cache and request pacing are shared by every research.
+  const fixtureAreas = fixtureAreaLookup()
+  let osm: OsmClient | null = null
+  const lookupFor = options.areaLookup ?? ((mode: ResearchMode) => areaLookup(fixtureAreas, mode === "live" ? liveAreaLookup((osm ??= new OsmClient())) : null))
   const secrets = () => [process.env.ANTHROPIC_API_KEY ?? ""].filter((s) => s.length >= 8)
 
   app.get("/api/config", async () => ({
@@ -173,6 +188,10 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
       },
       verdict: VERDICT_RULES,
       leaseConcerns: { maxNoticeMonths: MAX_NOTICE_MONTHS, maxFixedIndexationPercent: MAX_FIXED_INDEXATION_PERCENT },
+      location: { radiusM: LOCATION_ASSUMPTIONS.radiusM, description: LOCATION_ASSUMPTIONS.description, rules: LOCATION_ASSUMPTIONS.rules, metricText: OSM_METRIC_TEXT, businessText: BUSINESS_TYPE_TEXT, attribution: OSM_ATTRIBUTION },
+      noise: NOISE_ASSUMPTIONS,
+      buy: BUY_ASSUMPTIONS,
+      premises: { description: PREMISES_ASSUMPTIONS.description, checks: PREMISES_ASSUMPTIONS.checks, checkText: PREMISES_ASSUMPTIONS.checkText, businessText: BUSINESS_TYPE_TEXT },
       demoQuestionnaire: {
         business: p.description,
         areaM2: [p.areaMinM2, p.areaMaxM2],
@@ -263,6 +282,7 @@ export function registerResearchRoutes(app: FastifyInstance, options: ResearchRo
         price: LIVE_PRICE,
         timeoutMs: mode === "live" ? 300_000 : 60_000,
         secrets: secrets(),
+        areaLookup: lookupFor(mode),
       })
       sessions.set(id, session)
       for (const old of [...sessions.keys()].slice(0, Math.max(0, sessions.size - KEEP_SESSIONS))) sessions.delete(old)

@@ -3,31 +3,185 @@
 Read this at the start of every session. Update it before every push. Newest entries at the top.
 No long dashes in this file; use a plain hyphen.
 
+## HANDOFF (27 Nov 2026, ~13:00, Aleksa -> Andrej): READ THIS FIRST
+Supersedes the "main is untouched (2db1917)" line in the handoff below; the phase details below are still valid.
+
+### Branches
+- **main = 45d150f.** New logo in the sidebar and as the favicon, plus the sign in concept (docs only). Typecheck
+  clean, 180 of 180 tests pass, keyless Office in Beograd run checked in the browser with no console errors.
+- **wip/agents = this commit**, on top of the merge of main (1309c24). Phases 1 (Location analyst) and 2 (Premises
+  inspector) done and wired. Typecheck clean; 197 of 200 tests pass; only `tests/recorded-demo.test.ts` (3 tests)
+  fails until the demo runs are re-recorded (phase 4).
+- **design/logo = 45d150f** (same as main): logo files in `design/brand/`, sign in concept in `design/login/`.
+
+### Run without a key (PowerShell)
+`.env` may hold ANTHROPIC_API_KEY, and then plain `npm run dev` runs LIVE (costs money). Keyless:
+`$env:ANTHROPIC_API_KEY=' '; npm run dev` (a blank value counts as set, so dotenv does not load the key).
+
+### Next steps, in order
+1. **Phase 3 (about 45-60 min):** rent to revenue rule in the Ranker (code), the threshold as a labelled ASSUMPTION
+   on the Assumptions screen, no revenue = MissingData. In the same phase reword the misleading Location text: "the
+   address was not found in OpenStreetMap" (`web/src/results/CandidatePage.tsx` and `COMPONENT_MISSING` in
+   `web/src/results/results-model.ts`) also shows when only the recording is missing.
+2. **Phase 4:** `npm run record:demo` (about $0.30, needs ANTHROPIC_API_KEY in `.env`); the audit must have 0
+   removed; check that Office in Beograd (Voždovac) and Shop in Novi Sad still cut Finance mid-run (more than 1 s);
+   if the mid-run cut disappears, tell Aleksa before committing; new "For the video" table; Mozaik Cloud screenshot;
+   README. Merge wip/agents into main only if EVERYTHING passes.
+3. **Feature freeze 18:00.** If phases 3 and 4 are not done by about 17:00, main stays as it is and the time goes to
+   the video, the README and a clean clone check.
+
+### Decisions to explain to the jury
+- `pointsToCheck` on `CandidateScore`: premises concerns are not scored twice (they are in `checks.notCountedTwice`),
+  but they block a Good verdict (`src/domain/verdict.ts` needs `pointsToCheck === 0`).
+- Weights: cost 35, area 15, lease 15, location 10, premises 10, checks 15 (sum 100, tested).
+
+### Sign in page (optional, a new feature: only if there is time before 18:00)
+Concept in `design/login/` and DESIGN.md 7.5.
+- Left: white glass card, logo + "SuiteSpot" top left, "Welcome back", email, password, black "Sign in", "Continue as
+  guest", "Don't have an account? Sign up", footer "© 2026 SuiteSpot · Not financial or legal advice". No "Remember
+  me" and no "Forgot password" until we check that our Supabase sign in supports them.
+- Right: animated map in the DESIGN.md colours that slides slowly; the magnifying glass from the logo stops over the
+  coral dots (listings), the building from the logo pops up with a pill naming the listing; pills "Demo data" and
+  "100 synthetic listings".
+- Build suggestion: SVG + CSS/JS animation, `prefers-reduced-motion` = a static image. The existing auth routes and
+  logic do not change.
+
+### Video
+`design/brand/suitespot-logo-reveal.mp4` is the intro (7 s, 1920x1080, no sound, as delivered by Aleksa). The best
+scenario for a mid-run cut is still Office in Beograd (see "For the video" below).
+
+## HANDOFF (27 Nov 2026, branch wip/agents, Aleksa -> Andrej): phase 1 and 2 details
+Aleksa ran out of limit mid-phase. **main is untouched** (last good: 2db1917, all tests pass there, keyless demo works).
+Everything below is on the branch `wip/agents`, committed even though tests do not all pass. Do not merge it into
+main until the steps below are done. Feature freeze 18:00, submissions close at midnight.
+
+### The plan (Aleksa's prompt, phase by phase; after each phase: tests + typecheck, commit and push to main if they
+pass, with a PROGRESS entry; if a phase fails, revert it)
+- **Phase 0 (done, no changes):** a table of all criteria (who checks them, whether they affect the score, or not
+  built). It was shown in chat; the short version: built = budget, permitted use, locked in, unlimited increase (hard
+  flags, code), area, lease terms, soft lease concerns, typed-vs-text mismatch, ranges/confidence/tier, verdict,
+  sources, audit. Not built = rent share of revenue threshold (phase 3), location (phase 1), premises (phase 2),
+  hard requirements, fair-price estimate, in-listing contradictions.
+- **Phase 1, Location analyst:** CODE gets OpenStreetMap data (Nominatim for coordinates, Overpass counts within
+  300 m): same business type (competition), public transport, schools/faculties, offices, parking. Follow the OSM
+  usage policies (User-Agent, at most 1 request per second to Nominatim, cache). Normalise the address before
+  geocoding ("grbavici" -> "Grbavica, Novi Sad"). For the 100 seed listings the data is fetched once and stored in
+  fixtures (public OSM data, attribution "© OpenStreetMap contributors, ODbL"), so keyless and tests run without the
+  network. Live lookups only for an outside listing. The AI agent (Location analyst) explains the numbers for the
+  business from the questionnaire, source "osm"; it never estimates revenue or foot traffic. The Ranker gets a
+  "location" part with a weight; missing data goes into the range like everything else.
+- **Phase 2, Premises inspector:** an AI agent reads the listing and the lease draft and reports what suits the
+  business: floor, storefront, parking, heating, ventilation/drain for a cafe or food, renovation needed,
+  accessibility. Every claim with a quote (the same buildX principle). What is not stated is MissingData. Only soft
+  flags and a "premises" part of the score; CODE decides what is a flag.
+- **Phase 3, rent to revenue:** a rule in the Ranker (code): monthly cost as a share of expected revenue. The
+  threshold is a clearly labelled ASSUMPTION on the Assumptions screen (for example above 15% gives a soft flag). No
+  revenue given: MissingData.
+- **For all phases:** on every candidate.found Finance, Lease, Location and Premises run in parallel; a hard flag
+  still stops every loop of that candidate. New weights in RANKING_ASSUMPTIONS and on the Assumptions screen; rank by
+  verdict, then by the low end, stays. Report writer and Auditor cover the new facts. The schema-rules test covers
+  the new schemas. Tests without a key and without the network. UI: new Timeline lanes, new reasons and sources
+  (osm) on the candidate page.
+- **Phase 4:** re-record the 3 scenarios (npm run record:demo) and check the audit has 0 removed. Check that Office in
+  Beograd (Voždovac) and Shop in Novi Sad still cut Finance MID-RUN (more than 1 s) and update the video section
+  below with the new times; if the mid-run cut disappears, tell Aleksa before committing. One live run for a new
+  Mozaik Cloud screenshot. Update the README (agent table, Mermaid, P4 note, limitations) and the screenshots.
+  Commit and push.
+
+### Where each phase stopped
+**Phase 1: code done, data incomplete, NOT committed to main.**
+- Done and tested (keyless, offline): `src/domain/location.ts` (AreaData with osm sources, LOCATION_ASSUMPTIONS per
+  business type, scoreLocation, normalizeDistrict: "grbavici", "na Grbavici", "Limanu 2" -> known district);
+  `src/adapters/osm/osm-client.ts` (Nominatim + Overpass, User-Agent, Nominatim 1.1 s gap, Overpass 2.5 s gap,
+  45 s timeout, cache per address, falls back from overpass-api.de to maps.mail.ru, remembers the one that works);
+  `src/adapters/osm/area-lookup.ts` (fixture for seed listings, live OSM only for other listings and only in live
+  mode); `src/application/agents/location-analyst.ts` (one loop per candidate, tool area_data, explanation checked
+  number by number, cancelled by hard flags like the others); Ranker weights now cost 40, area 15, lease 20,
+  location 10, checks 15 (`src/domain/ranking.ts`); Report writer gets an OSM fact per ranked candidate; Assumptions
+  screen shows the location rules and the ODbL attribution; Timeline and orbit have the Location analyst; candidate
+  page has a Location card; `tests/location.test.ts` and `tests/fixtures/sample-areas.ts` (synthetic counts).
+- **Not done: the fixture `fixtures/osm/seed-areas.json` does not exist yet.** `scripts/fetch-osm.ts` was stopped at
+  44 of 59 distinct seed addresses (it writes the JSON only at the end). Its log is in
+  `fixtures/osm/seed-areas.partial.txt` (counts per address, no coordinates). On 27 Nov overpass-api.de answered 502
+  and overpass.kumi.systems / overpass.private.coffee timed out; only maps.mail.ru worked, at 15 to 90 s per address.
+  Next step: run `npx tsx scripts/fetch-osm.ts` again (about 20 to 60 minutes; Nominatim is fast). Improvement worth
+  doing first: make the script write the JSON after every address and skip addresses already in the file, so a
+  stop loses nothing. Without the fixture every seed candidate has location "not checked" (range of 10 points,
+  confidence medium), which also changes the verdicts in the demo.
+- Tests on this branch: everything passes except `tests/recorded-demo.test.ts` (3 tests): the new agent makes model
+  requests that are not in the recordings. Fix: after the fixture exists, `npm run record:demo` (about $0.30,
+  needs ANTHROPIC_API_KEY), then run all tests. Typecheck is clean for phase 1 alone.
+
+**Update (27 Nov): the OSM fixture `fixtures/osm/seed-areas.json` is now COMPLETE (59 of 59 seed addresses, all 100 listings; the resumable `scripts/fetch-osm.ts` reused the 44 logged counts and fetched the last 15), and `tests/location.test.ts` passes 10 of 10 including the fixture coverage test; the recorded-demo test still fails until `npm run record:demo` after phase 2.**
+
+**Phase 2: DONE and wired (27 Nov, Aleksa + Claude).** Typecheck clean; 197 of 200 tests pass; only the 3 tests in
+`tests/recorded-demo.test.ts` fail, on purpose, until the re-recording in phase 4.
+- Wired: export from `src/domain/index.ts`; `SuiteSpotState.premises` + `recordPremises` (idempotent); agent in
+  `research-session.ts`, its events in PASS_THROUGH; "premises" part in `scoreCandidate` with its own range
+  (`ScoreComponent.valueHigh`); weights cost 35, area 15, lease 15, location 10, premises 10, checks 15 (sum 100,
+  tested); Assumptions screen shows the weight and a "Premises rules" card.
+- Rules (tested): the agent only reports facts with quotes; code checks every quote against the listing or lease text
+  (`premises.extraction_rejected`, one retry, then unverified fields become missing data); code (`evaluatePremises`)
+  decides the soft flags per business type; never a hard flag; an unmentioned check is MissingData and widens the
+  range; premises not read at all lowers confidence like a missing location.
+- Decision: premises concerns are in `checks.notCountedTwice` (not scored twice), but `CandidateScore.pointsToCheck`
+  counts them, and a Good verdict needs `pointsToCheck === 0` (domain/verdict.ts). Old cases behave the same.
+- Keyless scripted answers (`premisesDemoScript` in `demo-script.ts`): fixed phrases found in the text, copied as
+  quotes, with negation ("Bez izloga" = no storefront).
+- UI: `building-2` agent in AGENTS and ORBIT_AGENTS (Timeline lane comes from AGENTS), "The space" card on the
+  candidate page (each check with its quote, what to check before signing, what is not stated), premises item in
+  "What is unknown". The card with real data was checked by a unit test (`tests/results-model.test.ts`), not seen in
+  the browser yet (recorded runs have no premises answers).
+- Tests: `tests/premises-agent.test.ts` (4 loops in parallel per candidate, quotes in the text, concerns reach the
+  report as "check" facts and pass the Auditor, invented quote rejected, a hard flag from the Lease reader cuts the
+  Premises loop and its result never arrives), `tests/fixtures/sample-premises.ts`, updates in ranking, verdict,
+  location, schema-rules, results-model.
+- Browser check (keyless, all 3 Find spaces scenarios): no console errors, Premises lanes and "cut" marks on the
+  Timeline. As expected the recorded run is incomplete: the report says "Provider error: this request is not in the
+  recording", every candidate is Low confidence, the space card says "has not read this listing". Also (from phase 1)
+  the Location card then says "address not found in OpenStreetMap" although the real cause is the missing recording;
+  it goes away after re-recording, but the wording is misleading.
+- Local run note: `.env` has ANTHROPIC_API_KEY, so plain `npm run dev` runs LIVE. For a keyless run in PowerShell:
+  `$env:ANTHROPIC_API_KEY=' '; npm run dev` (a blank value is "set", so dotenv does not load the key; the server sees
+  no key and runs the demo).
+
+**Next, in this order:** Phase 3 (rent share of revenue rule in the Ranker, threshold as a labelled ASSUMPTION on the
+Assumptions screen, no revenue = MissingData; about 45-60 min), then Phase 4 (`npm run record:demo`, about $0.30;
+check audit 0 removed and the mid-run cuts for the video; README, screenshots; about 1.5 h). Then merge into main only
+when all tests pass.
+
+**Phase 3 and Phase 4: not started.**
+
+### Recommendation if time is short
+Main already works and is fully documented. If phases 1-2 cannot be finished, verified and re-recorded before 18:00,
+leave main as it is and spend the time on the video and the Railway deploy. Never merge wip/agents with failing
+recorded tests: the keyless demo would break for the jury.
+
 ## For the video (Andrej): which scenario shows a hard flag cutting a running agent
-Checked on 27 Nov by replaying the three recorded scenarios at the app's own replay speed (no key). Times are from the
-start of the run. "Form check" rejections happen in the first milliseconds (code reads the listing form terms), so
-their Finance loop is cut before its first model call and shows only a red X at 0 s. The ones to show are the cuts
+Re-checked on 27 Nov afternoon after re-recording all three scenarios (A1 to A4 changed the model input), by replaying
+them at the app's own replay speed with no key: `npx tsx scripts/cut-report.ts`. Audit of every report: 0 corrected,
+0 removed (cafe 11 claims checked, office 10, shop 10). "Form check" rejections happen in the first milliseconds (code
+reads the listing form terms), so their Finance loop is cut before its first model call. The ones to show are the cuts
 raised by the **Lease reader** while the Finance analyst is already working on the same candidate:
 
 | Scenario | Candidate | Raised by, rule | Finance analyst ran before the cut | Where it stopped |
 |---|---|---|---|---|
-| Cafe in Novi Sad | Detelinara 69 m2 (listing-ns024), Adice 84 m2 (listing-ns040) | Listing form check, locked_in_without_exit | 2-3 ms | before inference |
-| **Office in Beograd** | **Voždovac, Vojvode Stepe, 51 m2 (listing-bg004)** | **Lease reader, unlimited_rent_increase** | **about 3.7 s** | **mid tool call** |
-| Office in Beograd | Banovo brdo 63 m2 (listing-bg011) | Listing form check, unlimited_rent_increase | 2 ms | before inference |
-| Shop in Novi Sad | Liman 1, Fruškogorska, 83 m2 (listing-ns044) | Lease reader, locked_in_without_exit | about 2.0 s | before its next tool call |
-| Shop in Novi Sad | Centar, Laze Telečkog, 47 m2 (listing-ns002) | Lease reader, locked_in_without_exit | about 2.0 s | mid tool call |
-| Shop in Novi Sad | Adice 84 m2 (listing-ns040), Telep 76 m2 (listing-ns014) | Listing form check, locked_in_without_exit | 1-2 ms | before inference |
+| Cafe in Novi Sad | Detelinara 69 m2 (listing-ns024), Adice 84 m2 (listing-ns040) | Listing form check, locked_in_without_exit | 7-9 ms | before inference |
+| **Office in Beograd** | **Voždovac, Vojvode Stepe, 51 m2 (listing-bg004)** | **Lease reader, unlimited_rent_increase** | **about 4.6 s (1 tool call)** | **before its next tool call** |
+| Office in Beograd | Banovo brdo 63 m2 (listing-bg011) | Listing form check, unlimited_rent_increase | 8 ms | before inference |
+| Shop in Novi Sad | Liman 1, Fruškogorska, 83 m2 (listing-ns044) | Lease reader, locked_in_without_exit | about 3.7 s (1 tool call) | before its next tool call |
+| Shop in Novi Sad | Centar, Laze Telečkog, 47 m2 (listing-ns002) | Lease reader, locked_in_without_exit | about 3.7 s (1 tool call) | before its next tool call |
+| Shop in Novi Sad | Adice 84 m2 (listing-ns040), Telep 76 m2 (listing-ns014) | Listing form check, locked_in_without_exit | 4-6 ms | before inference |
 
-**Best for the video: Office in Beograd, candidate "Voždovac · 51 m2".** Its Finance bar runs for about 3.7 seconds
-(two calculator dots), the Lease reader finds that the landlord may raise the rent without a limit, and the bar ends in
-the red X with "cut"; the dashed red line and "Hard flag: Voždovac · 51 m2 rejected" sit above it. In the run view the
-chip turns red and moves to "Left the orbit" with the reason. Second choice: **Shop in Novi Sad**, where two
-candidates are cut by the Lease reader at the same moment (about 2 s), which shows two cuts in parallel. The cafe
-scenario has no mid-run cut (both rejections come from the form check at 0 s), so do not use it for this shot; it is
-still the best scenario for the results list and the report (Grbavica 85 m2, Good, 95).
-Suggested order: Find spaces, pick Office in Beograd, Search and evaluate; film the orbit (counter "agents in
-parallel", peak 14); then Results, Timeline tab, point at the Voždovac lane; then Report tab ("Audited: N claims
-checked"); end on the Mozaik Cloud screenshot in the README.
+**Best for the video: Office in Beograd, candidate "Voždovac · 51 m2".** Its Finance bar runs for about 4.6 seconds,
+the Lease reader finds that the landlord may raise the rent without a limit, and the bar ends in the red X with
+"stopped"; the dashed red line and "Deal breaker: Voždovac · 51 m2 ruled out" sit above it. In the run view it is
+listed under "Ruled out" with the reason. Second choice: **Shop in Novi Sad**, where two candidates are cut by the
+Lease reader at about the same moment (3.7 s), which shows two cuts in parallel. The cafe scenario has no mid-run cut
+(both rejections come from the form check), so do not use it for this shot.
+Suggested order: Research, Find spaces, pick Office in Beograd, Search and evaluate; film the run (agents on the path,
+counter "agent tasks running now"); then Results, Timeline tab ("How your research ran"), point at the Voždovac lane;
+then the Report tab ("Every number checked against its source"); end on the Mozaik Cloud screenshot in the README.
 
 ## 27 Nov 2026, morning (Aleksa + Claude): README, auditor ids, rank by verdict, re-recorded demos
 - **README written** (scored): pitch, hero, keyless quick start, live and Supabase, concurrency table + Mermaid +

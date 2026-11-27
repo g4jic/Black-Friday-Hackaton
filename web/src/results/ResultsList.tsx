@@ -2,7 +2,7 @@ import { ChevronDown, ChevronRight, OctagonAlert } from "lucide-react"
 import { useState } from "react"
 import { Link, paths } from "../app/router"
 import type { ResearchState } from "../research-state"
-import { cx } from "../ui"
+import { SourceLabel, cx } from "../ui"
 import { VERDICT_LABEL, headline, resultsList, type DisplayVerdict, type ListEntry } from "./results-model"
 
 const VERDICT_STYLE: Record<DisplayVerdict, string> = {
@@ -84,6 +84,12 @@ function CandidateCard({ researchId, entry, position }: { researchId: string; en
             "Monthly cost unknown"
           )}
         </span>
+        {entry.rentShare && (
+          <span className={cx("text-[13px]", entry.rentShare.aboveThreshold ? "text-amber-800" : "text-ink-2")}>
+            <span className="tnum font-semibold">{entry.rentShare.text.split(" ")[0]}</span> {entry.rentShare.text.split(" ").slice(1).join(" ")}
+            <SourceLabel source={entry.rentShare.source} />
+          </span>
+        )}
       </span>
       <span className="flex items-center gap-2 self-start [grid-area:score] sm:self-center">
         <ScoreBlock score={entry.score} confidence={entry.confidence} note={entry.scoreRangeNote} />

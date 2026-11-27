@@ -13,6 +13,7 @@ const candidate = (fields: CandidateDTO["fields"]): CandidateDTO => ({
   rejection: null,
   laterFlags: [],
   findings: [],
+  premises: null,
   ranking: null,
 })
 const text = (value: string) => ({ value: { kind: "text" as const, value } })

@@ -14,7 +14,7 @@ import { formatMoney } from "../format"
 type Mode = "evaluate" | "find"
 
 /** The questionnaire as typed (strings), so half-typed numbers are kept while the user edits. */
-type ProfileForm = Record<"businessType" | "city" | "currency" | "monthlyBudget" | "expectedMonthlyRevenue" | "areaMinM2" | "areaMaxM2" | "leaseMonths" | "fitOutBudget" | "equipmentBudget" | "grossMarginPercent", string>
+type ProfileForm = Record<"businessType" | "city" | "currency" | "monthlyBudget" | "expectedMonthlyRevenue" | "areaMinM2" | "areaMaxM2" | "leaseMonths" | "fitOutBudget" | "equipmentBudget" | "grossMarginPercent" | "description" | "yearsPlanned", string>
 
 const toForm = (p: ProfileInput): ProfileForm => ({
   businessType: p.businessType,
@@ -28,6 +28,8 @@ const toForm = (p: ProfileInput): ProfileForm => ({
   fitOutBudget: String(p.fitOutBudget),
   equipmentBudget: String(p.equipmentBudget),
   grossMarginPercent: p.grossMarginRate === undefined ? "" : String(Math.round(p.grossMarginRate * 100)),
+  description: p.description,
+  yearsPlanned: p.yearsPlanned === undefined ? "" : String(p.yearsPlanned),
 })
 
 const fromSettings = (s: Settings): ProfileForm => ({
@@ -42,6 +44,8 @@ const fromSettings = (s: Settings): ProfileForm => ({
   fitOutBudget: "",
   equipmentBudget: "",
   grossMarginPercent: "",
+  description: "",
+  yearsPlanned: "",
 })
 
 const number = (text: string) => (text.trim() === "" ? NaN : Number(text.replace(",", ".")))
@@ -61,10 +65,12 @@ function profileFromForm(form: ProfileForm): { profile: Partial<ProfileInput> } 
   if (!form.city.trim()) return { error: "Enter the city." }
   const margin = number(form.grossMarginPercent)
   if (form.grossMarginPercent.trim() && !(margin > 0 && margin <= 100)) return { error: "The gross margin is a percentage between 1 and 100, or empty." }
+  const years = number(form.yearsPlanned)
+  if (form.yearsPlanned.trim() && !(Number.isInteger(years) && years >= 1 && years <= 30)) return { error: "Years you plan to stay is a whole number from 1 to 30, or empty." }
   return {
     profile: {
       businessType: form.businessType as ProfileInput["businessType"],
-      description: BUSINESS_TYPE_LABELS[form.businessType as ProfileInput["businessType"]],
+      description: form.description.trim() || BUSINESS_TYPE_LABELS[form.businessType as ProfileInput["businessType"]],
       city: form.city.trim(),
       currency: form.currency as ProfileInput["currency"],
       monthlyBudget: number(form.monthlyBudget),
@@ -75,6 +81,7 @@ function profileFromForm(form: ProfileForm): { profile: Partial<ProfileInput> } 
       fitOutBudget: number(form.fitOutBudget),
       equipmentBudget: number(form.equipmentBudget),
       ...(form.grossMarginPercent.trim() ? { grossMarginRate: margin / 100 } : {}),
+      ...(form.yearsPlanned.trim() ? { yearsPlanned: years } : {}),
     },
   }
 }
@@ -330,6 +337,12 @@ function ProfileFields({ form, locked, onChange }: { form: ProfileForm; locked: 
           </select>
         )}
       </label>
+      <label className="sm:col-span-2">
+        <span className={LABEL}>
+          What your business does<span className="font-normal text-ink-3"> (optional)</span>
+        </span>
+        <input value={form.description} onChange={(e) => onChange({ description: e.target.value })} readOnly={locked} disabled={locked} placeholder="For example: carpentry workshop making kitchen cabinets" className={INPUT} />
+      </label>
       <label>
         <span className={LABEL}>City</span>
         <input value={form.city} onChange={(e) => onChange({ city: e.target.value })} readOnly={locked} disabled={locked} className={INPUT} />
@@ -351,6 +364,7 @@ function ProfileFields({ form, locked, onChange }: { form: ProfileForm; locked: 
       {field("areaMinM2", "Area from", "m²")}
       {field("areaMaxM2", "Area to", "m²")}
       {field("leaseMonths", "Lease length", "months")}
+      {field("yearsPlanned", "Years you plan to stay", "optional", locked ? "the lease length" : "the lease length")}
       {field("grossMarginPercent", "Gross margin", "%, optional", locked ? "not given" : "")}
       {field("fitOutBudget", "Fit-out budget", form.currency)}
       {field("equipmentBudget", "Equipment budget", form.currency)}

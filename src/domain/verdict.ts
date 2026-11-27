@@ -26,8 +26,8 @@ export function verdictFor(score: CandidateScore | null, rejected: boolean): Ver
   }
   const area = score.components.find((c) => c.name === "area")
   if (area?.value === 0) return { verdict: "check_before_signing", why: "Ranked, but the area is outside your required range" }
-  const checks = score.components.find((c) => c.name === "checks")
-  const pointsToCheck = checks?.value !== null && checks?.value !== undefined && checks.value < 1
+  // Every soft flag counts here, also the ones scored under premises (not in the checks part, so not counted twice).
+  const pointsToCheck = score.pointsToCheck > 0
   if (score.confidence === "high" && !pointsToCheck && score.score >= VERDICT_RULES.goodMinScore) {
     return { verdict: "good", why: `High confidence, a score of ${score.score} and nothing to check before signing` }
   }

@@ -44,6 +44,8 @@ export type ListEntry = {
   location: string | null
   areaM2: number | null
   monthlyCost: string | null
+  /** "18.3% of expected revenue", from the Ranker (code); null when the rent or the revenue is unknown */
+  rentShare: { text: string; aboveThreshold: boolean; source: SourceDTO } | null
   verdict: DisplayVerdict
   score: number | null
   confidence: string | null
@@ -106,6 +108,7 @@ function entryFor(c: CandidateDTO, listingNumber: number): ListEntry {
     location: candidateLocation(c),
     areaM2: areaM2(c),
     monthlyCost: monthlyCostText(c),
+    rentShare: rentShareOf(c),
     verdict,
     score: ranking?.score ?? null,
     confidence: ranking ? (CONFIDENCE_LABEL[ranking.confidence] ?? ranking.confidence) : null,
@@ -146,6 +149,15 @@ export function headline(s: ResearchState): string {
 
 // ---------------------------------------------------------------- candidate page
 
+/** 0.1834 reads as "18.3%", the same rounding as the server's facts. */
+export const percent1 = (share: number) => `${Math.round(share * 1000) / 10}%`
+
+export function rentShareOf(c: CandidateDTO): ListEntry["rentShare"] {
+  const r = c.ranking?.rentShare
+  if (!r) return null
+  return { text: `${percent1(r.share)} of expected revenue`, aboveThreshold: r.aboveThreshold, source: r.source }
+}
+
 export type CostRow = { label: string; value: string | null; source: string | null; note: string | null }
 
 const costRow = (c: CandidateDTO, name: string, label: string, render: (v: ValueDTO) => string | null, missingNote: string): CostRow => {
@@ -168,9 +180,23 @@ export function costRows(c: CandidateDTO): CostRow[] {
     costRow(c, "initial_costs", "Initial cost", moneyText, "Needs the rent and deposit"),
     costRow(c, "total_cost_over_term", termMonths ? `Total over the lease (${termMonths} months)` : "Total over the lease", moneyText, "Needs the lease length"),
     exit,
+    rentShareRow(c),
     costRow(c, "break_even_revenue", "Break-even revenue", (v) => (moneyText(v) ? `${moneyText(v)} per month` : null), "Needs your gross margin (questionnaire)"),
     costRow(c, "payback_months", "Payback", (v) => (v.kind === "number" ? `${v.value} months` : v.kind === "none" ? "Never at the expected revenue" : null), "Needs your gross margin (questionnaire)"),
   ]
+}
+
+function rentShareRow(c: CandidateDTO): CostRow {
+  const label = "Rent share of revenue"
+  const r = c.ranking?.rentShare
+  if (!r) return { label, value: null, source: null, note: c.ranking ? "Needs the rent and your expected monthly revenue (questionnaire)" : "Not calculated in this run" }
+  const limit = `${Math.round(r.threshold * 100)}%`
+  return {
+    label,
+    value: percent1(r.share),
+    source: plainSource(r.source),
+    note: r.aboveThreshold ? `Above ${limit} (SuiteSpot assumption): check before signing` : `Within ${limit} (SuiteSpot assumption)`,
+  }
 }
 
 export type PointItem = { text: string; hard: boolean; source: string | null }
@@ -212,8 +238,8 @@ export function leaseSection(c: CandidateDTO): { hasLease: boolean; fromForm: bo
   return { hasLease: c.hasLease, fromForm: false, terms, questions: LANDLORD_QUESTIONS.map((q) => q.question) }
 }
 
-const COMPONENT_LABEL: Record<string, string> = { cost: "Monthly cost against your budget", area: "Area against your range", lease: "Lease terms", checks: "Points to check before signing" }
-const COMPONENT_MISSING: Record<string, string> = { cost: "the rent is not stated", area: "the area is not stated", lease: "no verified lease terms", checks: "not known" }
+const COMPONENT_LABEL: Record<string, string> = { cost: "Monthly cost against your budget", area: "Area against your range", lease: "Lease terms", location: "Location", premises: "The space itself", checks: "Points to check before signing" }
+const COMPONENT_MISSING: Record<string, string> = { cost: "the rent is not stated", area: "the area is not stated", lease: "no verified lease terms", location: "no OpenStreetMap area data for this address in this run", premises: "the listing was not read", checks: "not known" }
 
 /** What lowers the confidence and by how much (points between the worst and the best case). */
 export function unknowns(c: CandidateDTO): { items: { text: string; points: number }[]; totalPoints: number } {
@@ -221,6 +247,10 @@ export function unknowns(c: CandidateDTO): { items: { text: string; points: numb
   const items: { text: string; points: number }[] = []
   for (const component of ranking?.components ?? []) {
     if (component.value === null) items.push({ text: `${COMPONENT_LABEL[component.name] ?? component.name}: ${COMPONENT_MISSING[component.name] ?? "unknown"}`, points: component.weight })
+    else if (component.valueHigh !== undefined && component.valueHigh > component.value) {
+      const notStated = (c.premises?.notStated ?? []).map((f) => fieldLabel(f).toLowerCase())
+      items.push({ text: `${COMPONENT_LABEL[component.name] ?? component.name}: not stated in the listing or the lease${notStated.length ? ` (${notStated.join(", ")})` : ""}`, points: Math.round(component.weight * (component.valueHigh - component.value)) })
+    }
   }
   for (const u of c.unverified) items.push({ text: `The ${u.field} could not be verified from the text (${u.reason})`, points: 0 })
   const monthly = findingOf(c, "monthly_cost")
@@ -243,6 +273,11 @@ export const FIELD_LABEL: Record<string, string> = {
   floor: "Floor",
   heating: "Heating",
   parking: "Parking",
+  storefront: "Storefront",
+  kitchenVentilation: "Kitchen ventilation",
+  waterAndDrain: "Water and drain",
+  needsRenovation: "Renovation needed",
+  stepFreeAccess: "Step-free access",
   url: "Listing address (URL)",
   minimumTermMonths: "Minimum lease term",
   earlyTermination: "Ending the lease early",
@@ -309,4 +344,97 @@ export function allSources(c: CandidateDTO): SourceGroup[] {
   for (const r of c.ranking?.reasons ?? []) add(r.source)
   if (c.listingUrl) add(c.listingUrl.source)
   return GROUP_ORDER.filter((g) => groups.has(g)).map((title) => ({ title, items: [...groups.get(title)!] }))
+}
+
+const LOCATION_LABEL: Record<string, string> = {
+  transit: "Bus and tram stops",
+  offices: "Offices",
+  schools: "Schools and faculties",
+  parking: "Parking areas",
+  food: "Cafes, restaurants and bars",
+  shops: "Shops",
+  crafts: "Workshops and crafts",
+}
+
+/** The Location card: OpenStreetMap counts (code), the Location analyst's explanation, and whether it was checked. */
+export function locationSection(c: CandidateDTO): { rows: { label: string; count: number }[]; explanation: string | null; zone: string | null; checked: boolean } {
+  const rows = Object.keys(LOCATION_LABEL).flatMap((metric) => {
+    const f = c.findings.find((x) => x.id === `${c.id}:location:${metric}`)
+    return f?.value?.kind === "number" ? [{ label: LOCATION_LABEL[metric]!, count: f.value.value }] : []
+  })
+  const explanation = c.findings.find((x) => x.id === `${c.id}:location:explanation`)?.claim ?? null
+  const zone = c.findings.find((x) => x.id === `${c.id}:location:zone`)?.claim ?? null
+  return { rows, explanation, zone, checked: rows.length > 0 }
+}
+
+/**
+ * The Premises card: what the listing and the lease draft state about the space (each line quoted, judged by code
+ * for this type of business; a line that does not suit it is a soft flag with what to check before signing), and
+ * what they do not mention. Never a hard flag.
+ */
+export function premisesSection(c: CandidateDTO): {
+  read: boolean
+  checks: { text: string; ok: boolean; checkBeforeSigning: string | null; source: string }[]
+  notStated: string[]
+  heating: { text: string; source: string } | null
+} {
+  const own = c.findings.filter((f) => f.aspect === "premises")
+  // The quote is the evidence: shown next to where it comes from, so the user can find it in the listing.
+  const quoted = (s: SourceDTO) => (s.quote ? `${plainSource(s)}: "${s.quote}"` : plainSource(s))
+  const soft = own.filter((f) => f.severity === "soft")
+  const heatingId = `${c.id}:premises:heating`
+  const checks = own
+    .filter((f) => f.severity === "info" && f.id !== heatingId)
+    .map((f) => {
+      const concern = soft.find((x) => x.claim === f.claim)
+      return { text: f.claim, ok: !concern, checkBeforeSigning: concern?.checkBeforeSigning ?? null, source: quoted(f.source) }
+    })
+  const heating = own.find((f) => f.id === heatingId)
+  return {
+    read: c.premises !== null,
+    checks,
+    notStated: (c.premises?.notStated ?? []).map(fieldLabel),
+    heating: heating ? { text: heating.claim, source: quoted(heating.source) } : null,
+  }
+}
+
+export type YearScenarios = {
+  /** If the business does not work out: what leaving after 12 months costs, with its parts. */
+  bad: { total: string | null; complete: boolean; parts: { label: string; value: string; source: SourceDTO }[]; source: SourceDTO | null; note: string }
+  /** If the business goes as planned: months until the initial costs are earned back, and the break-even revenue. */
+  good: { payback: string | null; paybackSource: SourceDTO | null; breakEven: string | null; breakEvenSource: SourceDTO | null; note: string }
+}
+
+/** "Bad year, good year" from the Finance analyst's code-computed figures only; nothing new is calculated here. */
+export function yearScenarios(c: CandidateDTO): YearScenarios | null {
+  const exit = findingOf(c, "exit_cost_after_12_months")
+  const payback = findingOf(c, "payback_months")
+  const breakEven = findingOf(c, "break_even_revenue")
+  if (!exit && !payback && !breakEven) return null
+  const parts = c.findings
+    .filter((f) => f.id.startsWith(`${c.id}:finance:exit_cost_part_`))
+    .flatMap((f) => (f.value?.kind === "money" ? [{ label: f.claim, value: formatMoney(f.value.amount, f.value.currency), source: f.source }] : []))
+  const exitTotal = moneyText(exit?.value)
+  const known = findingOf(c, "exit_cost_known_part")
+  const paybackText = payback?.value?.kind === "number" ? `${payback.value.value} months` : payback?.value?.kind === "none" ? "Never at your expected revenue" : null
+  return {
+    bad: {
+      total: exitTotal ?? moneyText(known?.value),
+      complete: exitTotal !== null,
+      parts,
+      source: exit?.value?.kind === "money" ? exit.source : (known?.source ?? null),
+      note: exitTotal
+        ? "Leaving after 12 months: rent during the notice period, any early exit penalty and the fit-out you have not used up. Whether the deposit comes back is not known."
+        : known
+          ? "Known part only: the lease terms (notice period) are needed for the full cost of leaving."
+          : "Needs the lease terms (notice period).",
+    },
+    good: {
+      payback: paybackText,
+      paybackSource: payback?.value && payback.value.kind !== "missing" ? payback.source : null,
+      breakEven: breakEven?.value?.kind === "money" ? `${formatMoney(breakEven.value.amount, breakEven.value.currency)} per month` : null,
+      breakEvenSource: breakEven?.value?.kind === "money" ? breakEven.source : null,
+      note: paybackText ? "At the revenue and gross margin from your questionnaire, the money you put in before opening (without the refundable deposit) is earned back after this many months." : "Needs your gross margin (questionnaire).",
+    },
+  }
 }
