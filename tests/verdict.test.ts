@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { VERDICT_RULES, verdictFor, type CandidateScore } from "../src/domain/index.js"
+import { VERDICT_RULES, missingData, verdictFor, type CandidateScore } from "../src/domain/index.js"
 
 const score = (patch: Partial<CandidateScore> & { checks?: number | null }): CandidateScore => ({
   candidateId: "c1",
@@ -8,6 +8,7 @@ const score = (patch: Partial<CandidateScore> & { checks?: number | null }): Can
   confidence: "high",
   tier: 1,
   pointsToCheck: patch.checks !== undefined && patch.checks !== null && patch.checks < 1 ? 1 : 0,
+  rentShare: missingData("expectedMonthlyRevenue"),
   reasons: [],
   components: [
     { name: "cost", weight: 45, value: 0.9 },

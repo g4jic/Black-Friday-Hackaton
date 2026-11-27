@@ -68,6 +68,8 @@ export type RankingDTO = {
   tier: number
   reasons: ReasonDTO[]
   components: { name: string; weight: number; value: number | null; valueHigh?: number }[]
+  /** Monthly cost / expected revenue (code); null when the rent or the revenue is unknown. Older runs have none. */
+  rentShare?: { share: number; threshold: number; aboveThreshold: boolean; source: SourceDTO; thresholdSource: SourceDTO } | null
   /** Decided by code on the server (domain/verdict.ts). */
   verdict: { verdict: Verdict; why: string }
 }

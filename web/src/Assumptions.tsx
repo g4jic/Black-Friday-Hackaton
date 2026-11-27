@@ -14,6 +14,7 @@ type Assumptions = {
       indexation: Record<string, number>
     }
     checks: { description: string; penaltyEach: number; notCountedTwice: string[] }
+    rentShare: { description: string; checkAbove: number; basis: string }
     location: { description: string }
     premises: { description: string }
     missingData: string
@@ -106,6 +107,7 @@ export function AssumptionsScreen() {
           <li>Hard flag: the tenant cannot end the lease early and the term is longer than {a.hardFlags.maxTermWithoutExitMonths} months.</li>
           <li>Hard flag: the landlord may raise the rent at will.</li>
           <li>Check before signing: notice longer than {a.leaseConcerns.maxNoticeMonths} months, a fixed rent increase above {a.leaseConcerns.maxFixedIndexationPercent}% a year, a personal guarantee, the tenant paying structural repairs, an early exit penalty, an unverified clause.</li>
+          <li>Check before signing: the rent takes more than {pct(r.rentShare.checkAbove)} of your expected monthly revenue ({r.rentShare.basis}). Without an expected revenue it is unknown.</li>
           <li>A hard flag cancels the candidate: it is never ranked.</li>
         </ul>
       </Card>

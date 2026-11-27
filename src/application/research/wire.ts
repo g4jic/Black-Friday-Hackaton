@@ -80,6 +80,8 @@ export type RankingDTO = {
   tier: number
   reasons: { text: string; effect: string; source: SourceDTO }[]
   components: { name: string; weight: number; value: number | null; valueHigh?: number }[]
+  /** Monthly cost / expected revenue (code); null when the rent or the revenue is unknown. */
+  rentShare: { share: number; threshold: number; aboveThreshold: boolean; source: SourceDTO; thresholdSource: SourceDTO } | null
   /** Decided by code (domain/verdict.ts). */
   verdict: { verdict: Verdict; why: string }
 }
@@ -207,6 +209,9 @@ function rankingDTO(state: SuiteSpotState, id: string): RankingDTO | null {
     tier: r.tier,
     reasons: r.reasons.map((x) => ({ text: x.text, effect: x.effect, source: sourceDTO(x.source) })),
     components: r.components.map((c) => ({ name: c.name, weight: c.weight, value: c.value, ...(c.valueHigh !== undefined ? { valueHigh: c.valueHigh } : {}) })),
+    rentShare: isMissingData(r.rentShare)
+      ? null
+      : { share: r.rentShare.share.value, threshold: r.rentShare.threshold.value, aboveThreshold: r.rentShare.aboveThreshold, source: sourceDTO(r.rentShare.share.source), thresholdSource: sourceDTO(r.rentShare.threshold.source) },
     verdict: verdictFor(r, false),
   }
 }

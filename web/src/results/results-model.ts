@@ -44,6 +44,8 @@ export type ListEntry = {
   location: string | null
   areaM2: number | null
   monthlyCost: string | null
+  /** "18.3% of expected revenue", from the Ranker (code); null when the rent or the revenue is unknown */
+  rentShare: { text: string; aboveThreshold: boolean; source: SourceDTO } | null
   verdict: DisplayVerdict
   score: number | null
   confidence: string | null
@@ -106,6 +108,7 @@ function entryFor(c: CandidateDTO, listingNumber: number): ListEntry {
     location: candidateLocation(c),
     areaM2: areaM2(c),
     monthlyCost: monthlyCostText(c),
+    rentShare: rentShareOf(c),
     verdict,
     score: ranking?.score ?? null,
     confidence: ranking ? (CONFIDENCE_LABEL[ranking.confidence] ?? ranking.confidence) : null,
@@ -146,6 +149,15 @@ export function headline(s: ResearchState): string {
 
 // ---------------------------------------------------------------- candidate page
 
+/** 0.1834 reads as "18.3%", the same rounding as the server's facts. */
+export const percent1 = (share: number) => `${Math.round(share * 1000) / 10}%`
+
+export function rentShareOf(c: CandidateDTO): ListEntry["rentShare"] {
+  const r = c.ranking?.rentShare
+  if (!r) return null
+  return { text: `${percent1(r.share)} of expected revenue`, aboveThreshold: r.aboveThreshold, source: r.source }
+}
+
 export type CostRow = { label: string; value: string | null; source: string | null; note: string | null }
 
 const costRow = (c: CandidateDTO, name: string, label: string, render: (v: ValueDTO) => string | null, missingNote: string): CostRow => {
@@ -168,9 +180,23 @@ export function costRows(c: CandidateDTO): CostRow[] {
     costRow(c, "initial_costs", "Initial cost", moneyText, "Needs the rent and deposit"),
     costRow(c, "total_cost_over_term", termMonths ? `Total over the lease (${termMonths} months)` : "Total over the lease", moneyText, "Needs the lease length"),
     exit,
+    rentShareRow(c),
     costRow(c, "break_even_revenue", "Break-even revenue", (v) => (moneyText(v) ? `${moneyText(v)} per month` : null), "Needs your gross margin (questionnaire)"),
     costRow(c, "payback_months", "Payback", (v) => (v.kind === "number" ? `${v.value} months` : v.kind === "none" ? "Never at the expected revenue" : null), "Needs your gross margin (questionnaire)"),
   ]
+}
+
+function rentShareRow(c: CandidateDTO): CostRow {
+  const label = "Rent share of revenue"
+  const r = c.ranking?.rentShare
+  if (!r) return { label, value: null, source: null, note: c.ranking ? "Needs the rent and your expected monthly revenue (questionnaire)" : "Not calculated in this run" }
+  const limit = `${Math.round(r.threshold * 100)}%`
+  return {
+    label,
+    value: percent1(r.share),
+    source: plainSource(r.source),
+    note: r.aboveThreshold ? `Above ${limit} (SuiteSpot assumption): check before signing` : `Within ${limit} (SuiteSpot assumption)`,
+  }
 }
 
 export type PointItem = { text: string; hard: boolean; source: string | null }
@@ -213,7 +239,7 @@ export function leaseSection(c: CandidateDTO): { hasLease: boolean; fromForm: bo
 }
 
 const COMPONENT_LABEL: Record<string, string> = { cost: "Monthly cost against your budget", area: "Area against your range", lease: "Lease terms", location: "Location", premises: "The space itself", checks: "Points to check before signing" }
-const COMPONENT_MISSING: Record<string, string> = { cost: "the rent is not stated", area: "the area is not stated", lease: "no verified lease terms", location: "the address was not found in OpenStreetMap", premises: "the listing was not read", checks: "not known" }
+const COMPONENT_MISSING: Record<string, string> = { cost: "the rent is not stated", area: "the area is not stated", lease: "no verified lease terms", location: "no OpenStreetMap area data for this address in this run", premises: "the listing was not read", checks: "not known" }
 
 /** What lowers the confidence and by how much (points between the worst and the best case). */
 export function unknowns(c: CandidateDTO): { items: { text: string; points: number }[]; totalPoints: number } {

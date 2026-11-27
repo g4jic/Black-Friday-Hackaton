@@ -1,4 +1,4 @@
-import { AREA_RADIUS_M, OSM_METRICS, type AreaCounts, type OsmMetric } from "../../domain/index.js"
+import { AREA_RADIUS_M, OSM_METRICS, type AreaCounts, type LanduseCounts, type OsmMetric } from "../../domain/index.js"
 
 /**
  * OpenStreetMap over plain HTTP, following the usage policies of both services:
@@ -38,7 +38,14 @@ export type Geocoded = {
   readonly precision: "street" | "district"
 }
 
-export type AreaFetch = { readonly geocoded: Geocoded; readonly counts: AreaCounts; readonly query: string; readonly fetchedAt: string }
+export type AreaFetch = {
+  readonly geocoded: Geocoded
+  readonly counts: AreaCounts
+  readonly query: string
+  readonly fetchedAt: string
+  /** Land use around the address (added 27 Nov for the noisy business rule); missing in older fixtures. */
+  readonly landuse?: LanduseCounts
+}
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
@@ -58,6 +65,45 @@ export function overpassQuery(lat: number, lon: number, radius = AREA_RADIUS_M):
   const fill = (f: string) => f.replace("R", String(radius)).replace("LAT", lat.toFixed(6)).replace("LON", lon.toFixed(6))
   const blocks = OSM_METRICS.map((m) => `(${OVERPASS_FILTERS[m].map(fill).join(";")};);out count;`)
   return `[out:json][timeout:25];${blocks.join("")}`
+}
+
+/** Building tags counted as homes / as industry for the land use check (an assumption, shown on How it works). */
+export const RESIDENTIAL_BUILDINGS = "apartments|residential|house|detached|semidetached_house|terrace|dormitory"
+export const INDUSTRIAL_BUILDINGS = "industrial|warehouse|manufacture"
+
+/**
+ * Land use around a point: the landuse areas the point lies inside (is_in), the landuse areas within the radius, and
+ * the homes and industrial buildings within the radius. One small query per address.
+ */
+export function landuseQuery(lat: number, lon: number, radius = AREA_RADIUS_M): string {
+  const at = `${lat.toFixed(6)},${lon.toFixed(6)}`
+  return (
+    `[out:json][timeout:25];` +
+    `is_in(${at})->.a;area.a["landuse"];out tags;` +
+    `wr(around:${radius},${at})["landuse"~"^(residential|industrial|commercial|retail)$"];out tags;` +
+    `nwr(around:${radius},${at})["building"~"^(${RESIDENTIAL_BUILDINGS})$"];out count;` +
+    `nwr(around:${radius},${at})["building"~"^(${INDUSTRIAL_BUILDINGS})$"];out count;`
+  )
+}
+
+type OverpassElement = { type: string; id?: number; tags?: Record<string, string> }
+
+/** Turns the answer of `landuseQuery` into counts. is_in area ids are 3600000000 + relation id or 2400000000 + way id. */
+export function parseLanduse(elements: readonly OverpassElement[]): LanduseCounts {
+  const areaRef = (id: number) => (id >= 3_600_000_000 ? `relation/${id - 3_600_000_000}` : id >= 2_400_000_000 ? `way/${id - 2_400_000_000}` : `area/${id}`)
+  const atPoint = elements.filter((e) => e.type === "area" && e.tags?.landuse).map((e) => ({ landuse: e.tags!.landuse!, ref: areaRef(e.id ?? 0) }))
+  const nearby = elements.filter((e) => (e.type === "way" || e.type === "relation") && e.tags?.landuse)
+  const near = (re: RegExp) => nearby.filter((e) => re.test(e.tags!.landuse!)).length
+  const totals = elements.filter((e) => e.type === "count").map((e) => Number(e.tags?.total ?? 0))
+  if (totals.length !== 2) throw new Error(`Overpass returned ${totals.length} building counts, expected 2`)
+  return {
+    atPoint,
+    residentialAreas: near(/^residential$/),
+    industrialAreas: near(/^industrial$/),
+    commercialAreas: near(/^(commercial|retail)$/),
+    residentialBuildings: totals[0]!,
+    industrialBuildings: totals[1]!,
+  }
 }
 
 export class OsmClient {
@@ -92,6 +138,19 @@ export class OsmClient {
 
   async counts(lat: number, lon: number): Promise<{ counts: AreaCounts; query: string }> {
     const query = overpassQuery(lat, lon)
+    const elements = await this.overpassElements(query)
+    const totals = elements.filter((e) => e.type === "count").map((e) => Number(e.tags?.total ?? 0))
+    if (totals.length !== OSM_METRICS.length) throw new Error(`Overpass returned ${totals.length} counts, expected ${OSM_METRICS.length}`)
+    const counts = Object.fromEntries(OSM_METRICS.map((m, i) => [m, totals[i]!])) as AreaCounts
+    return { counts, query }
+  }
+
+  async landuse(lat: number, lon: number): Promise<LanduseCounts> {
+    return parseLanduse(await this.overpassElements(landuseQuery(lat, lon)))
+  }
+
+  /** POSTs one query to the first Overpass instance that answers and returns its elements. */
+  private async overpassElements(query: string): Promise<OverpassElement[]> {
     const problems: string[] = []
     for (let attempt = 0; attempt < OVERPASS.length * 2; attempt++) {
       const index = (this.preferred + attempt) % OVERPASS.length
@@ -114,12 +173,9 @@ export class OsmClient {
         if (res.status === 429) await sleep(5000)
         continue
       }
-      const body = (await res.json()) as { elements: { type: string; tags: { total: string } }[] }
-      const totals = body.elements.filter((e) => e.type === "count").map((e) => Number(e.tags.total))
-      if (totals.length !== OSM_METRICS.length) throw new Error(`Overpass returned ${totals.length} counts, expected ${OSM_METRICS.length}`)
-      const counts = Object.fromEntries(OSM_METRICS.map((m, i) => [m, totals[i]!])) as AreaCounts
+      const body = (await res.json()) as { elements: OverpassElement[] }
       this.preferred = index
-      return { counts, query }
+      return body.elements
     }
     throw new Error(`Overpass did not answer (${problems.join("; ")})`)
   }
@@ -133,7 +189,8 @@ export class OsmClient {
         const geocoded = await this.geocode(street, district, city)
         if (!geocoded) return null
         const { counts, query } = await this.counts(geocoded.lat, geocoded.lon)
-        return { geocoded, counts, query, fetchedAt: new Date().toISOString() }
+        const landuse = await this.landuse(geocoded.lat, geocoded.lon)
+        return { geocoded, counts, query, landuse, fetchedAt: new Date().toISOString() }
       })()
       this.cache.set(key, p)
       p.catch(() => this.cache.delete(key)) // a failed lookup may be retried later

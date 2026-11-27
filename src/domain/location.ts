@@ -23,6 +23,19 @@ export const OSM_METRIC_TEXT: Record<OsmMetric, string> = {
   parking: "parking areas",
 }
 
+/** Land use around an address, from OpenStreetMap (raw counts; code classifies them, see classifyZone). */
+export type LanduseCounts = {
+  /** The landuse areas the address lies inside, with their OSM reference ("way/123"). */
+  readonly atPoint: readonly { readonly landuse: string; readonly ref: string }[]
+  readonly residentialAreas: number
+  readonly industrialAreas: number
+  readonly commercialAreas: number
+  /** Homes (apartments, houses) mapped within the radius. */
+  readonly residentialBuildings: number
+  /** Industrial buildings and warehouses mapped within the radius. */
+  readonly industrialBuildings: number
+}
+
 /** The area data of one candidate: where it was found and what was counted, every count with its OSM source. */
 export type AreaData = {
   readonly candidateId: string

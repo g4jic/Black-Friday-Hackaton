@@ -49,7 +49,19 @@ const save = () => {
 let i = 0
 for (const a of addresses) {
   i++
-  if (areas[a]) continue
+  const existing = areas[a]
+  if (existing && !existing.landuse) {
+    // Land use was added on 27 Nov: reuse the stored coordinates, fetch only the land use (one Overpass query).
+    try {
+      areas[a] = { ...existing, landuse: await client.landuse(existing.geocoded.lat, existing.geocoded.lon) }
+      save()
+      console.log(`${i}/${addresses.length} ${a}: landuse ${JSON.stringify(areas[a]!.landuse)}`)
+    } catch (error) {
+      console.error(`  ${a} (landuse): ${(error as Error).message}`)
+    }
+    continue
+  }
+  if (existing) continue
   const [street, district, city] = a.split("|") as [string, string, string]
   try {
     const counts = logged.get(a)

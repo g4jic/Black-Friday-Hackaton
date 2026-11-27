@@ -11,7 +11,9 @@ import { createScout, submitListings } from "../src/application/agents/scout.js"
 import { createRecorder } from "../src/application/observers/recorder.js"
 import { createAppRuntime } from "../src/application/runtime.js"
 import {
+  BusinessProfile,
   DomainError,
+  isMissingData,
   Money,
   RANKING_ASSUMPTIONS,
   buildLease,
@@ -189,6 +191,30 @@ describe("score rules (domain)", () => {
     const a = rankCandidates(inputs.map(scoreCandidate)).map((r) => [r.candidateId, r.rank, r.score, r.scoreHigh])
     const b = rankCandidates([...inputs].reverse().map(scoreCandidate)).map((r) => [r.candidateId, r.rank, r.score, r.scoreHigh])
     expect(b).toEqual(a)
+  })
+
+  it("rent share of revenue: above the threshold it is a soft point to check (never a hard flag), with a calc source", () => {
+    const revenue = (n: number) => BusinessProfile.create({ ...profile.input, expectedMonthlyRevenue: n })
+    const threshold = RANKING_ASSUMPTIONS.rentShare.checkAbove
+    // 1310 EUR a month against a revenue that puts the share just below and just above the threshold.
+    const within = scoreCandidate({ ...base, profile: revenue(Math.ceil(1310 / threshold) + 100) })
+    const above = scoreCandidate({ ...base, profile: revenue(Math.floor(1310 / threshold) - 100) })
+    if (isMissingData(within.rentShare) || isMissingData(above.rentShare)) throw new Error("rent share should be known")
+    expect(within.rentShare.aboveThreshold).toBe(false)
+    expect(above.rentShare.aboveThreshold).toBe(true)
+    expect(above.rentShare.share.source).toMatchObject({ kind: "calc", ref: "monthly cost / expected monthly revenue" })
+    expect(above.rentShare.share.source.inputs?.[1]).toMatchObject({ kind: "profile", field: "expectedMonthlyRevenue" })
+    expect(above.rentShare.threshold.source).toMatchObject({ kind: "assumption", field: "rentShare.checkAbove" })
+    expect(above.pointsToCheck).toBe(within.pointsToCheck + 1)
+    expect(above.components.find((c) => c.name === "checks")!.value).toBeLessThan(within.components.find((c) => c.name === "checks")!.value!)
+    expect(verdictFor(above, false).verdict).not.toBe("good")
+  })
+
+  it("rent share without an expected revenue is missing data, never a guess, and adds no point to check", () => {
+    const none = scoreCandidate({ ...base, profile: BusinessProfile.create({ ...profile.input, expectedMonthlyRevenue: 0 }) })
+    expect(isMissingData(none.rentShare)).toBe(true)
+    expect(none.pointsToCheck).toBe(scoreCandidate({ ...base, profile: BusinessProfile.create({ ...profile.input, expectedMonthlyRevenue: 1_000_000 }) }).pointsToCheck)
+    expect(isMissingData(scoreCandidate({ ...base, monthlyCost: null }).rentShare)).toBe(true)
   })
 
   it("the weights and rules are the published assumptions", () => {

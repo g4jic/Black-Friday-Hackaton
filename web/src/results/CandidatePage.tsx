@@ -234,7 +234,7 @@ function LocationCard({ candidate }: { candidate: CandidateDTO }) {
           <p className="mt-3 text-xs text-ink-2">Source: OpenStreetMap. Data © OpenStreetMap contributors, ODbL.</p>
         </>
       ) : (
-        <p className="text-[13px] text-ink-3">The location was not checked: the address was not found in OpenStreetMap.</p>
+        <p className="text-[13px] text-ink-3">The location was not checked: there is no OpenStreetMap area data for this address in this run.</p>
       )}
     </Section>
   )
