@@ -21,6 +21,10 @@ export type Landlord = {
   readonly role: Role | null
   /** When the onboarding was finished (saved or skipped); null: show the onboarding. */
   readonly onboardedAt: string | null
+  /** The profile photo (stored by our server), or null: the first letter of the name is shown. */
+  readonly avatarUrl: string | null
+  /** Supabase only: a new email that waits for the user to confirm it from the link in their inbox. */
+  readonly pendingEmail: string | null
 }
 export type AuthMode = "supabase" | "local"
 export type AuthState = { readonly status: "loading" | "ready"; readonly enabled: boolean; readonly mode: AuthMode; readonly landlord: Landlord | null }
@@ -43,7 +47,14 @@ export function authHeaders(): Record<string, string> {
 
 setAuthHeaders(authHeaders)
 
-type SessionLike = { access_token: string; user: { id: string; email?: string; user_metadata?: Record<string, unknown> } } | null
+type SessionLike = { access_token: string; user: { id: string; email?: string; new_email?: string; user_metadata?: Record<string, unknown> } } | null
+
+/** Only a photo address our own server handed out is shown (user_metadata is editable by its user). */
+function safeAvatarUrl(value: unknown): string | null {
+  if (typeof value !== "string") return null
+  if (value.startsWith("/api/avatars/")) return value
+  return /^https:\/\/[^/]+\/storage\/v1\/object\/public\/avatars\//.test(value) ? value : null
+}
 
 function applySession(session: SessionLike): void {
   token = session?.access_token ?? null
@@ -52,7 +63,12 @@ function applySession(session: SessionLike): void {
   const name = typeof meta.display_name === "string" ? meta.display_name.trim() : ""
   // Option B of the onboarding plan: role and onboarded_at live in Supabase user_metadata, next to display_name.
   const { role, onboardedAt } = onboardingFromMetadata(meta)
-  set({ status: "ready", landlord: user ? { id: user.id, email: user.email ?? "", displayName: name || user.email || "Account", role, onboardedAt } : null })
+  set({
+    status: "ready",
+    landlord: user
+      ? { id: user.id, email: user.email ?? "", displayName: name || user.email || "Account", role, onboardedAt, avatarUrl: safeAvatarUrl(meta.avatar_url), pendingEmail: user.new_email || null }
+      : null,
+  })
 }
 
 const readLocalToken = (): string | null => {
@@ -71,7 +87,7 @@ const writeLocalToken = (value: string | null): void => {
   }
 }
 
-type LocalAccount = { id: string; email: string; displayName: string; role?: unknown; onboardedAt?: unknown }
+type LocalAccount = { id: string; email: string; displayName: string; role?: unknown; onboardedAt?: unknown; avatarUrl?: unknown }
 
 function applyLocal(newToken: string | null, account: LocalAccount | null): void {
   token = newToken
@@ -85,6 +101,8 @@ function applyLocal(newToken: string | null, account: LocalAccount | null): void
           displayName: account.displayName,
           role: isRole(account.role) ? account.role : null,
           onboardedAt: typeof account.onboardedAt === "string" ? account.onboardedAt : null,
+          avatarUrl: safeAvatarUrl(account.avatarUrl),
+          pendingEmail: null,
         }
       : null,
   })
@@ -170,6 +188,98 @@ export async function updateOnboarding(change: { role?: Role; onboarded?: true }
   if (error) throw new Error(error.message)
   // onAuthStateChange also fires (USER_UPDATED); apply at once so the next screen sees the new answers.
   if (updated.user) applySession({ access_token: token ?? "", user: updated.user })
+}
+
+async function saveLocalProfile(change: Record<string, unknown>, failure: string): Promise<void> {
+  const response = await fetch("/api/local-auth/profile", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(change) })
+  const data = (await response.json().catch(() => ({}))) as { account?: LocalAccount; error?: string }
+  if (!response.ok || !data.account) throw new Error(data.error ?? failure)
+  applyLocal(token, data.account)
+}
+
+async function saveSupabaseUser(change: { data?: Record<string, unknown>; email?: string }): Promise<void> {
+  const { data: updated, error } = await client!.auth.updateUser(change)
+  if (error) throw new Error(error.message)
+  if (updated.user) applySession({ access_token: token ?? "", user: updated.user })
+}
+
+export const MAX_NAME_LENGTH = 80
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+/**
+ * Changes the name and/or the email. Local accounts: saved at once. Supabase: the name at once; a new email only
+ * after the user confirms it from the link Supabase sends (until then the old email signs in): emailPending says so.
+ */
+export async function updateIdentity(change: { displayName?: string; email?: string }): Promise<{ emailPending: boolean }> {
+  const current = state.landlord
+  if (!current) throw new Error("Sign in first.")
+  const displayName = change.displayName?.trim()
+  const email = change.email?.trim().toLowerCase()
+  if (displayName !== undefined && !displayName) throw new Error("Enter your name or company.")
+  if (displayName && displayName.length > MAX_NAME_LENGTH) throw new Error(`The name can have at most ${MAX_NAME_LENGTH} characters.`)
+  if (email !== undefined && !EMAIL.test(email)) throw new Error("Enter a valid email address.")
+  const nameChanged = displayName !== undefined && displayName !== current.displayName
+  const emailChanged = email !== undefined && email !== current.email.toLowerCase()
+  if (!nameChanged && !emailChanged) return { emailPending: false }
+  if (state.mode === "local") {
+    await saveLocalProfile({ ...(nameChanged ? { displayName } : {}), ...(emailChanged ? { email } : {}) }, "Your details could not be saved. Try again.")
+    return { emailPending: false }
+  }
+  if (nameChanged) await saveSupabaseUser({ data: { display_name: displayName } })
+  if (emailChanged) {
+    await saveSupabaseUser({ email })
+    return { emailPending: (state.landlord?.email ?? "").toLowerCase() !== email }
+  }
+  return { emailPending: false }
+}
+
+/** The longest side of the stored photo, in pixels (the avatar is drawn at 48 px at most, so this is sharp on retina). */
+const AVATAR_PX = 256
+
+/** Center-crops the chosen image to a square and shrinks it to a small JPEG in the browser (no upload of the original). */
+export async function shrinkPhoto(file: File): Promise<string> {
+  if (!file.type.startsWith("image/")) throw new Error("Choose an image file (JPEG, PNG or WebP).")
+  if (file.size > 15 * 1024 * 1024) throw new Error("The photo is too large (at most 15 MB).")
+  const url = URL.createObjectURL(file)
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => resolve(img)
+      img.onerror = () => reject(new Error("This image could not be read. Try a JPEG or PNG."))
+      img.src = url
+    })
+    const side = Math.min(image.naturalWidth, image.naturalHeight)
+    if (!side) throw new Error("This image could not be read. Try a JPEG or PNG.")
+    const canvas = document.createElement("canvas")
+    canvas.width = canvas.height = Math.min(AVATAR_PX, side)
+    const context = canvas.getContext("2d")
+    if (!context) throw new Error("This browser cannot prepare the photo.")
+    context.fillStyle = "#ffffff" // a transparent PNG gets a white background in the JPEG
+    context.fillRect(0, 0, canvas.width, canvas.height)
+    context.imageSmoothingQuality = "high"
+    context.drawImage(image, (image.naturalWidth - side) / 2, (image.naturalHeight - side) / 2, side, side, 0, 0, canvas.width, canvas.height)
+    return canvas.toDataURL("image/jpeg", 0.86)
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+
+/** Shrinks the photo, stores it on our server and saves its address on the account. */
+export async function uploadAvatar(file: File): Promise<void> {
+  if (!state.landlord) throw new Error("Sign in first.")
+  const image = await shrinkPhoto(file)
+  const response = await fetch("/api/me/avatar", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ image }) })
+  const data = (await response.json().catch(() => ({}))) as { avatarUrl?: string; account?: LocalAccount; error?: string }
+  if (!response.ok || !data.avatarUrl) throw new Error(data.error ?? "The photo could not be saved. Try again.")
+  if (state.mode === "local") return data.account ? applyLocal(token, data.account) : undefined
+  await saveSupabaseUser({ data: { avatar_url: data.avatarUrl } })
+}
+
+/** Removes the photo from the account (the first letter of the name is shown again). */
+export async function removeAvatar(): Promise<void> {
+  if (!state.landlord) throw new Error("Sign in first.")
+  if (state.mode === "local") return saveLocalProfile({ avatarUrl: null }, "The photo could not be removed. Try again.")
+  await saveSupabaseUser({ data: { avatar_url: null } })
 }
 
 /** The signed-in account right now (outside React). */

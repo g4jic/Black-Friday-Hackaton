@@ -127,7 +127,8 @@ export function orbitModel(s: ResearchState): OrbitModel {
         const onCandidate = [...dots.values()].filter((d) => d.candidateId === e.candidateId)
         const finance = onCandidate.find((d) => d.agent === "Finance analyst" && d.endSeq === null)
         if (!finance) break // Finance already finished on this candidate: nobody receives the terms now
-        const reader = onCandidate.filter((d) => d.agent === "Lease reader").at(-1)
+        const readers = onCandidate.filter((d) => d.agent === "Lease reader")
+        const reader = readers[readers.length - 1] // not .at(-1): Safari before 15.4 has no Array.prototype.at
         cues.push({
           kind: "handoff",
           key: `handoff:${e.seq}`,

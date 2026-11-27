@@ -17,6 +17,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent
 import { cx } from "../ui"
 import { Logo } from "../Logo"
 import { logOut, updateOnboarding, useAuth } from "./auth"
+import { AvatarFace } from "./Avatar"
 import { onboardingPath } from "./onboarding-gate"
 import { navKeysFor, ROLE_LABELS, type NavKey } from "./roles"
 import { Link, navigate, paths, useLocation, type Route } from "./router"
@@ -80,7 +81,7 @@ export function AdviceNote() {
  */
 export function Shell({ route, title, titleExtra, children }: { route: Route; title: string; titleExtra?: ReactNode; children: ReactNode }) {
   return (
-    <div className="min-h-screen px-4 pb-28 text-ink page-frame sm:pb-8 sm:pl-[128px]">
+    <div className="min-h-screen px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] text-ink page-frame sm:pb-8 sm:pl-[128px]">
       <Sidebar route={route} />
       <div className="mx-auto w-full max-w-[1360px] pt-6">
         <header className="flex flex-wrap items-center gap-4">
@@ -97,16 +98,20 @@ export function Shell({ route, title, titleExtra, children }: { route: Route; ti
 
 function Sidebar({ route }: { route: Route }) {
   const role = useAuth().landlord?.role ?? null
+  const keys = navKeysFor(role)
+  // On a phone every item gets an equal share of the bar; with more than five items plus the avatar the labels stay
+  // for screen readers only (each item keeps its full name as aria-label and title), so nothing wraps or spills.
+  const iconsOnly = keys.length + 1 > 6
   return (
     <aside
-      className="fixed z-30 flex items-center glass-strong max-sm:inset-x-3 max-sm:bottom-3 max-sm:h-[68px] max-sm:justify-around max-sm:rounded-[28px] max-sm:px-1 sm:top-4 sm:bottom-4 sm:left-4 sm:w-[88px] sm:flex-col sm:rounded-[32px] sm:py-5"
+      className="fixed z-30 flex items-center glass-strong max-sm:inset-x-3 max-sm:bottom-[max(12px,env(safe-area-inset-bottom))] max-sm:h-[68px] max-sm:justify-around max-sm:rounded-[28px] max-sm:px-1 sm:top-4 sm:bottom-4 sm:left-4 sm:w-[88px] sm:flex-col sm:rounded-[32px] sm:py-5"
       aria-label="Main"
     >
       <Link to={paths.dashboard()} className="mb-4 flex h-14 w-14 items-center justify-center max-sm:hidden" aria-label="SuiteSpot home" title="SuiteSpot">
         <Logo size={56} title="SuiteSpot" className="h-14 w-14" />
       </Link>
       <nav className="flex flex-col items-center gap-2.5 max-sm:contents">
-        {navKeysFor(role).map((key) => {
+        {keys.map((key) => {
           const item = NAV_ITEMS[key]
           const active = item.isActive(route)
           const Icon = item.icon
@@ -117,7 +122,7 @@ function Sidebar({ route }: { route: Route }) {
               title={item.name}
               aria-label={item.name}
               aria-current={active ? "page" : undefined}
-              className="group flex w-[58px] flex-col items-center gap-1 rounded-[18px] py-1.5 sm:w-[72px]"
+              className="group flex flex-col items-center gap-1 rounded-[18px] py-1.5 max-sm:min-w-0 max-sm:flex-1 sm:w-[72px]"
             >
               <span
                 className={cx(
@@ -127,14 +132,14 @@ function Sidebar({ route }: { route: Route }) {
               >
                 <Icon size={18} strokeWidth={active ? 2 : 1.75} aria-hidden />
               </span>
-              <span className={cx("text-[11px] leading-3", active ? "font-semibold text-ink" : "font-medium text-ink-2 group-hover:text-ink")}>
+              <span className={cx("text-[11px] leading-3 max-sm:max-w-full max-sm:truncate", iconsOnly && "max-sm:sr-only", active ? "font-semibold text-ink" : "font-medium text-ink-2 group-hover:text-ink")}>
                 {item.label}
               </span>
             </Link>
           )
         })}
       </nav>
-      <div className="sm:mt-auto">
+      <div className="max-sm:flex max-sm:min-w-0 max-sm:flex-1 max-sm:justify-center sm:mt-auto">
         <AvatarMenu settingsActive={route.name === "settings" || route.name === "howItWorks"} />
       </div>
     </aside>
@@ -167,7 +172,7 @@ function AvatarMenu({ settingsActive }: { settingsActive: boolean }) {
   const headAvatarRef = useRef<HTMLButtonElement>(null)
   const bodyRef = useRef<HTMLDivElement>(null)
   const auth = useAuth()
-  const user = { name: auth.landlord?.displayName ?? "Account" }
+  const user = { name: auth.landlord?.displayName ?? "Account", avatarUrl: auth.landlord?.avatarUrl ?? null }
   const role = auth.landlord?.role ?? null
   const { pathname, search } = useLocation()
   const ITEM = "flex w-full items-center gap-2.5 rounded-[14px] px-2.5 py-2 text-left text-[15px] font-medium text-ink hover:bg-white focus-visible:bg-white"
@@ -279,7 +284,7 @@ function AvatarMenu({ settingsActive }: { settingsActive: boolean }) {
         title={user.name}
         className={cx("group flex w-[58px] justify-center rounded-[18px] py-1.5 sm:w-[72px]", open && "invisible")}
       >
-        <span className={cx("nav-lift text-sm", avatar("h-10 w-10"))}>{user.name[0]}</span>
+        <AvatarFace name={user.name} url={user.avatarUrl} className={cx("nav-lift text-sm", avatar("h-10 w-10"))} />
       </button>
       {open && (
         <div
@@ -296,9 +301,9 @@ function AvatarMenu({ settingsActive }: { settingsActive: boolean }) {
               onClick={() => close(true)}
               aria-label="Close the menu"
               title="Close the menu"
-              className={cx("text-base", avatar("h-11 w-11"))}
+              className="shrink-0 rounded-full"
             >
-              {user.name[0]}
+              <AvatarFace name={user.name} url={user.avatarUrl} className={cx("text-base", avatar("h-11 w-11"))} />
             </button>
             <span className="flex min-w-0 flex-col gap-1">
               <span className="truncate text-[15px] font-semibold text-ink">{user.name}</span>

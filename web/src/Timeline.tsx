@@ -70,7 +70,9 @@ export function Timeline({ s, now }: { s: ResearchState; now: number }) {
       {loops.length === 0 ? (
         <p className="py-8 text-center text-sm text-ink-2">Waiting for the first agent to start.</p>
       ) : (
-        <div className="relative">
+        // On a narrow screen the chart scrolls inside its card (never the whole page).
+        <div className="-mx-6 overflow-x-auto overscroll-x-contain px-6">
+        <div className="relative min-w-[640px]">
           {/* rejection labels get their own row, so they never cover the time axis */}
           <div className="relative mb-1" style={{ marginLeft: LABEL_W, height: labelRows(rejections, span).rows * 24 }}>
             {labelRows(rejections, span).placed.map(({ r, row }) => {
@@ -120,6 +122,7 @@ export function Timeline({ s, now }: { s: ResearchState; now: number }) {
               )
             })}
           </div>
+        </div>
         </div>
       )}
     </section>

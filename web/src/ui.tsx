@@ -1,5 +1,6 @@
 import { Building2, Calculator, FileText, MapPin, ListOrdered, PenLine, Search, ShieldCheck, OctagonAlert, TriangleAlert, Check, Info, type LucideIcon } from "lucide-react"
-import type { ReactNode } from "react"
+import { useEffect, useId, useRef, useState, type ReactNode, type SyntheticEvent } from "react"
+import { createPortal } from "react-dom"
 import { formatMoney } from "./format"
 import type { FieldDTO, SourceDTO, ValueDTO } from "./types"
 
@@ -36,16 +37,78 @@ export function describeSource(s: SourceDTO, depth = 0): string {
   return [head, ...(s.inputs ?? []).map((i) => describeSource(i, depth + 1))].join("\n")
 }
 
-/** The tiny pill after every number (DESIGN.md 6.6). */
+const SOURCE_POPOVER_W = 280
+
+/**
+ * The tiny pill after every number (DESIGN.md 6.6). A hover shows the source chain as a tooltip; a tap or a click
+ * (phones and tablets have no hover) or Enter opens it as a small panel, closed by another tap, Escape, scrolling or
+ * focus leaving. The panel is fixed to the window (portalled), so a scrolling or clipped card never cuts it off.
+ */
 export function SourceLabel({ source }: { source: SourceDTO }) {
+  const [at, setAt] = useState<{ left: number; top?: number; bottom?: number } | null>(null)
+  // A span with the button role, not a <button>: the pill often sits inside a card that is a link, where a real
+  // button would be invalid HTML. The click never reaches the link (no navigation when the user opens a source).
+  const button = useRef<HTMLSpanElement>(null)
+  const id = useId()
+  const text = describeSource(source)
+  const toggle = (event: SyntheticEvent) => {
+    event.preventDefault()
+    event.stopPropagation()
+    if (at) return setAt(null)
+    const r = button.current?.getBoundingClientRect()
+    if (!r) return
+    const width = Math.min(SOURCE_POPOVER_W, window.innerWidth - 16)
+    const left = Math.max(8, Math.min(r.left, window.innerWidth - width - 8))
+    // In the lower part of the window the panel opens upwards, so it is never cut off by the bottom edge.
+    setAt(r.bottom > window.innerHeight * 0.6 ? { left, bottom: window.innerHeight - r.top + 6 } : { left, top: r.bottom + 6 })
+  }
+  useEffect(() => {
+    if (!at) return
+    const close = () => setAt(null)
+    const onKey = (event: KeyboardEvent) => event.key === "Escape" && close()
+    // Safari does not focus a button on click, so a tap elsewhere closes it here instead of through blur.
+    const onPointer = (event: PointerEvent) => !button.current?.contains(event.target as Node) && close()
+    window.addEventListener("pointerdown", onPointer, true)
+    window.addEventListener("scroll", close, true)
+    window.addEventListener("resize", close)
+    window.addEventListener("keydown", onKey)
+    return () => {
+      window.removeEventListener("pointerdown", onPointer, true)
+      window.removeEventListener("scroll", close, true)
+      window.removeEventListener("resize", close)
+      window.removeEventListener("keydown", onKey)
+    }
+  }, [at])
   return (
-    <span
-      tabIndex={0}
-      title={describeSource(source)}
-      className="ml-1.5 inline-flex h-[18px] cursor-help items-center rounded-full border border-line bg-white/80 px-1.5 align-middle text-[11px] font-medium leading-none text-ink-2"
-    >
-      {KIND_LABEL[source.kind] ?? source.kind}
-    </span>
+    <>
+      <span
+        ref={button}
+        role="button"
+        tabIndex={0}
+        title={at ? undefined : text}
+        aria-label={`Source: ${text}`}
+        aria-expanded={at !== null}
+        aria-controls={at ? id : undefined}
+        onClick={toggle}
+        onKeyDown={(event) => (event.key === "Enter" || event.key === " ") && toggle(event)}
+        onBlur={() => setAt(null)}
+        className="ml-1.5 inline-flex h-[18px] cursor-help items-center rounded-full border border-line bg-white/80 px-1.5 align-middle text-[11px] font-medium leading-none text-ink-2 hover:bg-white"
+      >
+        {KIND_LABEL[source.kind] ?? source.kind}
+      </span>
+      {at &&
+        createPortal(
+          <span
+            id={id}
+            role="tooltip"
+            className="popover glass-strong fixed z-[60] block p-3 text-left text-[12px] leading-[1.45] font-normal whitespace-pre-wrap text-ink"
+            style={{ left: at.left, top: at.top, bottom: at.bottom, width: Math.min(SOURCE_POPOVER_W, window.innerWidth - 16) }}
+          >
+            {text}
+          </span>,
+          document.body,
+        )}
+    </>
   )
 }
 

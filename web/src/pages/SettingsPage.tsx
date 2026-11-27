@@ -1,7 +1,8 @@
-import { ArrowRight, Check, LogOut } from "lucide-react"
+import { ArrowRight, Camera, Check, LogOut, Trash2 } from "lucide-react"
 import { ROLE_ICONS } from "../app/role-icons"
 import { useRef, useState, type FormEvent, type KeyboardEvent } from "react"
-import { logOut, ROLES, updateOnboarding, useAuth, type Role } from "../app/auth"
+import { logOut, MAX_NAME_LENGTH, removeAvatar, ROLES, updateIdentity, updateOnboarding, uploadAvatar, useAuth, type Role } from "../app/auth"
+import { AvatarFace } from "../app/Avatar"
 import { checkProfileFields, toProfileFields, type ProfileFields, type ProfileProblems } from "../app/business-profile"
 import { listsSpaces, ROLE_LABELS, seeksSpaces } from "../app/roles"
 import { Link, navigate, paths } from "../app/router"
@@ -13,7 +14,7 @@ import { cx } from "../ui"
 import { BusinessProfileFields, FieldBox } from "./BusinessProfileFields"
 
 export const INPUT =
-  "h-11 w-full rounded-[16px] border border-white/80 bg-white/85 px-4 text-sm text-ink placeholder:text-ink-3 focus:border-brand focus:outline-none disabled:cursor-not-allowed disabled:bg-white/50 disabled:text-ink-2"
+  "h-11 w-full rounded-[16px] border border-white/80 bg-white/85 px-4 text-base text-ink sm:text-sm placeholder:text-ink-3 focus:border-brand focus:outline-none disabled:cursor-not-allowed disabled:bg-white/50 disabled:text-ink-2"
 export const LABEL = "mb-1.5 block text-xs font-medium text-ink"
 const SECONDARY = "inline-flex h-10 items-center gap-2 rounded-full glass-strong px-[18px] text-sm font-medium text-ink hover:bg-white"
 
@@ -34,20 +35,160 @@ export function SettingsPage() {
   )
 }
 
+type Notice = { readonly tone: "ok" | "error"; readonly text: string } | null
+
+function NoticeLine({ notice }: { notice: Notice }) {
+  return (
+    <span role="status" className="min-h-5 text-[13px]">
+      {notice?.tone === "ok" && (
+        <span className="inline-flex items-center gap-1.5 text-green-700">
+          <Check size={16} aria-hidden /> {notice.text}
+        </span>
+      )}
+      {notice?.tone === "error" && <span className="text-hard">{notice.text}</span>}
+    </span>
+  )
+}
+
+/** The account: the profile photo, the name and the email (all editable), and signing out. */
 function AccountSection() {
-  const account = useAuth().landlord
+  const auth = useAuth()
+  const account = auth.landlord
   const name = account?.displayName ?? "Account"
+  const [displayName, setDisplayName] = useState(name)
+  const [email, setEmail] = useState(account?.email ?? "")
+  const [busy, setBusy] = useState<"details" | "photo" | null>(null)
+  const [details, setDetails] = useState<Notice>(null)
+  const [photo, setPhoto] = useState<Notice>(null)
+  const fileInput = useRef<HTMLInputElement>(null)
+  const changed = displayName.trim() !== name || email.trim().toLowerCase() !== (account?.email ?? "").toLowerCase()
+
+  const saveDetails = async (event: FormEvent) => {
+    event.preventDefault()
+    if (busy || !changed) return
+    setBusy("details")
+    setDetails(null)
+    try {
+      const { emailPending } = await updateIdentity({ displayName, email })
+      setDetails({ tone: "ok", text: emailPending ? `Saved. Confirm ${email.trim().toLowerCase()} from the link we sent there; until then sign in with your current email.` : "Saved on your account." })
+      if (emailPending) setEmail(account?.email ?? "")
+    } catch (failure) {
+      setDetails({ tone: "error", text: (failure as Error).message })
+    } finally {
+      setBusy(null)
+    }
+  }
+  const choosePhoto = async (file: File | undefined) => {
+    if (!file || busy) return
+    setBusy("photo")
+    setPhoto(null)
+    try {
+      await uploadAvatar(file)
+      setPhoto({ tone: "ok", text: "Photo saved." })
+    } catch (failure) {
+      setPhoto({ tone: "error", text: (failure as Error).message })
+    } finally {
+      setBusy(null)
+      if (fileInput.current) fileInput.current.value = "" // the same file can be chosen again
+    }
+  }
+  const dropPhoto = async () => {
+    if (busy) return
+    setBusy("photo")
+    setPhoto(null)
+    try {
+      await removeAvatar()
+      setPhoto({ tone: "ok", text: "Photo removed." })
+    } catch (failure) {
+      setPhoto({ tone: "error", text: (failure as Error).message })
+    } finally {
+      setBusy(null)
+    }
+  }
+
   return (
     <Card title="Account" collapsible id="settings-account">
-      <div className="flex flex-wrap items-center gap-4">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-lilac text-lg font-semibold text-ink">{name[0]}</span>
-        <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-[15px] font-semibold text-ink">{name}</span>
-          {account?.email && <span className="truncate text-[13px] text-ink-2">{account.email}</span>}
-        </span>
-        <button type="button" onClick={() => void logOut().then(() => navigate(paths.dashboard()))} className={SECONDARY}>
-          <LogOut size={16} aria-hidden /> Sign out
-        </button>
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-wrap items-center gap-4">
+          <AvatarFace name={displayName || name} url={account?.avatarUrl ?? null} className="h-16 w-16 bg-lilac text-xl" />
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <div className="flex flex-wrap gap-2">
+              <input
+                ref={fileInput}
+                id="settings-photo"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/*"
+                className="sr-only"
+                onChange={(event) => void choosePhoto(event.target.files?.[0])}
+                disabled={busy !== null}
+              />
+              <label htmlFor="settings-photo" className={cx(SECONDARY, "cursor-pointer", busy !== null && "pointer-events-none opacity-60")}>
+                <Camera size={16} aria-hidden /> {busy === "photo" ? "Saving..." : account?.avatarUrl ? "Change photo" : "Add a photo"}
+              </label>
+              {account?.avatarUrl && (
+                <button type="button" onClick={() => void dropPhoto()} disabled={busy !== null} className={cx(SECONDARY, "disabled:opacity-60")}>
+                  <Trash2 size={16} aria-hidden /> Remove
+                </button>
+              )}
+            </div>
+            <span className="text-[12px] text-ink-2">JPEG, PNG or WebP. Cropped to a square and shrunk in your browser before it is uploaded.</span>
+            <NoticeLine notice={photo} />
+          </div>
+        </div>
+
+        <form onSubmit={saveDetails} noValidate className="flex flex-col gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="min-w-0">
+              <span className={LABEL}>Name or company</span>
+              <input
+                className={INPUT}
+                value={displayName}
+                maxLength={MAX_NAME_LENGTH}
+                autoComplete="name"
+                onChange={(event) => {
+                  setDisplayName(event.target.value)
+                  setDetails(null)
+                }}
+              />
+            </label>
+            <label className="min-w-0">
+              <span className={LABEL}>Email</span>
+              <input
+                className={INPUT}
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                autoCapitalize="none"
+                spellCheck={false}
+                value={email}
+                onChange={(event) => {
+                  setEmail(event.target.value)
+                  setDetails(null)
+                }}
+              />
+              {account?.pendingEmail && <span className="mt-1.5 block text-[12px] text-ink-2">Waiting for you to confirm {account.pendingEmail}.</span>}
+            </label>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="submit"
+              disabled={!changed || busy !== null}
+              className="inline-flex h-10 items-center rounded-full bg-ink px-[18px] text-sm font-medium text-white hover:bg-[#26262e] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {busy === "details" ? "Saving..." : "Save details"}
+            </button>
+            <NoticeLine notice={details} />
+          </div>
+        </form>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/70 pt-4">
+          <span className="text-[13px] text-ink-2">
+            {auth.mode === "local" ? "This account is kept on this computer only (no Supabase configured)." : "Signed in with SuiteSpot (Supabase Auth)."}
+          </span>
+          <button type="button" onClick={() => void logOut().then(() => navigate(paths.dashboard()))} className={SECONDARY}>
+            <LogOut size={16} aria-hidden /> Sign out
+          </button>
+        </div>
       </div>
     </Card>
   )

@@ -45,6 +45,16 @@ html {
   /* no layout shift when content grows past the window height (the 10 px it reserves are part of the right page gap, see Shell) */
   scrollbar-gutter: stable;
   background-color: #f6cfd2;
+}
+/* The gradient sits on its own fixed layer the size of the window, not on html with background-attachment: fixed:
+   iOS ignores that (the blobs would stretch over the whole page) and other browsers repaint the background on every
+   scroll frame. A fixed layer is painted once and only composited while the page scrolls. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background-image:
     radial-gradient(55% 45% at 50% 42%, rgba(255, 246, 244, 0.55) 0%, rgba(255, 246, 244, 0) 100%),
     radial-gradient(42% 48% at 4% 96%, rgba(246, 123, 86, 0.62) 0%, rgba(246, 123, 86, 0) 100%),
@@ -54,7 +64,6 @@ html {
     radial-gradient(40% 42% at 14% 6%, rgba(251, 214, 200, 0.95) 0%, rgba(251, 214, 200, 0) 100%),
     radial-gradient(22% 70% at 0% 50%, rgba(247, 150, 120, 0.55) 0%, rgba(247, 150, 120, 0) 100%),
     linear-gradient(to top right, #f7a48c 0%, #f7c3c0 38%, #f1d2e4 62%, #d9bff4 100%);
-  background-attachment: fixed;
 }
 
 body,
@@ -143,16 +152,28 @@ button:active {
 }
 
 /* Busy agent ring: slow coral pulse; a static ring when the user prefers reduced motion (DESIGN.md 6.8). */
+/* The halo pulses with transform and opacity only (the compositor runs it, no repaint per frame). */
 @keyframes ring-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 2px var(--color-brand), 0 0 0 4px rgba(242, 92, 84, 0.25);
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
   }
-  50% {
-    box-shadow: 0 0 0 2px var(--color-brand), 0 0 0 8px rgba(242, 92, 84, 0);
+  100% {
+    transform: scale(1.45);
+    opacity: 0;
   }
 }
+/* both users of .ring-busy (AgentChip, the Timeline dot) are positioned, so the halo sits on them */
 .ring-busy {
+  box-shadow: 0 0 0 2px var(--color-brand);
+}
+.ring-busy::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  border: 2px solid rgba(242, 92, 84, 0.6);
+  pointer-events: none;
   animation: ring-pulse 1.6s var(--ease-ios) infinite;
 }
 
@@ -355,9 +376,9 @@ button:active {
   .run-leave {
     transition: none;
   }
-  .ring-busy {
+  .ring-busy::after {
     animation: none;
-    box-shadow: 0 0 0 2px var(--color-brand);
+    opacity: 0;
   }
   .fade-in {
     animation: none;
@@ -454,6 +475,20 @@ button:active {
 .auth-shell.is-welcome .auth-lens { filter: none; }
 .auth-shell.is-welcome .auth-map-pan { animation-play-state: paused; }
 .auth-shell.is-welcome .auth-form { -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* Phones and tablets: the big section cards skip the backdrop blur (behind them is only the soft gradient, so it
+   looks the same), because re-blurring every card on every scroll frame makes scrolling stutter on mid-range
+   phones. The bar, pills and popovers (glass-strong) keep their blur. */
+@layer components {
+  /* in the components layer, so a utility class on the same element (bg-..., backdrop-blur-...) still wins */
+  @media (hover: none) and (pointer: coarse) {
+    .glass,
+    .surface {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      background: rgba(255, 255, 255, 0.66);
+    }
+  }
+}
 /* While the veil fades away on the app, glass skips its blur for those half a second (the veil hides the change). */
 html.is-revealing .glass,
 html.is-revealing .glass-strong,
@@ -474,9 +509,12 @@ html.is-revealing .surface {
   transform-origin: 212px 212px;
   transition: transform 300ms cubic-bezier(0.34, 1.45, 0.64, 1);
 }
-.ss-logo:hover .ss-logo-lens,
 a:focus-visible > .ss-logo .ss-logo-lens {
   transform: rotate(-12deg);
+}
+/* hover effects only with a real pointer: on a phone a tap would leave them stuck on */
+@media (hover: hover) {
+  .ss-logo:hover .ss-logo-lens { transform: rotate(-12deg); }
 }
 @media (prefers-reduced-motion: reduce) {
   .ss-logo-lens { transition: none; }
@@ -497,10 +535,15 @@ a:focus-visible > .ss-logo .ss-logo-lens {
 .nav-lift {
   transition: transform 180ms cubic-bezier(0.34, 1.5, 0.64, 1), box-shadow 180ms ease-out, background-color 200ms var(--ease-ios);
 }
-.group:hover .nav-lift,
 .group:focus-visible .nav-lift {
   transform: translateY(-2px);
   box-shadow: 0 6px 14px rgba(11, 11, 15, 0.1), 0 1px 3px rgba(11, 11, 15, 0.06);
+}
+@media (hover: hover) {
+  .group:hover .nav-lift {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(11, 11, 15, 0.1), 0 1px 3px rgba(11, 11, 15, 0.06);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .group:hover .nav-lift,
@@ -570,12 +613,18 @@ textarea:disabled {
 .role-card {
   transition: transform 200ms var(--ease-ios), box-shadow 200ms var(--ease-ios), border-color 200ms var(--ease-ios), background-color 200ms var(--ease-ios);
 }
-.role-card:not(:disabled):hover,
 .role-card:focus-visible,
 .role-card.is-busy {
   transform: translateY(-3px);
   box-shadow: 0 18px 48px rgba(120, 60, 90, 0.16);
   border-color: var(--color-brand);
+}
+@media (hover: hover) {
+  .role-card:not(:disabled):hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 48px rgba(120, 60, 90, 0.16);
+    border-color: var(--color-brand);
+  }
 }
 @keyframes onb-enter {
   from {
@@ -601,7 +650,19 @@ textarea:disabled {
   -webkit-mask: radial-gradient(closest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
   mask: radial-gradient(closest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
   opacity: 0.85;
-  will-change: transform;
+  /* the ring turns on the compositor (10 degrees a second), so a burst of events never makes it hitch */
+  animation: orbit-spin 36s linear infinite;
+}
+.orbit-stage[data-done="true"] .orbit-path {
+  animation-play-state: paused;
+}
+@keyframes orbit-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .orbit-path { animation: none; }
 }
 .orbit-inner-ring {
   position: absolute;

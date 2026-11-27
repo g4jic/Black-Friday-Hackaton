@@ -19,6 +19,8 @@ import { StripeTestGateway, stripeTestConfig } from "../payments/stripe-test-gat
 import { LOCAL_DEALS_FILE, LocalDealStore } from "../storage/local-deal-store.js"
 import { SupabaseDealStore } from "../storage/supabase-deal-store.js"
 import { registerDealRoutes } from "./deal-routes.js"
+import { LocalAvatarStore, SupabaseAvatarStore, type AvatarStore } from "../auth/avatar-store.js"
+import { registerAvatarRoutes } from "./avatar-routes.js"
 import { registerResearchRoutes, type DemoCatalogue, type ResearchRoutesOptions } from "./research-routes.js"
 
 const webDist = fileURLToPath(new URL("../../../web/dist", import.meta.url))
@@ -45,6 +47,8 @@ export type ServerOptions = {
   readonly dealStore?: DealStore
   /** For tests: the payment gateway (default: Stripe test mode with test keys, else simulated). */
   readonly paymentGateway?: PaymentGateway
+  /** For tests: where profile photos go (default: Supabase Storage with Supabase, else data/avatars). */
+  readonly avatarStore?: AvatarStore
 }
 
 export async function buildServer(options: ServerOptions = {}): Promise<FastifyInstance> {
@@ -67,6 +71,9 @@ export async function buildServer(options: ServerOptions = {}): Promise<FastifyI
   const resolveActor = options.resolveActor ?? (auth ? supabaseActorResolver(auth) : localAccounts!.actorResolver())
   const dealStore = options.dealStore ?? (storeConfig ? new SupabaseDealStore(storeConfig) : new LocalDealStore(LOCAL_DEALS_FILE))
   registerListingRoutes(app, { store: listingStore, resolveActor, backend: auth ? "supabase" : "local", leasedListingIds: () => dealStore.leasedListingIds() })
+  // Profile photos: Supabase Storage with Supabase, else a local folder (data/avatars, git-ignored).
+  const avatarStore = options.avatarStore ?? (auth && storeConfig ? new SupabaseAvatarStore(storeConfig) : new LocalAvatarStore())
+  registerAvatarRoutes(app, { store: avatarStore, resolveActor, localAccounts })
   // Deals: offers, tenancies and rent. Payments go through one port: Stripe Checkout in test mode when both test keys
   // are set, otherwise the simulated checkout (same flow, labelled "Simulated payment, no real money").
   const stripe = stripeTestConfig()

@@ -244,7 +244,7 @@ function BarChart({ label, bars, note }: { label: string; bars: ChartBar[]; note
         {bars.map((b) => (
           <li
             key={b.label}
-            className="grid grid-cols-[minmax(0,9.5rem)_minmax(0,1fr)] items-center gap-x-3 text-[13px] sm:grid-cols-[minmax(0,11rem)_minmax(0,1fr)]"
+            className="grid grid-cols-[minmax(0,6.5rem)_minmax(0,1fr)] items-center gap-x-3 text-[13px] sm:grid-cols-[minmax(0,11rem)_minmax(0,1fr)]"
           >
             <span className="leading-4 text-ink-2">{b.label}</span>
             <span className="flex min-w-0 items-center gap-2">
@@ -253,7 +253,7 @@ function BarChart({ label, bars, note }: { label: string; bars: ChartBar[]; note
                 style={{ width: `${Math.max(2, (b.amount / max) * 70)}%` }}
                 title={`${b.label}: ${b.text}\n${describeSource(b.source)}`}
               />
-              <span className="tnum shrink-0 font-semibold whitespace-nowrap text-ink">
+              <span className="tnum font-semibold text-ink sm:shrink-0 sm:whitespace-nowrap">
                 {b.text}
                 <SourceLabel source={b.source} />
               </span>

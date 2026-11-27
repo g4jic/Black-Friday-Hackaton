@@ -22,9 +22,9 @@ export type AccountRole = "owner" | "seeker" | "both"
 export const ACCOUNT_ROLES: readonly AccountRole[] = ["owner", "seeker", "both"]
 
 /** The part of an account the browser sees. role and onboardedAt are null until the onboarding sets them. */
-export type PublicAccount = { id: string; email: string; displayName: string; role: AccountRole | null; onboardedAt: string | null }
+export type PublicAccount = { id: string; email: string; displayName: string; role: AccountRole | null; onboardedAt: string | null; avatarUrl: string | null }
 
-type StoredAccount = { id: string; email: string; displayName: string; salt: string; hash: string; createdAt: string; role?: AccountRole; onboardedAt?: string }
+type StoredAccount = { id: string; email: string; displayName: string; salt: string; hash: string; createdAt: string; role?: AccountRole; onboardedAt?: string; avatarUrl?: string }
 type StoredFile = { accounts: StoredAccount[]; sessions: { tokenHash: string; accountId: string; createdAt: string }[] }
 
 export class LocalAccountError extends Error {
@@ -39,6 +39,7 @@ export class LocalAccountError extends Error {
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex")
 const hashPassword = (password: string, salt: string) => scryptSync(password, salt, 32).toString("hex")
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+export const MAX_DISPLAY_NAME_LENGTH = 80
 
 export class LocalAccounts {
   private data: StoredFile = { accounts: [], sessions: [] }
@@ -126,9 +127,29 @@ export class LocalAccounts {
    * onboarded: true. Setting onboarded twice keeps the first time (idempotent). onboarded: false is refused: a
    * finished onboarding is not undone, the role can still change.
    */
-  updateProfile(token: string | null, input: { role?: unknown; onboarded?: unknown }): PublicAccount {
+  updateProfile(token: string | null, input: { role?: unknown; onboarded?: unknown; displayName?: unknown; email?: unknown; avatarUrl?: unknown }): PublicAccount {
     const account = this.accountOf(token)
     if (!account) throw new LocalAccountError(401, "Sign in first.")
+    // Check every identity field first, then change them: a bad email never leaves a half-saved profile.
+    let displayName: string | undefined
+    if (input.displayName !== undefined) {
+      displayName = String(input.displayName ?? "").trim()
+      if (!displayName) throw new LocalAccountError(400, "Enter your name or company.")
+      if (displayName.length > MAX_DISPLAY_NAME_LENGTH) throw new LocalAccountError(400, `The name can have at most ${MAX_DISPLAY_NAME_LENGTH} characters.`)
+    }
+    let email: string | undefined
+    if (input.email !== undefined) {
+      email = String(input.email ?? "").trim().toLowerCase()
+      if (!EMAIL.test(email)) throw new LocalAccountError(400, "Enter a valid email address.")
+      if (this.data.accounts.some((a) => a.email === email && a.id !== account.id)) throw new LocalAccountError(409, "Another account on this machine already uses this email.")
+    }
+    const avatar = input.avatarUrl
+    if (avatar !== undefined && avatar !== null && !(typeof avatar === "string" && avatar.startsWith(`/api/avatars/${account.id}?`)))
+      throw new LocalAccountError(400, "Upload the photo first.")
+    if (displayName !== undefined) account.displayName = displayName
+    if (email !== undefined) account.email = email
+    if (avatar === null) delete account.avatarUrl
+    else if (typeof avatar === "string") account.avatarUrl = avatar
     if (input.role !== undefined) {
       if (!ACCOUNT_ROLES.includes(input.role as AccountRole)) throw new LocalAccountError(400, `The role must be one of: ${ACCOUNT_ROLES.join(", ")}.`)
       account.role = input.role as AccountRole
@@ -150,7 +171,7 @@ export class LocalAccounts {
 }
 
 function toPublic(account: StoredAccount): PublicAccount {
-  return { id: account.id, email: account.email, displayName: account.displayName, role: account.role ?? null, onboardedAt: account.onboardedAt ?? null }
+  return { id: account.id, email: account.email, displayName: account.displayName, role: account.role ?? null, onboardedAt: account.onboardedAt ?? null, avatarUrl: account.avatarUrl ?? null }
 }
 
 /** POST /api/local-auth/sign-up, /sign-in, /sign-out, /profile and GET /api/local-auth/me (only when Supabase is off). */

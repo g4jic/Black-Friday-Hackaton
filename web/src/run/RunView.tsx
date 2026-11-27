@@ -147,7 +147,6 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
   const { state } = snapshot
   const model = useMemo(() => orbitModel(state), [state])
   const stageRef = useRef<HTMLDivElement>(null)
-  const pathRef = useRef<HTMLDivElement>(null)
   const els = useRef({
     dots: new Map<string, HTMLDivElement>(),
     candidates: new Map<string, HTMLDivElement>(),
@@ -346,7 +345,6 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
         }
       }
 
-      if (pathRef.current && !s.done) pathRef.current.style.transform = `rotate(${((now / 1000) * 10) % 360}deg)`
       if (s.done && !animating && !settled) {
         settled = true
         live.current.onSettled()
@@ -371,8 +369,8 @@ function Orbit({ snapshot, onSettled }: { snapshot: RunSnapshot; onSettled: () =
   const lineCues = model.cues.filter((c) => c.kind === "handoff" || c.kind === "auditReturn")
 
   return (
-    <div ref={stageRef} className="orbit-stage" role="img" aria-label={`${model.atWork} agent loop${model.atWork === 1 ? "" : "s"} at work. ${status}`}>
-      <div ref={pathRef} className="orbit-path" style={{ inset: `${(1 - AGENT_RADIUS) * 50}%` }} aria-hidden />
+    <div ref={stageRef} className="orbit-stage" data-done={state.done} role="img" aria-label={`${model.atWork} agent loop${model.atWork === 1 ? "" : "s"} at work. ${status}`}>
+      <div className="orbit-path" style={{ inset: `${(1 - AGENT_RADIUS) * 50}%` }} aria-hidden />
       <div className="orbit-inner-ring" style={{ inset: `${(1 - CANDIDATE_RADIUS) * 50}%` }} aria-hidden />
 
       {/* handoff and audit lines: above the candidate circles, under the dots */}
@@ -538,7 +536,7 @@ function RunFooter({ snapshot }: { snapshot: RunSnapshot }) {
     }
   }
   return (
-    <div className="mt-14 flex flex-wrap items-center justify-center gap-3 sm:mt-6">
+    <div className="mt-14 grid grid-cols-2 items-stretch gap-3 sm:mt-6 sm:flex sm:flex-wrap sm:items-center sm:justify-center">
       <Counter label="spaces evaluated" value={`${counters.evaluated} of ${counters.total}`} />
       <Counter label="ruled out by a deal breaker" value={String(counters.rejected)} tone={counters.rejected > 0 ? "hard" : undefined} />
       <Counter label="agent tasks running now" value={String(counters.runningNow)} detail={counters.peak > 0 ? `up to ${counters.peak}` : undefined} />
@@ -546,13 +544,13 @@ function RunFooter({ snapshot }: { snapshot: RunSnapshot }) {
         type="button"
         onClick={() => void cancel()}
         disabled={done || cancelState === "sending" || cancelState === "sent"}
-        className="inline-flex h-10 items-center gap-2 rounded-full glass-strong px-[18px] text-sm font-medium text-ink hover:bg-white disabled:opacity-50"
+        className="inline-flex min-h-10 items-center justify-center gap-2 self-center justify-self-center rounded-full glass-strong px-[18px] text-sm font-medium text-ink hover:bg-white disabled:opacity-50 sm:h-10"
       >
         <CircleStop size={16} aria-hidden />
         {cancelState === "sending" || (cancelState === "sent" && !done) ? "Stopping..." : "Cancel"}
       </button>
       {cancelState === "failed" && (
-        <span role="alert" className="text-[13px] text-hard">
+        <span role="alert" className="col-span-2 text-center text-[13px] text-hard">
           Could not cancel. The run may have just finished.
         </span>
       )}
@@ -562,7 +560,7 @@ function RunFooter({ snapshot }: { snapshot: RunSnapshot }) {
 
 function Counter({ label, value, detail, tone }: { label: string; value: string; detail?: string; tone?: "hard" }) {
   return (
-    <div className="flex min-w-[150px] flex-col items-center rounded-[20px] glass-strong px-4 py-2.5">
+    <div className="flex min-w-0 flex-col items-center justify-center rounded-[20px] glass-strong px-3 py-2.5 text-center sm:min-w-[150px] sm:px-4">
       <span className={cx("tnum text-xl leading-7 font-semibold", tone === "hard" ? "text-hard" : "text-ink")}>
         {value}
         {detail && <span className="ml-1.5 text-xs font-medium text-ink-3">{detail}</span>}
