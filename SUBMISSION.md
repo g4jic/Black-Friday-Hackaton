@@ -29,7 +29,7 @@ Added when the video is published.
 SuiteSpot finds a small business the best financial deal on a commercial space.
 
 Comparing spaces by hand takes an evening with a spreadsheet per listing, and the lease clause that matters most is
-the easiest to miss. SuiteSpot is a two-sided platform: landlords publish structured listings and a business fills in
+the easiest to miss. SuiteSpot is a two-sided platform: space owners publish structured listings and a business fills in
 a short questionnaire.
 
 Mozaik agents then evaluate every matching space at the same time. Each covers one financial angle, with one goal:

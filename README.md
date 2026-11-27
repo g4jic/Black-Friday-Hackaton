@@ -19,7 +19,7 @@ answer takes about ten seconds instead of an evening with a spreadsheet.
 - **Local:** no key, no database, four commands ([Quick start](#quick-start))
 - Team **Scope** (Aleksa Ćupina, Andrej Gajić). Built during the JigJoy Black Friday AI Hackathon, 26-27 Nov 2026,
   track "AI agents in finance".
-- **All listings, landlords and businesses are synthetic. Not financial or legal advice.**
+- **All listings, space owners and businesses are synthetic. Not financial or legal advice.**
 
 ## Contents
 [The problem](#the-problem) · [Quick start](#quick-start) · [What you see](#what-you-see) ·
@@ -35,14 +35,14 @@ out:
 - the real monthly cost and the money needed up front;
 - what leaving early costs;
 - what share of revenue the rent eats;
-- which clause is a deal breaker (no exit for ten years, a landlord who may raise the rent at will, a permitted use
+- which clause is a deal breaker (no exit for ten years, an owner who may raise the rent at will, a permitted use
   that excludes the business).
 
 The clause that matters most is the easiest to miss.
 
 SuiteSpot is a two-sided platform:
 
-- **Landlords** publish structured listings: terms, an optional lease draft and up to six photos.
+- **Space owners** publish structured listings: terms, an optional lease draft and up to six photos.
 - **A business** fills in a questionnaire and either:
   - asks **Find spaces**: SuiteSpot picks the listings that fit, or
   - **evaluates one listing**: from SuiteSpot, or a space found elsewhere whose terms it types in.
@@ -178,7 +178,7 @@ flowchart LR
 | Shop in Novi Sad | 7.3 s | 29 | 28 | 4 | 10 |
 
 Example: in **Office in Beograd** the Finance analyst works on "Voždovac, 51 m2" for 4.6 s. Then the Lease reader finds
-that the landlord may raise the rent without a limit, and the Finance loop stops before its next tool call.
+that the owner may raise the rent without a limit, and the Finance loop stops before its next tool call.
 `npx tsx scripts/cut-report.ts` prints every cut.
 
 ![Timeline: one lane per agent loop, calculator calls, loops cut by a deal breaker](design/screenshots/timeline.png)
@@ -216,7 +216,7 @@ $0.098) had 31 loops, a peak of 27 in parallel and 6 loops cut. The screenshot b
   - over budget by more than 10%;
   - a permitted use that excludes the business;
   - no early exit with a term over 36 months;
-  - a landlord who may raise the rent without a limit.
+  - an owner who may raise the rent without a limit.
 - **Ranked by the worst case.**
   - Unknown data counts as 0 for the low end, and the score is shown as a range ("74-94").
   - The rank uses the low end (`src/domain/ranking.ts`). **Good** needs 70 or more in the worst case, high confidence
@@ -254,7 +254,7 @@ first pass found two wrong verdicts. We fixed both in code, added tests, and all
 | Model answers with a key | Real: claude-haiku-4-5, live (the online version) |
 | Model answers without a key, the three example businesses | **Recorded** real claude-haiku-4-5 runs (`fixtures/recordings/`), replayed with their latencies; code still checks every value |
 | Model answers without a key, every other run | **Scripted** agents; every number still comes from the calculator and every quote is checked. A lease draft outside the seed is not read, and a new address gets no area data |
-| Listings, landlords, businesses | **Synthetic**: 100 generated listings (50 Novi Sad, 50 Beograd). Seed listings show a plain tile instead of a photo; only owners upload photos |
+| Listings, space owners, businesses | **Synthetic**: 100 generated listings (50 Novi Sad, 50 Beograd). Seed listings show a plain tile instead of a photo; only owners upload photos |
 | Area data | Real public data: OpenStreetMap, stored for seeded addresses (© OpenStreetMap contributors, ODbL) |
 | Accounts, offers, leases, rent schedule | Real code and storage (Supabase online, local files without it) |
 | Rent payments | **Simulated** locally; **Stripe test mode** online (test card `4242 4242 4242 4242`). Never real money |
